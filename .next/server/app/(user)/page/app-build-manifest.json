@@ -1,0 +1,19 @@
+{
+  "pages": {
+    "/(user)/page": [
+      "static/chunks/[root-of-the-server]__9d9886ee._.css",
+      "static/chunks/5343e_next_dist_e14212f1._.js",
+      "static/chunks/Documents_web-dev_projects_smartplates_src_app_layout_tsx_d3e88dae._.js",
+      "static/chunks/5343e_next_dist_client_components_builtin_global-error_0591a822.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_d3415a22._.js",
+      "static/chunks/5343e_next_dist_compiled_react-dom_08574544._.js",
+      "static/chunks/5343e_next_dist_compiled_next-devtools_index_228c9e51.js",
+      "static/chunks/5343e_next_dist_compiled_f3aa210a._.js",
+      "static/chunks/5343e_next_dist_client_1abedc75._.js",
+      "static/chunks/5343e_next_dist_322dcce6._.js",
+      "static/chunks/5343e_@swc_helpers_cjs_17ae96c3._.js",
+      "static/chunks/Documents_web-dev_projects_smartplates_a0ff3932._.js",
+      "static/chunks/turbopack-Documents_web-dev_projects_smartplates_cc585600._.js"
+    ]
+  }
+}

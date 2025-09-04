@@ -533,7 +533,7 @@ NEXTAUTH_URL=http://localhost:3000
 - Use basic search and filter functionality
 - Access cookware recommendations
 - View meal planning examples
-- Limited AI suggestions (with registration prompt)
+
 
 ### Meal Planning System
 

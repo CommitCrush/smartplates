@@ -2,11 +2,11 @@
 
 ## Übersicht
 
-Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler über ca. 12-16 Wochen.
+Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler über **4 Wochen**. Der Fokus liegt auf den **Kernfunktionen und wichtigsten Features** zuerst.
 
 ---
 
-## Phase 1: Foundation & Core Setup (Wochen 1-3)
+## Phase 1: Foundation & Core Setup (Woche 1)
 **Priorität: KRITISCH - Muss zuerst implementiert werden**
 
 ### 🏗️ **Developer 1: Project Setup & Authentication**
@@ -51,7 +51,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 
 ---
 
-## Phase 2: Core Recipe System (Wochen 4-7)
+## Phase 2: Core Recipe System (Woche 2)
 **Priorität: HOCH - Hauptfunktionalität**
 
 ### 🍳 **Developer 1: Recipe Management**
@@ -96,150 +96,171 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 
 ---
 
-## Phase 3: Advanced Features (Wochen 8-11)
-**Priorität: MITTEL - Erweiterte Funktionalität**
+## Phase 3: Meal Planning & Key Features (Woche 3)
+**Priorität: HOCH - Kernfunktionalität**
 
-### 🤖 **Developer 1: AI Integration**
-- [ ] Google Cloud Vision API Setup
-- [ ] Kühlschrank-Foto Analyse Feature
-- [ ] AI Recipe Suggestion Logic
-- [ ] Prompt-basierte Recipe Search
-- [ ] AI Response Processing
-- [ ] Error Handling für AI Features
+### 🤖 **Developer 1: Basic AI Integration**
+- [ ] Google Cloud Vision API Setup (Optional)
+- [ ] Basic Kühlschrank-Foto Analyse (MVP)
+- [ ] Simple Recipe Suggestions
+- [ ] Basic Error Handling für AI Features
+- [ ] **Fallback**: Manual ingredient input if AI fails
 
-### 💾 **Developer 2: Saved Plans & User Experience**
-- [ ] Saved Meal Plans System
-- [ ] Meal Plan Templates
-- [ ] Plan Sharing Functionality
+### 💾 **Developer 2: User Experience & Meal Planning**
+- [ ] Enhanced Meal Planning Features
+- [ ] Basic Saved Meal Plans System
 - [ ] User Recipe Collections
-- [ ] Export/Import Meal Plans
-- [ ] Plan History & Analytics
+- [ ] Simple Plan Sharing
+- [ ] Basic Export/Print Functionality
 
-### 🍴 **Developer 3: Cookware & Affiliate System**
-- [ ] Cookware Database & Models
-- [ ] Amazon/IKEA Affiliate Integration
-- [ ] Cookware Recommendation Engine
-- [ ] Commission Tracking System
-- [ ] Cookware Admin Management
-- [ ] Product Review System
+### 🍴 **Developer 3: Basic Cookware System**
+- [ ] Simple Cookware Database
+- [ ] Basic Amazon/IKEA Links (Static)
+- [ ] Cookware Recommendations (Simple)
+- [ ] **Focus**: Essential kitchen tools only
 
-### ⚙️ **Developer 4: Advanced Settings & Personalization**
-- [ ] Dietary Preferences System
-- [ ] Notification Management
-- [ ] Privacy Settings Implementation
-- [ ] Multi-language Support Grundlage
-- [ ] Cookie Consent Management
-- [ ] Advanced User Preferences
+### ⚙️ **Developer 4: Essential Settings**
+- [ ] Basic Dietary Preferences
+- [ ] Essential User Settings
+- [ ] Privacy Settings (Basic)
+- [ ] **Focus**: Core user preferences only
 
-### 📈 **Developer 5: Analytics & Performance**
-- [ ] User Activity Tracking
-- [ ] Recipe Popularity Analytics
-- [ ] Performance Monitoring
+### 📈 **Developer 5: Performance & Polish**
+- [ ] Basic Performance Optimization
+- [ ] Essential Error Handling
+- [ ] Simple Analytics (Optional)
 - [ ] Database Query Optimization
-- [ ] Caching Implementation
-- [ ] SEO Optimization
+- [ ] Basic SEO
 
 ---
 
-## Phase 4: Polish & Deployment (Wochen 12-16)
-**Priorität: NIEDRIG - Finalisierung**
+## Phase 4: Testing, Polish & Deployment (Woche 4)
+**Priorität: HOCH - Finalisierung für Launch**
 
-### 🚀 **Developer 1: Deployment & DevOps**
+### 🚀 **Developer 1: Deployment & Launch**
 - [ ] Vercel Deployment Setup
-- [ ] Environment Configuration
+- [ ] Essential Environment Configuration
 - [ ] Production Database Setup
 - [ ] Domain & SSL Configuration
-- [ ] Performance Monitoring Setup
-- [ ] Backup & Recovery System
+- [ ] **Focus**: Get app live and accessible
 
-### 🧪 **Developer 2: Testing & Quality Assurance**
-- [ ] Unit Tests für Components
-- [ ] Integration Tests für API
-- [ ] E2E Tests für User Flows
-- [ ] Performance Testing
-- [ ] Security Testing
-- [ ] Bug Fixes & Stabilization
+### 🧪 **Developer 2: Critical Testing**
+- [ ] Essential Unit Tests für Core Components
+- [ ] Basic Integration Tests für Key Features
+- [ ] Critical User Flow Testing
+- [ ] **Focus**: Ensure core functionality works
+- [ ] Bug Fixes für Launch-Blocker
 
-### 📱 **Developer 3: Mobile Optimization**
-- [ ] Progressive Web App Features
-- [ ] Mobile Performance Optimization
-- [ ] Touch Gestures & Interactions
-- [ ] Offline Functionality Basics
-- [ ] Mobile-specific UI Improvements
-- [ ] App Store Preparation
+### 📱 **Developer 3: Mobile & Accessibility**
+- [ ] Mobile Responsive Fixes
+- [ ] Basic Touch Interactions
+- [ ] Essential Accessibility Features
+- [ ] **Focus**: App works on mobile devices
+- [ ] Cross-browser Compatibility (Chrome, Safari, Firefox)
 
-### 🎨 **Developer 4: UI/UX Polish**
-- [ ] Design System Finalization
-- [ ] Animation & Micro-interactions
-- [ ] Accessibility Improvements
-- [ ] Cross-browser Compatibility
+### 🎨 **Developer 4: UI/UX Final Polish**
 - [ ] Design Consistency Review
+- [ ] Essential Animation & Interactions
+- [ ] Accessibility Improvements (WCAG 2.1 AA)
+- [ ] **Focus**: Professional appearance for launch
 - [ ] User Experience Testing
 
-### 📚 **Developer 5: Documentation & Maintenance**
-- [ ] Code Documentation
-- [ ] API Documentation
-- [ ] User Guide Creation
-- [ ] Admin Manual
-- [ ] Deployment Documentation
-- [ ] Maintenance Procedures
+### 📚 **Developer 5: Launch Preparation**
+- [ ] Essential API Documentation
+- [ ] Basic User Guide/Help
+- [ ] Admin Documentation
+- [ ] **Focus**: Support materials for launch
+- [ ] Performance Monitoring Setup
 
 ---
 
 ## Team Koordination
 
-### Daily Standups
-- Tägliche 15-min Meetings
-- Fortschritt, Blocker, nächste Schritte
-- Cross-team Dependencies besprechen
+### Daily Standups (15 Min)
+- **Täglich 9:00 Uhr**: Kurze Updates zu Fortschritt und Blockern
+- **Fokus**: Was wurde gemacht, was kommt heute, gibt es Blocker?
+- **Schnelle Problem-Lösung**: Bei Blockern sofort Hilfe organisieren
 
-### Weekly Reviews
-- Demo der implementierten Features
-- Code Reviews & Pair Programming
-- Planung der nächsten Woche
+### Sprint Planning (1 Woche Sprints)
+- **Montags 10:00 Uhr**: Wöchentliche Sprint-Planung
+- **Priorisierung**: Kernfeatures zuerst, Nice-to-have später
+- **Realistische Ziele**: Lieber weniger versprechen und mehr liefern
 
-### Sprint Planning
-- 2-Wochen Sprints
-- Feature Priorisierung
-- Task Estimation & Assignment
-
----
-
-## Technische Dependencies
-
-### Phase 1 → Phase 2
-- Authentication System muss fertig sein
-- Basis UI Components müssen verfügbar sein
-- Database Schema muss definiert sein
-
-### Phase 2 → Phase 3
-- Recipe System muss funktional sein
-- User System muss stabil sein
-- Meal Planning Grundfunktionen müssen verfügbar sein
-
-### Phase 3 → Phase 4
-- Alle Kernfeatures müssen implementiert sein
-- Grundlegende Tests müssen vorhanden sein
-- Performance Issues müssen identifiziert sein
+### Ende-der-Woche Demo (Freitags)
+- **Freitags 16:00 Uhr**: Demo der implementierten Features
+- **Team Review**: Was funktioniert, was muss verbessert werden
+- **Planung nächste Woche**: Prioritäten für folgende Woche
 
 ---
 
-## Qualitätssicherung
+## Technische Dependencies & Priorisierung
 
-### Code Standards
-- TypeScript strict mode
-- ESLint + Prettier Konfiguration
-- Commit Message Conventions
-- Branch Protection Rules
+### Woche 1 → Woche 2 (KRITISCH)
+- ✅ Authentication System muss funktionieren
+- ✅ Basis UI Components müssen verfügbar sein
+- ✅ Database Schema muss definiert und getestet sein
+- ✅ Grundlegende API Routes müssen funktionieren
 
-### Testing Strategy
-- Jest für Unit Tests
-- Cypress für E2E Tests
-- Lighthouse für Performance
-- Accessibility Testing
+### Woche 2 → Woche 3 (HOCH)
+- ✅ Recipe System muss CRUD-Operationen unterstützen
+- ✅ User System muss stabil laufen
+- ✅ Basis-Komponenten müssen responsive sein
 
-### Performance Targets
-- First Contentful Paint < 1.5s
-- Largest Contentful Paint < 2.5s
-- Time to Interactive < 3.5s
-- Accessibility Score > 95
+### Woche 3 → Woche 4 (MITTEL)
+- ✅ Meal Planning Grundfunktionen müssen verfügbar sein
+- ✅ Wichtigste User-Features müssen implementiert sein
+- ✅ Performance muss acceptable sein
+
+### **MVP-Kriterien** (Minimum Viable Product):
+1. **User kann sich registrieren/anmelden**
+2. **User kann Rezepte browsen und ansehen**
+3. **User kann eigene Rezepte hinzufügen**
+4. **User kann Wochenplan erstellen**
+5. **User kann Einkaufsliste generieren**
+6. **App läuft stabil auf Desktop und Mobile**
+
+---
+
+## Qualitätssicherung & Launch-Bereitschaft
+
+### MVP Quality Gates
+Jede Woche muss diese Kriterien erfüllen:
+
+**Woche 1**: 
+- ✅ Basic Auth funktioniert
+- ✅ UI Components sind responsive
+- ✅ Database Connection steht
+
+**Woche 2**: 
+- ✅ User kann Rezepte ansehen
+- ✅ Admin kann Rezepte verwalten
+- ✅ Such-/Filter-Funktion funktioniert
+
+**Woche 3**: 
+- ✅ Meal Planning funktioniert
+- ✅ Grocery Lists werden generiert
+- ✅ User Experience ist intuitiv
+
+**Woche 4**: 
+- ✅ App ist live und zugänglich
+- ✅ Mobile Experience ist gut
+- ✅ Performance ist acceptable (< 3s Load Time)
+
+### Code Standards (Vereinfacht für 4-Wochen-Sprint)
+- **TypeScript**: Strict mode für Type Safety
+- **ESLint**: Basis-Regeln für Code Quality
+- **Prettier**: Auto-Formatting
+- **Git**: Feature Branches + Main Branch Protection
+
+### Testing Strategy (MVP-Fokus)
+- **Manual Testing**: Kritische User Flows täglich testen
+- **Jest**: Nur für kritische Utility Functions
+- **Cypress**: Nur für wichtigste User Journey (Login → Recipe → Meal Plan)
+- **Performance**: Lighthouse Score > 80 für Mobile & Desktop
+
+### Launch-Kriterien
+- ✅ **Funktionalität**: Alle MVP-Features funktionieren
+- ✅ **Performance**: First Contentful Paint < 2s
+- ✅ **Accessibility**: Basis-Accessibility (Keyboard Navigation, Alt-Texts)
+- ✅ **Mobile**: App ist nutzbar auf iOS & Android Browsers
+- ✅ **Stability**: Keine kritischen Bugs in Hauptfunktionen

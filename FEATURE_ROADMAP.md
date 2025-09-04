@@ -9,7 +9,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 ## Phase 1: Foundation & Core Setup (Woche 1)
 **Priorität: KRITISCH - Muss zuerst implementiert werden**
 
-### 🏗️ **Developer 1: Project Setup & Authentication**
+### 🏗️ **Developer 1: Project Setup & Authentication** (Ese)
 - [ ] Next.js 14 App Router Setup mit TypeScript
 - [ ] Tailwind CSS Konfiguration
 - [ ] MongoDB Datenbankschema Design
@@ -17,7 +17,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Middleware für Route Protection
 - [ ] Basis Layout Components (Navbar, Footer)
 
-### 👥 **Developer 2: User Management System**
+### 👥 **Developer 2: User Management System** (Balta)
 - [ ] User Model & Types Definition
 - [ ] Registrierung/Login Forms
 - [ ] User Context & State Management
@@ -25,7 +25,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Admin User Management System
 - [ ] User Settings Grundstruktur
 
-### 🔒 **Developer 3: Admin Foundation**
+### 🔒 **Developer 3: Admin Foundation** (Hana)
 - [ ] Admin Dashboard Layout
 - [ ] Admin Authentication Flow
 - [ ] Admin Sidebar Navigation
@@ -33,7 +33,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Admin Statistics Grundstruktur
 - [ ] Error Handling & Logging System
 
-### 🎨 **Developer 4: UI/UX Foundation**
+### 🎨 **Developer 4: UI/UX Foundation** (Rozn)
 - [ ] Design System Components (Buttons, Inputs, Cards)
 - [ ] Responsive Layout System
 - [ ] Dark/Light Theme Implementation
@@ -41,7 +41,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Mobile-First Responsive Design
 - [ ] Component Library Dokumentation
 
-### 📊 **Developer 5: Database & API Foundation**
+### 📊 **Developer 5: Database & API Foundation** (Monika)
 - [ ] MongoDB Schema Design & Implementation
 - [ ] API Routes Struktur (/api/*)
 - [ ] Data Models (User, Recipe, Category)

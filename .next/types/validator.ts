@@ -47,40 +47,40 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 }
 
 
-// Validate ../../src/app/(admin)/dashboard/manage-recipes/page.tsx
+// Validate ../../src/app/(admin)/admin/dashboard/manage-recipes/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(admin)/dashboard/manage-recipes/page.js")
-  handler satisfies AppPageConfig<"/dashboard/manage-recipes">
+  const handler = {} as typeof import("../../src/app/(admin)/admin/dashboard/manage-recipes/page.js")
+  handler satisfies AppPageConfig<"/admin/dashboard/manage-recipes">
 }
 
-// Validate ../../src/app/(admin)/dashboard/manage-users/[id]/page.tsx
+// Validate ../../src/app/(admin)/admin/dashboard/manage-users/[id]/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(admin)/dashboard/manage-users/[id]/page.js")
-  handler satisfies AppPageConfig<"/dashboard/manage-users/[id]">
+  const handler = {} as typeof import("../../src/app/(admin)/admin/dashboard/manage-users/[id]/page.js")
+  handler satisfies AppPageConfig<"/admin/dashboard/manage-users/[id]">
 }
 
-// Validate ../../src/app/(admin)/dashboard/manage_cookware_commissions/page.tsx
+// Validate ../../src/app/(admin)/admin/dashboard/manage_cookware_commissions/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(admin)/dashboard/manage_cookware_commissions/page.js")
-  handler satisfies AppPageConfig<"/dashboard/manage_cookware_commissions">
+  const handler = {} as typeof import("../../src/app/(admin)/admin/dashboard/manage_cookware_commissions/page.js")
+  handler satisfies AppPageConfig<"/admin/dashboard/manage_cookware_commissions">
 }
 
-// Validate ../../src/app/(admin)/dashboard/statistics/page.tsx
+// Validate ../../src/app/(admin)/admin/dashboard/statistics/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(admin)/dashboard/statistics/page.js")
-  handler satisfies AppPageConfig<"/dashboard/statistics">
+  const handler = {} as typeof import("../../src/app/(admin)/admin/dashboard/statistics/page.js")
+  handler satisfies AppPageConfig<"/admin/dashboard/statistics">
 }
 
-// Validate ../../src/app/(admin)/page.tsx
+// Validate ../../src/app/(admin)/admin/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(admin)/page.js")
-  handler satisfies AppPageConfig<"/">
+  const handler = {} as typeof import("../../src/app/(admin)/admin/page.js")
+  handler satisfies AppPageConfig<"/admin">
 }
 
-// Validate ../../src/app/(admin)/settings/page.tsx
+// Validate ../../src/app/(admin)/admin/settings/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(admin)/settings/page.js")
-  handler satisfies AppPageConfig<"/settings">
+  const handler = {} as typeof import("../../src/app/(admin)/admin/settings/page.js")
+  handler satisfies AppPageConfig<"/admin/settings">
 }
 
 // Validate ../../src/app/(public)/about/page.tsx
@@ -119,51 +119,51 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies AppPageConfig<"/register">
 }
 
-// Validate ../../src/app/(user)/dashboard/ai_feature/page.tsx
+// Validate ../../src/app/(user)/user/dashboard/ai_feature/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(user)/dashboard/ai_feature/page.js")
-  handler satisfies AppPageConfig<"/dashboard/ai_feature">
+  const handler = {} as typeof import("../../src/app/(user)/user/dashboard/ai_feature/page.js")
+  handler satisfies AppPageConfig<"/user/dashboard/ai_feature">
 }
 
-// Validate ../../src/app/(user)/dashboard/cookware/page.tsx
+// Validate ../../src/app/(user)/user/dashboard/cookware/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(user)/dashboard/cookware/page.js")
-  handler satisfies AppPageConfig<"/dashboard/cookware">
+  const handler = {} as typeof import("../../src/app/(user)/user/dashboard/cookware/page.js")
+  handler satisfies AppPageConfig<"/user/dashboard/cookware">
 }
 
-// Validate ../../src/app/(user)/dashboard/my_added_recipes/[id]/page.tsx
+// Validate ../../src/app/(user)/user/dashboard/my_added_recipes/[id]/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(user)/dashboard/my_added_recipes/[id]/page.js")
-  handler satisfies AppPageConfig<"/dashboard/my_added_recipes/[id]">
+  const handler = {} as typeof import("../../src/app/(user)/user/dashboard/my_added_recipes/[id]/page.js")
+  handler satisfies AppPageConfig<"/user/dashboard/my_added_recipes/[id]">
 }
 
-// Validate ../../src/app/(user)/dashboard/my_meal_plan/[id]/page.tsx
+// Validate ../../src/app/(user)/user/dashboard/my_meal_plan/[id]/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(user)/dashboard/my_meal_plan/[id]/page.js")
-  handler satisfies AppPageConfig<"/dashboard/my_meal_plan/[id]">
+  const handler = {} as typeof import("../../src/app/(user)/user/dashboard/my_meal_plan/[id]/page.js")
+  handler satisfies AppPageConfig<"/user/dashboard/my_meal_plan/[id]">
 }
 
-// Validate ../../src/app/(user)/dashboard/my_saved_meal_plan/page.tsx
+// Validate ../../src/app/(user)/user/dashboard/my_saved_meal_plan/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(user)/dashboard/my_saved_meal_plan/page.js")
-  handler satisfies AppPageConfig<"/dashboard/my_saved_meal_plan">
+  const handler = {} as typeof import("../../src/app/(user)/user/dashboard/my_saved_meal_plan/page.js")
+  handler satisfies AppPageConfig<"/user/dashboard/my_saved_meal_plan">
 }
 
-// Validate ../../src/app/(user)/page.tsx
+// Validate ../../src/app/(user)/user/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(user)/page.js")
-  handler satisfies AppPageConfig<"/">
+  const handler = {} as typeof import("../../src/app/(user)/user/page.js")
+  handler satisfies AppPageConfig<"/user">
 }
 
-// Validate ../../src/app/(user)/profile/[id]/page.tsx
+// Validate ../../src/app/(user)/user/profile/[id]/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(user)/profile/[id]/page.js")
-  handler satisfies AppPageConfig<"/profile/[id]">
+  const handler = {} as typeof import("../../src/app/(user)/user/profile/[id]/page.js")
+  handler satisfies AppPageConfig<"/user/profile/[id]">
 }
 
 // Validate ../../src/app/page.tsx
 {
-  const handler = {} as typeof import("../../src/app/(public)/page.jsx")
+  const handler = {} as typeof import("../../src/app/page.js")
   handler satisfies AppPageConfig<"/">
 }
 
@@ -219,8 +219,20 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 
 
 
+// Validate ../../src/app/(admin)/admin/layout.tsx
+{
+  const handler = {} as typeof import("../../src/app/(admin)/admin/layout.js")
+  handler satisfies LayoutConfig<"/admin">
+}
+
+// Validate ../../src/app/(user)/user/layout.tsx
+{
+  const handler = {} as typeof import("../../src/app/layout.jsx.js")
+  handler satisfies LayoutConfig<"/user">
+}
+
 // Validate ../../src/app/layout.tsx
 {
-  const handler = {} as typeof import("../../src/app/(public)/layout.jsx")
+  const handler = {} as typeof import("../../src/app/layout.js")
   handler satisfies LayoutConfig<"/">
 }

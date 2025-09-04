@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SmartPlates (Rezept-Planer) 🍽️
 
-## Getting Started
+## Projektbeschreibung
 
-First, run the development server:
+SmartPlates ist eine Full-Stack-Webanwendung, die entwickelt wurde, um die Essensplanung zu vereinfachen. Benutzer können Rezepte entdecken, ihre eigenen hochladen, detaillierte Essenspläne erstellen und eine KI-gestützte Funktion zur Analyse von Lebensmittelbildern nutzen. Die Anwendung zielt darauf ab, eine intuitive und effiziente Erfahrung für die Organisation von Mahlzeiten zu bieten.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Das Projekt umfasst ein umfassendes Backend für die Benutzer- und Rezeptverwaltung sowie ein modernes Frontend für eine nahtlose Benutzerinteraktion.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Design & UI/UX Vision
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Basierend auf den visuellen Entwürfen soll das Projekt eine saubere, moderne und benutzerfreundliche Oberfläche erhalten.
 
-## Learn More
+* **Responsive Design**: Alle Komponenten und Layouts werden vollständig responsiv gestaltet, um eine optimale Darstellung und Funktionalität auf allen Geräten – vom Desktop-PC über Tablets bis hin zu Smartphones – sicherzustellen.
 
-To learn more about Next.js, take a look at the following resources:
+### Homepage (Ansicht für Besucher)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Die Startseite dient als einladender Einstieg in die Welt von SmartPlates.
+* **Design & Farben**: Ein minimalistisches Layout mit viel Weißraum, sanften Grüntönen und einem warmen Korallton für Akzente und Call-to-Action-Buttons.
+* **Slogan**: Der zentrale Leitspruch ist **"Effortless Meal Planning. Delicious Living."**, um den Kernnutzen der App zu kommunizieren.
+* **Layout**: Ein prominenter Header-Bereich mit hochwertigen Food-Bildern, dem Slogan und einem direkten "START PLANNING NOW"-Button. Darunter werden die drei Hauptfunktionen ("Plan Your Week", "Smart Grocery List", "AI Meal Suggestions") visuell ansprechend präsentiert.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Features
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Benutzer-Features
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+* **Mein Essensplan (My Meal Plan)**: Dies ist die zentrale Planungszentrale. Hier können Benutzer in einer Kalenderansicht ihre Mahlzeiten für die Woche organisieren. Um den Plan zu füllen, steht eine leistungsstige Such- und Filterfunktion zur Verfügung. Mithilfe von **Dropdowns mit Kategorien und Allergien** können Rezepte zur besseren Filterung nach Kriterien wie "Beliebt" oder "Schnell & Einfach" durchsucht und direkt zum Plan hinzugefügt werden.
+* **Einkaufsliste (Groceries)**: Automatisch generierte Zutatenliste basierend auf dem ausgewählten Essensplan.
+* **Gespeicherte Pläne (Saved Meal Plan)**: Möglichkeit, bewährte Wochenpläne zu speichern und wiederzuverwenden.
+* **Rezept-Upload**: Benutzer können eigene Rezepte mit Titel, Zutaten, Anleitung, Bildern/Videos und Kategorien hochladen.
+* **KI-gestützte Rezeptvorschläge**: Eine innovative Funktion, die es Benutzern ermöglicht, ein Foto vom Inhalt ihres Kühlschranks hochzuladen. Die KI analysiert das Bild, erkennt die vorhandenen Zutaten (z.B. Eier, Tomaten) und schlägt passende Rezepte vor. Zusätzlich können Benutzer über Texteingaben (Prompts) gezielt nach Rezeptideen suchen.
+* **Kochgeschirr (Cookware)**: Eine kuratierte Liste von grundlegenden Küchenutensilien mit Affiliate-Links zu Amazon oder IKEA.
+
+### Admin-Features
+
+* **Dashboard & Statistiken**: Eine Übersicht über Nutzeraktivitäten, beliebte Rezepte und andere relevante Metriken.
+* **Benutzerverwaltung**: Admins können registrierte Benutzer einsehen, ihren Status verwalten und bei Bedarf löschen.
+* **Rezeptverwaltung**: Admins haben die volle Kontrolle über alle in der Datenbank befindlichen Rezepte.
+* **Cookware & Provisionen**: Verwalten Sie die Liste der Kochgeschirr-Artikel und die damit verbundenen Partner-Provisionen.
+
+---
+
+## Einstellungsoptionen (Settings)
+
+Die Einstellungsseite ist an moderne Dashboards wie die GitHub-Profileinstellungen angelehnt und verfügt über eine Navigationsleiste (Sidebar) auf der linken Seite.
+
+### Benutzer-Einstellungen
+
+* **Profil**:
+    * Profilbild, Benutzername und E-Mail ändern.
+    * Passwort ändern.
+    * Sichtbarkeit des Profils einstellen (öffentlich/privat).
+* **Personalisierung**:
+    * App-Sprache und Design (Hell/Dunkel) anpassen.
+    * Benachrichtigungen für Kommentare und Likes verwalten.
+    * Ernährungsvorlieben (z.B. vegan, glutenfrei) speichern.
+* **Datenschutz & Sicherheit**:
+    * Cookie-Einwilligungen verwalten (erstellen, speichern, löschen).
+* **Konto**:
+    * Konto löschen und Logout.
+
+### Admin-Einstellungen
+
+* **Profil-Settings**:
+    * Profilbild, Benutzername, E-Mail und Passwort des Admin-Kontos ändern.
+* **Konto**:
+    * Konto löschen und Logout.
+
+---
+
+## Technologie-Stack
+
+* **Framework**: Next.js (Fullstack mit App Router)
+* **Datenbank**: MongoDB
+* **Authentifizierung**: Google Cloud for Authentication
+* **Styling**: Tailwind CSS
+* **Bild- & Videoverwaltung**: Google Cloud Storage
+* **Deployment**: Vercel
+* **Externe APIs & Services**:
+    * **Rezept-API** (z.B. Spoonacular, TheMealDB) zur Beschaffung von Gerichten und Zutaten.
+    * **KI Vision API**: Google Cloud Vision AI zur Analyse von Bildern für das Kühlschrank-Feature.

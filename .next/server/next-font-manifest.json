@@ -1,5 +1,9 @@
 {
   "app": {
+    "[project]/Documents/web-dev/projects/smartplates/src/app/(public)/page": [
+      "static/media/caa3a2e1cccd8315-s.p.6435ea53.woff2",
+      "static/media/797e433ab948586e-s.p.dbea232f.woff2"
+    ],
     "[project]/Documents/web-dev/projects/smartplates/src/app/page": [
       "static/media/caa3a2e1cccd8315-s.p.6435ea53.woff2",
       "static/media/797e433ab948586e-s.p.dbea232f.woff2"

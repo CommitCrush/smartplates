@@ -82,3 +82,64 @@ Die Einstellungsseite ist an moderne Dashboards wie die GitHub-Profileinstellung
 * **Externe APIs & Services**:
     * **Rezept-API** (z.B. Spoonacular, TheMealDB) zur Beschaffung von Gerichten und Zutaten.
     * **KI Vision API**: Google Cloud Vision AI zur Analyse von Bildern für das Kühlschrank-Feature.
+
+---
+
+## Development Workflow
+
+### Git Branching Strategy
+
+This project follows a structured Git workflow to ensure clean code management and stable releases:
+
+#### Branch Structure
+
+- **`main`** - Production-ready code only. Protected branch with no direct commits allowed.
+- **`dev`** - Active development branch. All feature branches must branch off from `dev`.
+- **`feature/*`** - Individual feature branches created from `dev`.
+
+#### Workflow Process
+
+1. **Starting a New Feature:**
+   ```bash
+   # Always start from the latest dev branch
+   git checkout dev
+   git pull origin dev
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Working on Features:**
+   - Make commits to your feature branch
+   - Regularly sync with dev: `git pull origin dev`
+   - Push feature branch: `git push origin feature/your-feature-name`
+
+3. **Completing a Feature:**
+   - Create Pull Request from `feature/your-feature-name` → `dev`
+   - Request code review from team members
+   - Merge into `dev` after approval
+
+4. **Production Release:**
+   - Only final, tested code from `dev` gets merged into `main`
+   - `main` branch is protected and requires admin approval
+   - Production deployments happen only from `main`
+
+#### Branch Protection Rules
+
+- **Main Branch**: No direct commits, requires Pull Request with reviews
+- **Dev Branch**: Primary working branch, all features merge here first
+- **Feature Branches**: Short-lived, deleted after merge
+
+#### Guidelines
+
+- **Feature Branch Naming**: Use descriptive names like `feature/meal-planning`, `feature/recipe-search`, `bugfix/login-issue`
+- **Commit Messages**: Clear, descriptive commit messages following conventional format
+- **Code Review**: All code must be reviewed before merging
+- **Testing**: Features must pass all tests before merging
+
+### Team Coordination
+
+- **Daily Standups**: Progress updates and blocker identification
+- **Weekly Reviews**: Feature demos and sprint planning
+- **Code Reviews**: Mandatory for all Pull Requests
+- **Documentation**: Update relevant docs with each feature
+
+For detailed feature tracking, see the `features/` directory and `FEATURE_ROADMAP.md`.

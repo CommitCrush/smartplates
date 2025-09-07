@@ -250,7 +250,11 @@ Jede Woche muss diese Kriterien erfüllen:
 - **TypeScript**: Strict mode für Type Safety
 - **ESLint**: Basis-Regeln für Code Quality
 - **Prettier**: Auto-Formatting
-- **Git**: Feature Branches + Main Branch Protection
+- **Git Workflow**: 
+  - `main` branch: Production-ready code only (protected)
+  - `dev` branch: Active development base for all features
+  - `feature/*` branches: Created from `dev`, merged back to `dev`
+  - All Pull Requests require code review before merge
 
 ### Testing Strategy (MVP-Fokus)
 - **Manual Testing**: Kritische User Flows täglich testen

@@ -20,6 +20,7 @@ Dieses Verzeichnis enthält die gesamte Projektdokumentation für SmartPlates.
 ### 🚀 Implementierung
 - `setup-guide.md` - Entwicklungsumgebung Setup
 - `coding-standards.md` - Code Standards und Best Practices
+- `git-workflow.md` - Git Branching Strategy und Development Workflow
 - `testing-strategy.md` - Testing Ansatz und Strategien
 
 ### 🎨 Design

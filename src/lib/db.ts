@@ -26,23 +26,37 @@ let database: Db | null = null;
  */
 export async function connectToDatabase(): Promise<Db> {
   try {
-    // If we already have a connection, reuse it
-    if (database) {
+    // Return existing connection if available
+    if (database && client) {
+      // Verify connection is still alive
+      await database.admin().ping();
       return database;
     }
 
-    // Create new MongoDB client if needed
-    if (!client) {
-      client = new MongoClient(MONGODB_URI, {
-        // Modern MongoDB driver options
-        maxPoolSize: 10,              // Maximum number of connections
-        serverSelectionTimeoutMS: 5000, // How long to try selecting a server
-        socketTimeoutMS: 45000,       // How long to wait for a response
-      });
+    // Validate environment configuration
+    if (!MONGODB_URI) {
+      throw new Error('MONGODB_URL environment variable is not defined');
     }
 
-    // Connect to MongoDB
+    // Create new MongoDB client with optimized settings
+    client = new MongoClient(MONGODB_URI, {
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      family: 4, // Use IPv4, skip trying IPv6
+      retryWrites: true, // Retry write operations on failure
+      retryReads: true, // Retry read operations on failure
+      maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+      compressors: ['zlib'], // Enable compression for better performance
+    });
+
+    // Connect to MongoDB with retry logic
     await client.connect();
+    
+    // Test the connection
+    await client.db('admin').command({ ping: 1 });
+    
+    // Get database instance
     database = client.db(DATABASE_NAME);
     
     console.log(`✅ Connected to MongoDB database: ${DATABASE_NAME}`);
@@ -50,19 +64,35 @@ export async function connectToDatabase(): Promise<Db> {
     
   } catch (error) {
     console.error('❌ MongoDB connection failed:', error);
-    throw new Error('Failed to connect to database');
+    
+    // Clean up failed connection
+    if (client) {
+      try {
+        await client.close();
+      } catch (closeError) {
+        console.error('Error closing failed connection:', closeError);
+      }
+      client = null;
+      database = null;
+    }
+    
+    throw new Error(`Failed to connect to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 /**
  * Gets a specific collection from the database
- * 
- * @param collectionName - Name of the collection to get
- * @returns Promise<Collection> - MongoDB collection instance
+ * @param collectionName - Name of the collection to retrieve
+ * @returns MongoDB Collection instance
  */
-export async function getCollection<T extends Document = Document>(collectionName: string): Promise<Collection<T>> {
-  const db = await connectToDatabase();
-  return db.collection<T>(collectionName);
+export async function getCollection<T = any>(collectionName: string): Promise<Collection<T>> {
+  try {
+    const db = await connectToDatabase();
+    return db.collection<T>(collectionName);
+  } catch (error) {
+    console.error(`❌ Failed to get collection ${collectionName}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -86,6 +116,9 @@ export const COLLECTIONS = {
  */
 export function toObjectId(id: string | ObjectId): ObjectId {
   if (typeof id === 'string') {
+    if (!ObjectId.isValid(id)) {
+      throw new Error(`Invalid ObjectId format: ${id}`);
+    }
     return new ObjectId(id);
   }
   return id;
@@ -128,7 +161,7 @@ export async function isDatabaseHealthy(): Promise<boolean> {
     await db.admin().ping();
     return true;
   } catch (error) {
-    console.error('Database health check failed:', error);
+    console.error('❌ Database health check failed:', error);
     return false;
   }
 }
@@ -148,6 +181,65 @@ export async function closeDatabaseConnection(): Promise<void> {
   } catch (error) {
     console.error('❌ Error closing database connection:', error);
   }
+}
+
+/**
+ * Creates database indexes for better performance
+ * Should be called during application startup
+ */
+export async function createIndexes(): Promise<void> {
+  try {
+    const db = await connectToDatabase();
+    
+    // User collection indexes
+    const usersCollection = db.collection(COLLECTIONS.USERS);
+    await usersCollection.createIndexes([
+      { key: { email: 1 }, unique: true },
+      { key: { googleId: 1 }, unique: true, sparse: true },
+      { key: { createdAt: 1 } },
+      { key: { role: 1 } }
+    ]);
+
+    // Recipe collection indexes
+    const recipesCollection = db.collection(COLLECTIONS.RECIPES);
+    await recipesCollection.createIndexes([
+      { key: { title: 'text', description: 'text' } },
+      { key: { authorId: 1 } },
+      { key: { categories: 1 } },
+      { key: { createdAt: -1 } },
+      { key: { isPublic: 1 } },
+      { key: { 'nutrition.calories': 1 } },
+      { key: { cookingTime: 1 } }
+    ]);
+
+    // Category collection indexes
+    const categoriesCollection = db.collection(COLLECTIONS.CATEGORIES);
+    await categoriesCollection.createIndexes([
+      { key: { name: 1 }, unique: true },
+      { key: { slug: 1 }, unique: true },
+      { key: { parentId: 1 } }
+    ]);
+
+    console.log('✅ Database indexes created successfully');
+  } catch (error) {
+    console.error('❌ Failed to create database indexes:', error);
+    throw error;
+  }
+}
+
+// Graceful shutdown handling for production
+if (typeof process !== 'undefined') {
+  process.on('SIGINT', async () => {
+    console.log('🔄 Shutting down gracefully...');
+    await closeDatabaseConnection();
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    console.log('🔄 Shutting down gracefully...');
+    await closeDatabaseConnection();
+    process.exit(0);
+  });
 }
 
 // Export MongoDB types for convenience

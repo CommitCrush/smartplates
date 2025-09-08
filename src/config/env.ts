@@ -9,8 +9,7 @@
  * Required environment variables for the application
  */
 const requiredEnvVars = [
-  'MONGODB_URI',
-  'MONGODB_DB',
+  'MONGODB_URL',
   'JWT_SECRET',
 ] as const;
 
@@ -74,8 +73,8 @@ function getEnvVarWithDefault(key: string, defaultValue: string): string {
 export const config = {
   // Database
   database: {
-    uri: getEnvVar('MONGODB_URI')!,
-    name: getEnvVar('MONGODB_DB')!,
+    uri: getEnvVar('MONGODB_URL')!,
+    name: 'smartplates', // Default database name
   },
   
   // Authentication

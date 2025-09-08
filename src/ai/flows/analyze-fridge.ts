@@ -1,5 +1,3 @@
-'use server';
-
 import { z } from 'zod';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { config } from '@/config/env';

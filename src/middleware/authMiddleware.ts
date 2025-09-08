@@ -82,33 +82,18 @@ export async function authenticateToken(request: NextRequest): Promise<AuthResul
 
     /**
      * Extracts and validates JWT token from request
-     *
+     * 
      * @param request - Next.js request object
      */
-    export async function requireAdmin(request: NextRequest): Promise<NextResponse | void> {
-      const token = request.cookies.get('token')?.value;
-      if (!token) {
-        return NextResponse.redirect('/login');
-      }
-      try {
-        const decoded: any = verify(token, JWT_SECRET);
-        const user = await findUserById(decoded.userId);
-        if (!user || user.role !== 'admin') {
-          // Kein Admin: Zugriff verweigern
-          return NextResponse.redirect('/');
-        }
-        // Zugriff erlaubt
-        // (Optional: request.user = user)
-        return undefined;
-      } catch (error) {
-        return NextResponse.redirect('/login');
-      }
-    }
- * Use this to protect routes that need logged-in users
- * 
- * @param request - Next.js request object
- * @returns NextResponse or null (if authentication successful)
- */
+
+    // --- Admin Route Protection ---
+    /**
+     * Middleware-Utility: Erlaubt Zugriff nur für eingeloggte Admins
+     * @param request Next.js Request
+     * @returns NextResponse (redirect) oder undefined (Zugriff erlaubt)
+     */
+// ...existing code...
+// ...existing code...
 export async function requireAuth(request: NextRequest): Promise<NextResponse | null> {
   const authResult = await authenticateToken(request);
   

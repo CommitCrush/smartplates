@@ -9,13 +9,13 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 ## Phase 1: Foundation & Core Setup (Woche 1)
 **Priorität: KRITISCH - Muss zuerst implementiert werden**
 
-### 🏗️ **Developer 1: Project Setup & Authentication** (Ese)
-- [ ] Next.js 14 App Router Setup mit TypeScript
-- [ ] Tailwind CSS Konfiguration
-- [ ] MongoDB Datenbankschema Design
-- [ ] Google Cloud Authentication Setup
-- [ ] Middleware für Route Protection
-- [ ] Basis Layout Components (Navbar, Footer)
+### 🏗️ **Developer 1: Project Setup & Authentication** (Ese) ✅ **COMPLETED**
+- [x] Next.js 14 App Router Setup mit TypeScript
+- [x] Tailwind CSS Konfiguration
+- [x] MongoDB Datenbankschema Design
+- [x] Google Cloud Authentication Setup
+- [x] Middleware für Route Protection
+- [x] Basis Layout Components (Navbar, Footer)
 
 ### 👥 **Developer 2: User Management System** (Balta)
 - [ ] User Model & Types Definition

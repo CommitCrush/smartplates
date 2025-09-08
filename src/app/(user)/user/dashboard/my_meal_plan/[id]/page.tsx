@@ -1,0 +1,1 @@
+interface MealPlanDetailPageProps { params: Promise<{ id: string }>; } export default async function MealPlanDetailPage({ params }: MealPlanDetailPageProps) { const { id } = await params; return <div className="p-6"><h1 className="text-2xl font-bold mb-6">Meal Plan Details</h1><p>Meal Plan ID: {id}</p></div>; }

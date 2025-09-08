@@ -1,33 +1,29 @@
-import React from 'react';
-import Link from 'next/link';
 
-interface AdminLayoutProps {
+import React from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { AdminSidebar } from "@/components/layout/AdminSidebar";
+
+export default function AdminLayout({
+  children,
+}: {
   children: React.ReactNode;
-}
-
-export default function AdminLayout({ children }: AdminLayoutProps) {
+}) {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-foreground">
-              SmartPlates Admin
-            </h1>
-            <nav className="space-x-4">
-              <Link href="/admin" className="text-primary-600 hover:text-primary-700">
-                Dashboard
-              </Link>
-              <Link href="/admin/settings" className="text-muted-foreground hover:text-foreground">
-                Settings
-              </Link>
-            </nav>
-          </div>
-        </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Admin Navbar */}
+      <header className="h-16 flex items-center px-8 border-b border-border bg-card/80 backdrop-blur sticky top-0 z-30">
+        <Link href="/admin" className="text-2xl font-bold text-primary">
+          SmartPlates Admin
+        </Link>
       </header>
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {children}
-      </main>
+      {/* Main Content with Sidebar */}
+      <div className="flex flex-1 w-full max-w-7xl mx-auto">
+        <AdminSidebar />
+        <main className="flex-1 flex flex-col p-8">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

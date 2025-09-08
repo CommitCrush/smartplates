@@ -16,18 +16,10 @@ import { config } from '@/config/env';
 // JWT secret from environment configuration
 const JWT_SECRET = config.auth.jwtSecret;
 
-/**
- * Interface for authenticated request with user data
- * This extends the normal NextRequest to include user information
- */
 export interface AuthenticatedRequest extends NextRequest {
   user?: User;
 }
 
-/**
- * Authentication result interface
- * Provides clear success/failure information
- */
 interface AuthResult {
   success: boolean;
   user?: User;
@@ -51,34 +43,7 @@ export async function authenticateToken(request: NextRequest): Promise<AuthResul
       token = authHeader.substring(7); // Remove 'Bearer ' prefix
     }
     
-    // Fallback to cookie if no header token
-    /**
-     * Authentication Middleware for SmartPlates
-     *
-     * Handles route protection, user authentication, and admin access control.
-     * Clean, reusable functions for protected and admin-only routes.
-     */
-
-    import { NextRequest, NextResponse } from 'next/server';
-    import { verify } from 'jsonwebtoken';
-    import { findUserById } from '@/models/User';
-    import { User } from '@/types/user';
-    import { config } from '@/config/env';
-
-    // JWT secret from environment configuration
-    const JWT_SECRET = config.auth.jwtSecret;
-
-    // Interface for authenticated request with user data
-    export interface AuthenticatedRequest extends NextRequest {
-      user?: User;
-    }
-
-    // Authentication result interface
-    interface AuthResult {
-      success: boolean;
-      user?: User;
-      error?: string;
-    }
+  // Fallback to cookie if no header token
 
     /**
      * Extracts and validates JWT token from request

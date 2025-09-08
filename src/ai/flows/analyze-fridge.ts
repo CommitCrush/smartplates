@@ -178,6 +178,11 @@ export async function analyzeFridge(input: AnalyzeFridgeInput): Promise<AnalyzeF
       throw new Error('Google Cloud Vision not configured');
     }
     
+    // Additional check to ensure objectLocalization method exists
+    if (!visionClient.objectLocalization) {
+      throw new Error('Google Cloud Vision objectLocalization method not available');
+    }
+    
     // Convert base64 image data to buffer
     const imageBuffer = Buffer.from(validatedInput.imageData.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
     

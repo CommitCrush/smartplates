@@ -52,47 +52,58 @@ export async function authenticateToken(request: NextRequest): Promise<AuthResul
     }
     
     // Fallback to cookie if no header token
-    if (!token) {
-      token = request.cookies.get('auth-token')?.value;
-    }
-    
-    // No token found
-    if (!token) {
-      return {
-        success: false,
-        error: 'No authentication token provided'
-      };
-    }
-    
-    // Verify JWT token
-    const decoded = verify(token, JWT_SECRET) as { userId: string; email: string };
-    
-    // Get user data from database
-    const user = await findUserById(decoded.userId);
-    
-    if (!user) {
-      return {
-        success: false,
-        error: 'User not found'
-      };
-    }
-    
-    return {
-      success: true,
-      user: user
-    };
-    
-  } catch (error) {
-    console.error('Token authentication failed:', error);
-    return {
-      success: false,
-      error: 'Invalid or expired token'
-    };
-  }
-}
+    /**
+     * Authentication Middleware for SmartPlates
+     *
+     * Handles route protection, user authentication, and admin access control.
+     * Clean, reusable functions for protected and admin-only routes.
+     */
 
-/**
- * Middleware to require authentication
+    import { NextRequest, NextResponse } from 'next/server';
+    import { verify } from 'jsonwebtoken';
+    import { findUserById } from '@/models/User';
+    import { User } from '@/types/user';
+    import { config } from '@/config/env';
+
+    // JWT secret from environment configuration
+    const JWT_SECRET = config.auth.jwtSecret;
+
+    // Interface for authenticated request with user data
+    export interface AuthenticatedRequest extends NextRequest {
+      user?: User;
+    }
+
+    // Authentication result interface
+    interface AuthResult {
+      success: boolean;
+      user?: User;
+      error?: string;
+    }
+
+    /**
+     * Extracts and validates JWT token from request
+     *
+     * @param request - Next.js request object
+     */
+    export async function requireAdmin(request: NextRequest): Promise<NextResponse | void> {
+      const token = request.cookies.get('token')?.value;
+      if (!token) {
+        return NextResponse.redirect('/login');
+      }
+      try {
+        const decoded: any = verify(token, JWT_SECRET);
+        const user = await findUserById(decoded.userId);
+        if (!user || user.role !== 'admin') {
+          // Kein Admin: Zugriff verweigern
+          return NextResponse.redirect('/');
+        }
+        // Zugriff erlaubt
+        // (Optional: request.user = user)
+        return undefined;
+      } catch (error) {
+        return NextResponse.redirect('/login');
+      }
+    }
  * Use this to protect routes that need logged-in users
  * 
  * @param request - Next.js request object

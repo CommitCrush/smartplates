@@ -16,18 +16,10 @@ import { config } from '@/config/env';
 // JWT secret from environment configuration
 const JWT_SECRET = config.auth.jwtSecret;
 
-/**
- * Interface for authenticated request with user data
- * This extends the normal NextRequest to include user information
- */
 export interface AuthenticatedRequest extends NextRequest {
   user?: User;
 }
 
-/**
- * Authentication result interface
- * Provides clear success/failure information
- */
 interface AuthResult {
   success: boolean;
   user?: User;
@@ -51,53 +43,22 @@ export async function authenticateToken(request: NextRequest): Promise<AuthResul
       token = authHeader.substring(7); // Remove 'Bearer ' prefix
     }
     
-    // Fallback to cookie if no header token
-    if (!token) {
-      token = request.cookies.get('auth-token')?.value;
-    }
-    
-    // No token found
-    if (!token) {
-      return {
-        success: false,
-        error: 'No authentication token provided'
-      };
-    }
-    
-    // Verify JWT token
-    const decoded = verify(token, JWT_SECRET) as { userId: string; email: string };
-    
-    // Get user data from database
-    const user = await findUserById(decoded.userId);
-    
-    if (!user) {
-      return {
-        success: false,
-        error: 'User not found'
-      };
-    }
-    
-    return {
-      success: true,
-      user: user
-    };
-    
-  } catch (error) {
-    console.error('Token authentication failed:', error);
-    return {
-      success: false,
-      error: 'Invalid or expired token'
-    };
-  }
-}
+  // Fallback to cookie if no header token
 
-/**
- * Middleware to require authentication
- * Use this to protect routes that need logged-in users
- * 
- * @param request - Next.js request object
- * @returns NextResponse or null (if authentication successful)
- */
+    /**
+     * Extracts and validates JWT token from request
+     * 
+     * @param request - Next.js request object
+     */
+
+    // --- Admin Route Protection ---
+    /**
+     * Middleware-Utility: Erlaubt Zugriff nur für eingeloggte Admins
+     * @param request Next.js Request
+     * @returns NextResponse (redirect) oder undefined (Zugriff erlaubt)
+     */
+// ...existing code...
+// ...existing code...
 export async function requireAuth(request: NextRequest): Promise<NextResponse | null> {
   const authResult = await authenticateToken(request);
   

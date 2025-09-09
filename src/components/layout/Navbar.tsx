@@ -95,13 +95,14 @@ export default function Navbar() {
             <div className="ml-4 flex items-center md:ml-6">
               {!isAuthenticated ? (
                 <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => signIn('google')}
-                    className="text-sm"
-                  >
-                    Sign In
-                  </Button>
+                  <Link href="/login">
+                    <Button
+                      variant="outline"
+                      className="text-sm"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
                   <Link href="/register">
                     <Button className="text-sm bg-green-600 hover:bg-green-700">
                       Get Started
@@ -233,16 +234,14 @@ export default function Navbar() {
             <div className="pt-4 pb-3 border-t border-gray-200 dark:border-gray-700">
               {!isAuthenticated ? (
                 <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      signIn('google');
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full"
-                  >
-                    Sign In with Google
-                  </Button>
+                  <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
                   <Link href="/register" onClick={() => setIsMenuOpen(false)}>
                     <Button className="w-full bg-green-600 hover:bg-green-700">
                       Get Started

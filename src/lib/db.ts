@@ -85,7 +85,7 @@ export async function connectToDatabase(): Promise<Db> {
  * @param collectionName - Name of the collection to retrieve
  * @returns MongoDB Collection instance
  */
-export async function getCollection<T = any>(collectionName: string): Promise<Collection<T>> {
+export async function getCollection<T extends Document = Document>(collectionName: string): Promise<Collection<T>> {
   try {
     const db = await connectToDatabase();
     return db.collection<T>(collectionName);
@@ -149,19 +149,19 @@ export function isValidObjectId(id: string): boolean {
 }
 
 /**
- * Database health check function
+ * Database connection check function
  * Useful for API health endpoints and debugging
  * 
- * @returns Promise<boolean> - True if database is healthy
+ * @returns Promise<boolean> - True if database is working correctly
  */
-export async function isDatabaseHealthy(): Promise<boolean> {
+export async function checkDatabaseConnection(): Promise<boolean> {
   try {
     const db = await connectToDatabase();
     // Simple ping to check if database is responsive
     await db.admin().ping();
     return true;
   } catch (error) {
-    console.error('❌ Database health check failed:', error);
+    console.error('❌ Database connection check failed:', error);
     return false;
   }
 }

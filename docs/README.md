@@ -15,6 +15,8 @@ Dieses Verzeichnis enthält die gesamte Projektdokumentation für SmartPlates.
 - `architecture.md` - Systemarchitektur und Design Patterns
 - `api-documentation.md` - API Endpoints und Datenstrukturen
 - `database-schema.md` - MongoDB Schema Design
+- `database-api-foundation-summary.md` - Database & API Foundation Implementierung
+- `validation-system.md` - Validierungssystem und Schemas
 - `component-library.md` - UI Component Dokumentation
 
 ### 🚀 Implementierung

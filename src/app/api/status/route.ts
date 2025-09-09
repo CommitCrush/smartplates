@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
-import { isDatabaseHealthy, connectToDatabase, COLLECTIONS } from '@/lib/db';
+import { checkDatabaseConnection, connectToDatabase, COLLECTIONS } from '@/lib/db';
 
 export async function GET() {
   try {
     const startTime = Date.now();
     
     // Test database connection
-    const isHealthy = await isDatabaseHealthy();
+    const isDatabaseWorking = await checkDatabaseConnection();
     const connectionTime = Date.now() - startTime;
     
-    if (!isHealthy) {
+    if (!isDatabaseWorking) {
       return NextResponse.json({
         status: 'error',
         message: 'Database connection failed',

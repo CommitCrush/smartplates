@@ -1,385 +1,411 @@
 /**
- * Test Configuration and Utilities for SmartPlates API Testing
+ * Test Database Utilities für SmartPlates
  * 
- * This file sets up Jest testing environment and provides utilities
- * for testing API endpoints consistently across the application.
+ * Diese Datei stellt Funktionen für das Testen mit einer echten MongoDB-Datenbank bereit.
+ * Verwendet echte MongoDB-Verbindung für bessere Kompatibilität und Performance.
  */
 
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { MongoClient, Db } from 'mongodb';
-import { createIndexes } from '@/lib/db';
+import { connectToDatabase } from '@/lib/db';
+import { Db } from 'mongodb';
 
-// Type declarations for Jest globals
-declare global {
-  function expect(actual: unknown): {
-    toBe(expected: unknown): void;
-    toBeDefined(): void;
-    toBeUndefined(): void;
-    toEqual(expected: unknown): void;
-    toContain(expected: unknown): void;
-    toBeInstanceOf(expected: unknown): void;
-    toBeGreaterThan(expected: number): void;
-    toBeGreaterThanOrEqual(expected: number): void;
-  } & {
-    objectContaining(expected: Record<string, unknown>): unknown;
-  };
-}
+// Test-Database Name
+const TEST_DATABASE_NAME = 'smartplates_test';
 
-// API Response Types (for documentation purposes)
+// Test Environment Variables
+process.env.MONGODB_DB = TEST_DATABASE_NAME;
 
-// Global test database instance
-let mongoServer: MongoMemoryServer;
-let mongoClient: MongoClient;
-let testDatabase: Db;
+let testDb: Db | null = null;
 
 /**
- * Sets up the test database before running tests
- * Creates an in-memory MongoDB instance for isolated testing
+ * Stellt Verbindung zur Test-Datenbank her
  */
 export async function setupTestDatabase(): Promise<Db> {
+  if (testDb) {
+    return testDb;
+  }
+
   try {
-    // Start MongoDB Memory Server
-    mongoServer = await MongoMemoryServer.create({
-      binary: {
-        version: '6.0.0', // Use stable MongoDB version
-      }
-    });
+    const database = await connectToDatabase();
+    testDb = database;
     
-    const uri = mongoServer.getUri();
-    const dbName = 'smartplates_test';
+    // Test-Datenbank Indizes erstellen (falls nötig)
+    await createTestIndexes();
     
-    // Connect to the test database
-    mongoClient = new MongoClient(uri);
-    await mongoClient.connect();
-    
-    testDatabase = mongoClient.db(dbName);
-    
-    // Create indexes for better performance in tests
-    await createIndexes();
-    
-    console.log('✅ Test database setup complete');
-    return testDatabase;
-    
+    console.log(`✅ Test-Datenbank '${TEST_DATABASE_NAME}' verbunden`);
+    return testDb;
   } catch (error) {
-    console.error('❌ Failed to setup test database:', error);
-    throw error;
+    console.error('❌ Fehler beim Verbinden zur Test-Datenbank:', error);
+    throw new Error(`Test-Datenbank Verbindung fehlgeschlagen: ${error}`);
   }
 }
 
 /**
- * Tears down the test database after tests complete
- * Cleans up all resources to prevent memory leaks
+ * Schließt die Test-Datenbank-Verbindung
  */
 export async function teardownTestDatabase(): Promise<void> {
-  try {
-    if (mongoClient) {
-      await mongoClient.close();
+  if (testDb) {
+    try {
+      // Alle Test-Daten löschen
+      await clearTestDatabase();
+      testDb = null;
+      console.log('✅ Test-Datenbank Verbindung geschlossen');
+    } catch (error) {
+      console.error('❌ Fehler beim Schließen der Test-Datenbank:', error);
     }
-    
-    if (mongoServer) {
-      await mongoServer.stop();
-    }
-    
-    console.log('✅ Test database cleanup complete');
-  } catch (error) {
-    console.error('❌ Failed to cleanup test database:', error);
   }
 }
 
 /**
- * Clears all data from test collections between tests
- * Ensures test isolation by removing all documents
+ * Löscht alle Daten aus der Test-Datenbank
  */
-export async function clearTestData(): Promise<void> {
-  if (!testDatabase) {
-    throw new Error('Test database not initialized. Call setupTestDatabase first.');
+export async function clearTestDatabase(): Promise<void> {
+  if (!testDb) {
+    throw new Error('Test-Datenbank ist nicht verbunden');
   }
-  
+
   try {
-    const collections = await testDatabase.listCollections().toArray();
+    // Alle Collections in der Test-Datenbank löschen
+    const collections = await testDb.listCollections().toArray();
     
     for (const collection of collections) {
-      await testDatabase.collection(collection.name).deleteMany({});
+      await testDb.collection(collection.name).deleteMany({});
     }
     
-    console.log('✅ Test data cleared');
+    console.log('✅ Test-Datenbank bereinigt');
   } catch (error) {
-    console.error('❌ Failed to clear test data:', error);
+    console.error('❌ Fehler beim Bereinigen der Test-Datenbank:', error);
     throw error;
   }
 }
 
 /**
- * Gets the test database instance
- * Use this in your tests to access the database directly
+ * Erstellt notwendige Indizes für Test-Collections
  */
-export function getTestDatabase(): Db {
-  if (!testDatabase) {
-    throw new Error('Test database not initialized. Call setupTestDatabase first.');
-  }
-  
-  return testDatabase;
-}
+async function createTestIndexes(): Promise<void> {
+  if (!testDb) return;
 
-/**
- * Creates test data fixtures for consistent testing
- * Provides sample data for users, recipes, and categories
- */
-export const testFixtures = {
-  // Sample users for testing
-  users: [
-    {
-      email: 'testuser@example.com',
-      name: 'Test User',
-      role: 'user' as const,
-      isEmailVerified: true,
-      savedRecipes: [],
-      createdRecipes: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      email: 'admin@example.com',
-      name: 'Admin User',
-      role: 'admin' as const,
-      isEmailVerified: true,
-      savedRecipes: [],
-      createdRecipes: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ],
-  
-  // Sample categories for testing
-  categories: [
-    {
-      name: 'Hauptgerichte',
-      description: 'Herzhafte Hauptmahlzeiten',
-      slug: 'hauptgerichte',
-      isActive: true,
-      sortOrder: 1,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      name: 'Desserts',
-      description: 'Süße Nachspeisen',
-      slug: 'desserts',
-      isActive: true,
-      sortOrder: 2,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ],
-  
-  // Sample recipes for testing
-  recipes: [
-    {
-      title: 'Test Pasta Recipe',
-      description: 'A simple pasta recipe for testing',
-      ingredients: [
-        { name: 'Pasta', quantity: 200, unit: 'g' },
-        { name: 'Tomato Sauce', quantity: 1, unit: 'cup' }
-      ],
-      instructions: [
-        { stepNumber: 1, instruction: 'Boil water and cook pasta' },
-        { stepNumber: 2, instruction: 'Add tomato sauce and serve' }
-      ],
-      cookingTime: 20,
-      prepTime: 10,
-      totalTime: 30,
-      servings: 2,
-      difficulty: 'easy' as const,
-      mealType: ['lunch', 'dinner'],
-      isPublic: true,
-      tags: ['quick', 'easy'],
-      nutrition: {
-        calories: 350,
-        protein: 12,
-        carbs: 70,
-        fat: 2
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ]
-};
-
-/**
- * Helper function to insert test fixtures into the database
- * @param fixtures - Object containing arrays of test data
- */
-export async function insertTestFixtures(fixtures: typeof testFixtures): Promise<{
-  userIds: string[];
-  categoryIds: string[];
-  recipeIds: string[];
-}> {
-  const db = getTestDatabase();
-  
   try {
-    // Insert users and get their IDs
-    const userResult = await db.collection('users').insertMany(fixtures.users);
-    const userIds = Object.values(userResult.insertedIds).map(id => id.toString());
+    // Users Collection Indizes
+    await testDb.collection('users').createIndex({ email: 1 }, { unique: true });
+    await testDb.collection('users').createIndex({ username: 1 }, { unique: true });
     
-    // Insert categories and get their IDs
-    const categoryResult = await db.collection('categories').insertMany(fixtures.categories);
-    const categoryIds = Object.values(categoryResult.insertedIds).map(id => id.toString());
+    // Recipes Collection Indizes
+    await testDb.collection('recipes').createIndex({ title: 'text', description: 'text' });
+    await testDb.collection('recipes').createIndex({ category: 1 });
+    await testDb.collection('recipes').createIndex({ authorId: 1 });
     
-    // Add categoryId and authorId to recipes before inserting
-    const recipesWithRefs = fixtures.recipes.map(recipe => ({
-      ...recipe,
-      categoryId: categoryIds[0], // Use first category
-      authorId: userIds[0] // Use first user as author
-    }));
+    // Categories Collection Indizes
+    await testDb.collection('categories').createIndex({ name: 1 }, { unique: true });
     
-    const recipeResult = await db.collection('recipes').insertMany(recipesWithRefs);
-    const recipeIds = Object.values(recipeResult.insertedIds).map(id => id.toString());
-    
-    console.log('✅ Test fixtures inserted successfully');
-    
-    return {
-      userIds,
-      categoryIds,
-      recipeIds
-    };
-    
+    console.log('✅ Test-Indizes erstellt');
   } catch (error) {
-    console.error('❌ Failed to insert test fixtures:', error);
-    throw error;
+    console.error('❌ Fehler beim Erstellen der Test-Indizes:', error);
   }
 }
 
 /**
- * Helper function to create a test request object
- * @param method - HTTP method
- * @param url - Request URL
- * @param body - Request body (optional)
- * @param headers - Request headers (optional)
+ * Test Data Factory - Erstellt Testdaten
  */
-export function createTestRequest(
-  method: string,
-  url: string,
-  body?: Record<string, unknown> | string,
-  headers?: Record<string, string>
-): Request {
-  const init: RequestInit = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers
-    }
-  };
-  
-  if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-    init.body = typeof body === 'string' ? body : JSON.stringify(body);
-  }
-  
-  return new Request(url, init);
-}
-
-/**
- * Helper function to parse response and return JSON
- * @param response - Response object
- */
-export async function parseTestResponse(response: Response): Promise<Record<string, unknown>> {
-  const text = await response.text();
-  
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    console.error('Failed to parse response as JSON:', text);
-    throw new Error(`Invalid JSON response: ${text}`);
-  }
-}
-
-/**
- * Common test assertions for API responses
- */
-export const testAssertions = {
-  /**
-   * Asserts that response is a successful API response
-   */
-  expectSuccessResponse: (response: Record<string, unknown>, expectedData?: Record<string, unknown>) => {
-    expect(response.success).toBe(true);
-    expect(response.timestamp).toBeDefined();
-    expect(response.error).toBeUndefined();
-    
-    if (expectedData) {
-      expect(response.data).toEqual(expectedData);
-    }
-  },
+export const testDataFactory = {
   
   /**
-   * Asserts that response is an error API response
+   * Erstellt einen Test-User
    */
-  expectErrorResponse: (response: Record<string, unknown>, expectedError?: string) => {
-    expect(response.success).toBe(false);
-    expect(response.timestamp).toBeDefined();
-    expect(response.error).toBeDefined();
-    
-    if (expectedError && typeof response.error === 'string') {
-      expect(response.error).toContain(expectedError);
-    }
-  },
-  
-  /**
-   * Asserts that response has pagination information
-   */
-  expectPaginatedResponse: (response: Record<string, unknown>) => {
-    expect(response.success).toBe(true);
-    expect(response.data).toBeInstanceOf(Array);
-    expect(response.pagination).toBeDefined();
-    
-    const pagination = response.pagination as Record<string, unknown>;
-    expect(pagination.page).toBeGreaterThan(0);
-    expect(pagination.limit).toBeGreaterThan(0);
-    expect(pagination.total).toBeGreaterThanOrEqual(0);
-    expect(pagination.totalPages).toBeGreaterThanOrEqual(0);
-  },
-  
-  /**
-   * Asserts that response contains validation errors
-   */
-  expectValidationErrors: (response: Record<string, unknown>) => {
-    expect(response.success).toBe(false);
-    expect(response.errors).toBeDefined();
-    expect(response.errors).toBeInstanceOf(Array);
-    
-    const errors = response.errors as Array<Record<string, unknown>>;
-    expect(errors.length).toBeGreaterThan(0);
-    
-    // Check that each error has field and message
-    errors.forEach((error) => {
-      expect(error.field).toBeDefined();
-      expect(error.message).toBeDefined();
-    });
-  }
-};
-
-/**
- * Helper to mock authentication for protected routes
- */
-export function createMockAuthUser(overrides?: Partial<{
-  _id: string;
-  email: string;
-  name: string;
-  role: string;
-  isEmailVerified: boolean;
-  savedRecipes: string[];
-  createdRecipes: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}>) {
-  return {
-    _id: 'mock-user-id-12345',
-    email: 'mockuser@example.com',
-    name: 'Mock User',
+  createUser: (overrides: Record<string, any> = {}) => ({
+    username: 'testuser',
+    email: 'test@example.com',
+    password: 'hashedpassword123',
     role: 'user',
-    isEmailVerified: true,
-    savedRecipes: [],
-    createdRecipes: [],
+    profile: {
+      firstName: 'Test',
+      lastName: 'User',
+      bio: 'Test user bio',
+      location: 'Test City',
+      website: '',
+      avatar: ''
+    },
+    preferences: {
+      language: 'de',
+      theme: 'light',
+      notifications: {
+        email: true,
+        push: false
+      },
+      privacy: {
+        profilePublic: true,
+        recipesPublic: true
+      }
+    },
+    stats: {
+      recipesCount: 0,
+      followersCount: 0,
+      followingCount: 0
+    },
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides
-  };
-}
+  }),
+
+  /**
+   * Erstellt ein Test-Recipe
+   */
+  createRecipe: (overrides: Record<string, any> = {}) => ({
+    title: 'Test Recipe',
+    description: 'A delicious test recipe',
+    ingredients: [
+      { name: 'Test Ingredient 1', amount: '100g' },
+      { name: 'Test Ingredient 2', amount: '200ml' }
+    ],
+    instructions: [
+      'Step 1: Test instruction',
+      'Step 2: Another test instruction'
+    ],
+    category: 'main-course',
+    difficulty: 'easy',
+    prepTime: 15,
+    cookTime: 30,
+    servings: 4,
+    nutrition: {
+      calories: 250,
+      protein: 12,
+      carbs: 30,
+      fat: 8
+    },
+    tags: ['test', 'recipe'],
+    image: '',
+    video: '',
+    authorId: null,
+    isPublic: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides
+  }),
+
+  /**
+   * Erstellt eine Test-Category
+   */
+  createCategory: (overrides: Record<string, any> = {}) => ({
+    name: 'test-category',
+    displayName: 'Test Category',
+    description: 'A test category for recipes',
+    icon: 'utensils',
+    color: '#22c55e',
+    isActive: true,
+    sortOrder: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides
+  })
+};
+
+/**
+ * Test Database Seeder - Füllt Datenbank mit Testdaten
+ */
+export const testSeeder = {
+  
+  /**
+   * Erstellt einen Test-User in der Datenbank
+   * @returns Den erstellten User mit _id
+   */
+  async seedUser(userData: Record<string, any> = {}): Promise<any> {
+    const db = await setupTestDatabase();
+    const user = testDataFactory.createUser(userData);
+    
+    const result = await db.collection('users').insertOne(user);
+    return { ...user, _id: result.insertedId };
+  },
+
+  /**
+   * Erstellt eine Test-User ID in der Datenbank  
+   * @returns Nur die ID als String
+   */
+  async seedUserId(userData: Record<string, any> = {}): Promise<string> {
+    const user = await this.seedUser(userData);
+    return user._id.toString();
+  },
+
+  /**
+   * Erstellt ein Test-Recipe in der Datenbank
+   * @returns Das erstellte Recipe mit _id
+   */
+  async seedRecipe(recipeData: Record<string, any> = {}): Promise<any> {
+    const db = await setupTestDatabase();
+    const recipe = testDataFactory.createRecipe(recipeData);
+    
+    const result = await db.collection('recipes').insertOne(recipe);
+    return { ...recipe, _id: result.insertedId };
+  },
+
+  /**
+   * Erstellt eine Test-Recipe ID in der Datenbank
+   * @returns Nur die ID als String
+   */
+  async seedRecipeId(recipeData: Record<string, any> = {}): Promise<string> {
+    const recipe = await this.seedRecipe(recipeData);
+    return recipe._id.toString();
+  },
+
+  /**
+   * Erstellt eine Test-Category in der Datenbank
+   * @returns Die erstellte Category mit _id
+   */
+  async seedCategory(categoryData: Record<string, any> = {}): Promise<any> {
+    const db = await setupTestDatabase();
+    const category = testDataFactory.createCategory(categoryData);
+    
+    const result = await db.collection('categories').insertOne(category);
+    return { ...category, _id: result.insertedId };
+  },
+
+  /**
+   * Erstellt eine Test-Category ID in der Datenbank
+   * @returns Nur die ID als String
+   */
+  async seedCategoryId(categoryData: Record<string, any> = {}): Promise<string> {
+    const category = await this.seedCategory(categoryData);
+    return category._id.toString();
+  },
+
+  /**
+   * Erstellt Standard-Testdaten für umfassende Tests
+   */
+  async seedBasicData(): Promise<{
+    users: any[];
+    recipes: any[];
+    categories: any[];
+    userIds: string[];
+    recipeIds: string[];
+    categoryIds: string[];
+  }> {
+    const users = [
+      await this.seedUser({ username: 'alice', email: 'alice@test.com' }),
+      await this.seedUser({ username: 'bob', email: 'bob@test.com', role: 'admin' })
+    ];
+
+    const categories = [
+      await this.seedCategory({ name: 'breakfast', displayName: 'Frühstück' }),
+      await this.seedCategory({ name: 'main-course', displayName: 'Hauptgerichte' }),
+      await this.seedCategory({ name: 'dessert', displayName: 'Desserts' })
+    ];
+
+    const recipes = [
+      await this.seedRecipe({ 
+        title: 'Pancakes', 
+        category: 'breakfast',
+        authorId: users[0]._id 
+      }),
+      await this.seedRecipe({ 
+        title: 'Pasta Bolognese', 
+        category: 'main-course',
+        authorId: users[1]._id 
+      })
+    ];
+
+    // Erstelle auch String-Arrays für die IDs
+    const userIds = users.map(user => user._id.toString());
+    const categoryIds = categories.map(cat => cat._id.toString());
+    const recipeIds = recipes.map(recipe => recipe._id.toString());
+
+    return { users, recipes, categories, userIds, categoryIds, recipeIds };
+  }
+};
+
+/**
+ * Test Assertion Utilities
+ * Hinweis: Diese Funktionen sollten nur innerhalb von Jest-Tests verwendet werden,
+ * wo das globale 'expect' verfügbar ist.
+ */
+export const testAssertions = {
+  
+  /**
+   * Überprüft ob Response eine gültige API Response ist
+   */
+  isValidApiResponse: (response: unknown, expectedKeys: string[] = []) => {
+    const expect = globalThis.expect || (() => { throw new Error('expect ist nicht verfügbar - verwende nur in Jest Tests'); });
+    expect(response).toBeDefined();
+    expect(typeof response).toBe('object');
+    
+    if (expectedKeys.length > 0) {
+      expectedKeys.forEach(key => {
+        expect(response).toHaveProperty(key);
+      });
+    }
+  },
+
+  /**
+   * Überprüft ob User-Objekt gültig ist
+   */
+  isValidUser: (user: unknown) => {
+    const expect = globalThis.expect || (() => { throw new Error('expect ist nicht verfügbar - verwende nur in Jest Tests'); });
+    expect(user).toHaveProperty('_id');
+    expect(user).toHaveProperty('username');
+    expect(user).toHaveProperty('email');
+    expect(user).toHaveProperty('role');
+    expect(user).toHaveProperty('profile');
+    expect(user).toHaveProperty('createdAt');
+  },
+
+  /**
+   * Überprüft ob Recipe-Objekt gültig ist
+   */
+  isValidRecipe: (recipe: unknown) => {
+    const expect = globalThis.expect || (() => { throw new Error('expect ist nicht verfügbar - verwende nur in Jest Tests'); });
+    expect(recipe).toHaveProperty('_id');
+    expect(recipe).toHaveProperty('title');
+    expect(recipe).toHaveProperty('ingredients');
+    expect(recipe).toHaveProperty('instructions');
+    expect(recipe).toHaveProperty('category');
+    expect(recipe).toHaveProperty('createdAt');
+  },
+
+  /**
+   * Überprüft ob Category-Objekt gültig ist
+   */
+  isValidCategory: (category: unknown) => {
+    const expect = globalThis.expect || (() => { throw new Error('expect ist nicht verfügbar - verwende nur in Jest Tests'); });
+    expect(category).toHaveProperty('_id');
+    expect(category).toHaveProperty('name');
+    expect(category).toHaveProperty('displayName');
+    expect(category).toHaveProperty('isActive');
+    expect(category).toHaveProperty('createdAt');
+  }
+};
+
+/**
+ * Jest Setup und Teardown Hooks
+ */
+export const jestHooks = {
+  
+  /**
+   * Setup vor allen Tests
+   */
+  beforeAll: async () => {
+    console.log('🚀 Starting Test Suite...');
+    await setupTestDatabase();
+  },
+
+  /**
+   * Cleanup nach allen Tests
+   */
+  afterAll: async () => {
+    console.log('🧹 Cleaning up Test Suite...');
+    await teardownTestDatabase();
+  },
+
+  /**
+   * Reset vor jedem Test
+   */
+  beforeEach: async () => {
+    await clearTestDatabase();
+  },
+
+  /**
+   * Cleanup nach jedem Test
+   */
+  afterEach: async () => {
+    // Zusätzliche Bereinigung falls nötig
+  }
+};
+
+// Export Test Database für direkte Verwendung
+export { testDb };

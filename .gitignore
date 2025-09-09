@@ -31,12 +31,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
-
-
-
-
-
-
+# Screenshots and recordings (development documentation)
+public/Bildschirmfoto*.png
+public/Bildschirmaufzeichnungen/
 
 config/*.json

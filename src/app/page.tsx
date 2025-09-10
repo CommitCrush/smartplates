@@ -143,9 +143,9 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-background-card rounded-lg shadow-sm border border-border overflow-hidden">
+              <div key={i} className="bg-background-card rounded-lg shadow-sm border border-border overflow-hidden transform transition-[transform,shadow,border-color] duration-700 ease-out hover:scale-102 hover:shadow-md hover:border-primary-200 cursor-pointer">
                 <div className="p-6">
-                  <ChefHat className="h-12 w-12 text-primary-600 mb-4" />
+                  <ChefHat className="h-12 w-12 text-primary-600 mb-4 transition-colors duration-400 ease-out hover:text-coral-500" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">
                     Delicious Recipe {i}
                   </h3>

@@ -41,13 +41,13 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Mobile-First Responsive Design
 - [ ] Component Library Dokumentation
 
-### 📊 **Developer 5: Database & API Foundation** (Monika)
-- [ ] MongoDB Schema Design & Implementation
-- [ ] API Routes Struktur (/api/*)
-- [ ] Data Models (User, Recipe, Category)
-- [ ] CRUD Operations Grundfunktionen
-- [ ] Database Connection & Error Handling
-- [ ] API Testing & Validation
+### 📊 **Developer 5: Database & API Foundation** (Monika) ✅ **COMPLETED**
+- [x] MongoDB Schema Design & Implementation
+- [x] API Routes Struktur (/api/*)
+- [x] Data Models (User, Recipe, Category)
+- [x] CRUD Operations Grundfunktionen
+- [x] Database Connection & Error Handling
+- [x] API Testing & Validation
 
 ---
 

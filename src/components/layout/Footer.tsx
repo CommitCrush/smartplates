@@ -17,17 +17,17 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-neutral-900 text-foreground-inverse">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand and Description */}
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <ChefHat className="h-8 w-8 text-green-400" />
+              <ChefHat className="h-8 w-8 text-primary-400" />
               <span className="text-2xl font-bold">SmartPlates</span>
             </div>
-            <p className="text-gray-300 mb-6">
+            <p className="text-foreground-subtle mb-6">
               Smart meal planning and recipe management made easy. Discover new recipes, 
               plan your meals, and get AI-powered cooking suggestions.
             </p>
@@ -35,7 +35,7 @@ export default function Footer() {
               {/* Social Media Links - Placeholder for future implementation */}
               <Link 
                 href="#" 
-                className="text-gray-400 hover:text-green-400 transition-colors"
+                className="text-foreground-subtle hover:text-primary-400 transition-colors"
                 aria-label="Facebook"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -44,7 +44,7 @@ export default function Footer() {
               </Link>
               <Link 
                 href="#" 
-                className="text-gray-400 hover:text-green-400 transition-colors"
+                className="text-foreground-subtle hover:text-primary-400 transition-colors"
                 aria-label="Twitter"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -53,7 +53,7 @@ export default function Footer() {
               </Link>
               <Link 
                 href="#" 
-                className="text-gray-400 hover:text-green-400 transition-colors"
+                className="text-foreground-subtle hover:text-primary-400 transition-colors"
                 aria-label="Instagram"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -70,7 +70,7 @@ export default function Footer() {
               <li>
                 <Link 
                   href="/recipe" 
-                  className="text-gray-300 hover:text-green-400 transition-colors"
+                  className="text-foreground-subtle hover:text-primary-400 transition-colors"
                 >
                   Browse Recipes
                 </Link>
@@ -78,7 +78,7 @@ export default function Footer() {
               <li>
                 <Link 
                   href="/cookware" 
-                  className="text-gray-300 hover:text-green-400 transition-colors"
+                  className="text-foreground-subtle hover:text-primary-400 transition-colors"
                 >
                   Cookware
                 </Link>
@@ -86,7 +86,7 @@ export default function Footer() {
               <li>
                 <Link 
                   href="/about" 
-                  className="text-gray-300 hover:text-green-400 transition-colors"
+                  className="text-foreground-subtle hover:text-primary-400 transition-colors"
                 >
                   About Us
                 </Link>
@@ -94,7 +94,7 @@ export default function Footer() {
               <li>
                 <Link 
                   href="/contact" 
-                  className="text-gray-300 hover:text-green-400 transition-colors"
+                  className="text-foreground-subtle hover:text-primary-400 transition-colors"
                 >
                   Contact
                 </Link>
@@ -107,19 +107,19 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Features</h3>
             <ul className="space-y-2">
               <li>
-                <span className="text-gray-300">AI Recipe Suggestions</span>
+                <span className="text-foreground-subtle">AI Recipe Suggestions</span>
               </li>
               <li>
-                <span className="text-gray-300">Meal Planning</span>
+                <span className="text-foreground-subtle">Meal Planning</span>
               </li>
               <li>
-                <span className="text-gray-300">Grocery Lists</span>
+                <span className="text-foreground-subtle">Grocery Lists</span>
               </li>
               <li>
-                <span className="text-gray-300">Recipe Collections</span>
+                <span className="text-foreground-subtle">Recipe Collections</span>
               </li>
               <li>
-                <span className="text-gray-300">Cookware Recommendations</span>
+                <span className="text-foreground-subtle">Cookware Recommendations</span>
               </li>
             </ul>
           </div>
@@ -129,23 +129,23 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Get in Touch</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
-                <Mail className="h-5 w-5 text-green-400" />
-                <span className="text-gray-300">hello@smartplates.com</span>
+                <Mail className="h-5 w-5 text-primary-400" />
+                <span className="text-foreground-subtle">hello@smartplates.com</span>
               </div>
               <div className="flex items-center space-x-3">
-                <Phone className="h-5 w-5 text-green-400" />
-                <span className="text-gray-300">+1 (555) 123-4567</span>
+                <Phone className="h-5 w-5 text-primary-400" />
+                <span className="text-foreground-subtle">+1 (555) 123-4567</span>
               </div>
               <div className="flex items-center space-x-3">
-                <MapPin className="h-5 w-5 text-green-400" />
-                <span className="text-gray-300">San Francisco, CA</span>
+                <MapPin className="h-5 w-5 text-primary-400" />
+                <span className="text-foreground-subtle">San Francisco, CA</span>
               </div>
             </div>
 
             {/* Newsletter Signup Placeholder */}
             <div className="mt-6">
               <h4 className="text-sm font-semibold mb-2">Stay Updated</h4>
-              <p className="text-gray-400 text-sm">
+              <p className="text-foreground-subtle text-sm">
                 Get the latest recipes and cooking tips delivered to your inbox.
               </p>
               {/* Future: Newsletter signup form */}
@@ -154,14 +154,14 @@ export default function Footer() {
         </div>
 
         {/* Bottom Footer */}
-        <div className="border-t border-gray-700 py-6">
+        <div className="border-t border-neutral-700 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <span className="text-gray-400">
+              <span className="text-foreground-subtle">
                 © {currentYear} SmartPlates. Made with
               </span>
-              <Heart className="h-4 w-4 text-red-400" />
-              <span className="text-gray-400">
+              <Heart className="h-4 w-4 text-coral-400" />
+              <span className="text-foreground-subtle">
                 for food lovers everywhere.
               </span>
             </div>
@@ -169,19 +169,19 @@ export default function Footer() {
             <div className="flex space-x-6">
               <Link 
                 href="/privacy" 
-                className="text-gray-400 hover:text-green-400 transition-colors text-sm"
+                className="text-foreground-subtle hover:text-primary-400 transition-colors text-sm"
               >
                 Privacy Policy
               </Link>
               <Link 
                 href="/terms" 
-                className="text-gray-400 hover:text-green-400 transition-colors text-sm"
+                className="text-foreground-subtle hover:text-primary-400 transition-colors text-sm"
               >
                 Terms of Service
               </Link>
               <Link 
                 href="/cookies" 
-                className="text-gray-400 hover:text-green-400 transition-colors text-sm"
+                className="text-foreground-subtle hover:text-primary-400 transition-colors text-sm"
               >
                 Cookie Policy
               </Link>

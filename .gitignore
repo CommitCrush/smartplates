@@ -30,10 +30,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.github/ui_ux_issus/
 
-# Screenshots and recordings (development documentation)
-public/Bildschirmfoto*.png
-public/Bildschirmaufzeichnungen/
+
+
+
+
+
+
 
 config/*.json
 .github/ui_ux_issus/

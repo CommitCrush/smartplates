@@ -86,7 +86,7 @@ export async function setupTestDatabase(): Promise<Db> {
     
     // Set test environment
     process.env.NODE_ENV = 'test';
-    process.env.MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/smartplates_test';
+    process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/smartplates_test';
     process.env.DATABASE_NAME = 'smartplates_test';
     
     // Connect to real MongoDB instance
@@ -407,16 +407,16 @@ export const testSeeder = {
         prepTime: 10,
         cookTime: 15,
         ingredients: [
-          { name: 'Mehl', amount: 200, unit: 'g' },
-          { name: 'Milch', amount: 300, unit: 'ml' },
-          { name: 'Eier', amount: 2, unit: 'Stück' },
-          { name: 'Backpulver', amount: 1, unit: 'TL' }
+          { name: 'Mehl', quantity: 200, unit: 'g' },
+          { name: 'Milch', quantity: 300, unit: 'ml' },
+          { name: 'Eier', quantity: 2, unit: 'Stück' },
+          { name: 'Backpulver', quantity: 1, unit: 'TL' }
         ],
         instructions: [
-          'Alle trockenen Zutaten vermischen',
-          'Milch und Eier verquirlen',
-          'Teig zu einer glatten Masse verrühren',
-          'In der Pfanne goldbraun backen'
+          { description: 'Alle trockenen Zutaten vermischen' },
+          { description: 'Milch und Eier verquirlen' },
+          { description: 'Teig zu einer glatten Masse verrühren' },
+          { description: 'In der Pfanne goldbraun backen' }
         ]
       }),
       await this.seedRecipe({ 

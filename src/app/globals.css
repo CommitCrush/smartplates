@@ -1,57 +1,281 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
-@import "../styles/theme/colors.css";
 
 @layer base {
+  :root {
+    /* Primary Brand Colors */
+    --color-primary-50: #f8fcf6;
+    --color-primary-100: #f1f8eb;
+    --color-primary-200: #e6f0da;
+    --color-primary-300: #d7e4c6;
+    --color-primary-400: #d0dcc2;
+    --color-primary-500: #c8d4be;
+    --color-primary-600: #b4c0ab;
+    --color-primary-700: #a0ac98;
+    --color-primary-800: #8c9885;
+    --color-primary-900: #788472;
+
+    /* Coral Colors */
+    --color-coral-50: #fef8f7;
+    --color-coral-100: #fdf1ee;
+    --color-coral-200: #fbe2dc;
+    --color-coral-300: #f9c9c0;
+    --color-coral-400: #f89787;
+    --color-coral-500: #f7654e;
+    --color-coral-600: #de5b46;
+    --color-coral-700: #c5513e;
+    --color-coral-800: #ac4736;
+    --color-coral-900: #933d2e;
+
+    /* Neutral Colors */
+    --color-neutral-50: #fafafa;
+    --color-neutral-100: #f4f4f5;
+    --color-neutral-200: #e4e4e7;
+    --color-neutral-300: #d4d4d8;
+    --color-neutral-400: #a1a1aa;
+    --color-neutral-500: #71717a;
+    --color-neutral-600: #52525b;
+    --color-neutral-700: #3f3f46;
+    --color-neutral-800: #27272a;
+    --color-neutral-900: #18181b;
+
+    /* Semantic Colors */
+    --color-background: #fefefe;
+    --color-background-secondary: #fbfcfa;
+    --color-background-card: #ffffff;
+    --color-foreground: #18181b;
+    --color-foreground-muted: #71717a;
+    --color-foreground-subtle: #a1a1aa;
+    --color-foreground-inverse: #fefefe;
+    --color-border: #e4e4e7;
+    --color-border-muted: #f4f4f5;
+    --color-accent: #f7654e;
+    --color-muted: #f4f4f5;
+  }
+
+  .dark {
+    /* Professional Dark Mode Backgrounds - Warme, tiefe Töne */
+    --color-background: #0d1117;          /* GitHub-inspired deep dark */
+    --color-background-secondary: #161b22; /* Subtly lighter for sections */
+    --color-background-card: #21262d;     /* Card backgrounds with depth */
+    
+    /* Professional Dark Mode Text - Optimierte Kontraste */
+    --color-foreground: #f0f6fc;          /* Soft white, easy on eyes */
+    --color-foreground-muted: #8b949e;    /* Perfect gray for secondary text */
+    --color-foreground-subtle: #6e7681;   /* Subtle gray for tertiary content */
+    --color-foreground-inverse: #0d1117;  /* Dark text on light backgrounds */
+    
+    /* Professional Dark Mode Borders - Subtle divisions */
+    --color-border: #30363d;              /* Subtle border that doesn't clash */
+    --color-border-muted: #21262d;        /* Even more subtle borders */
+    
+    /* Dark Mode Accent - Warm and inviting */
+    --color-accent: #fd7e47;              /* Warmer coral for better visibility */
+    --color-muted: #161b22;               /* Consistent with secondary bg */
+    
+    /* Dark Mode Primary Colors - Sophisticated green palette */
+    --color-primary-50: #0c1910;          /* Very dark green for deep backgrounds */
+    --color-primary-100: #1a2b1e;         /* Dark green accents */
+    --color-primary-200: #2d4a34;         /* Medium dark green */
+    --color-primary-300: #3d5f47;         /* Professional green for UI elements */
+    --color-primary-400: #4d7357;         /* Balanced green */
+    --color-primary-500: #6ba76f;         /* Vibrant but not harsh green */
+    --color-primary-600: #81bb85;         /* Light green for hover states */
+    --color-primary-700: #98d09c;         /* Bright green for highlights */
+    --color-primary-800: #b0e5b4;         /* Very light green */
+    --color-primary-900: #c7f0ca;         /* Pale green for backgrounds */
+    
+    /* Dark Mode Coral Colors - Warmer and more sophisticated */
+    --color-coral-50: #2c1810;            /* Deep warm brown */
+    --color-coral-100: #4a2818;           /* Dark coral base */
+    --color-coral-200: #6b3d2a;           /* Medium coral */
+    --color-coral-300: #8c4f3a;           /* Balanced coral */
+    --color-coral-400: #b5644a;           /* Professional coral */
+    --color-coral-500: #fd7e47;           /* Main coral - warmer tone */
+    --color-coral-600: #ff9a6b;           /* Light coral for hover */
+    --color-coral-700: #ffb892;           /* Bright coral */
+    --color-coral-800: #ffd4b8;           /* Very light coral */
+    --color-coral-900: #ffebde;           /* Pale coral */
+    
+    /* Dark Mode Neutral Colors - Professional gray scale */
+    --color-neutral-50: #0d1117;          /* Deepest dark */
+    --color-neutral-100: #161b22;         /* Dark gray */
+    --color-neutral-200: #21262d;         /* Medium dark gray */
+    --color-neutral-300: #30363d;         /* Balanced gray */
+    --color-neutral-400: #484f58;         /* Medium gray */
+    --color-neutral-500: #6e7681;         /* Light gray */
+    --color-neutral-600: #8b949e;         /* Lighter gray */
+    --color-neutral-700: #adb5bd;         /* Very light gray */
+    --color-neutral-800: #ced4da;         /* Near white gray */
+    --color-neutral-900: #f0f6fc;         /* Almost white */
+  }
+
+  /* Base element styling */
   * {
-    border-color: rgb(var(--color-border));
+    border-color: var(--color-border);
   }
   
   body {
-    background-color: rgb(var(--color-background));
-    color: rgb(var(--color-text));
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1;
   }
   
   html {
     scroll-behavior: smooth;
   }
 
-  /* Typography Base Styles */
+  /* Typography */
   h1, h2, h3, h4, h5, h6 {
-    color: rgb(var(--color-text));
+    color: var(--color-foreground);
     font-weight: 600;
     line-height: 1.25;
   }
   
-  h1 { font-size: 2.25rem; }
-  h2 { font-size: 1.875rem; }
-  h3 { font-size: 1.5rem; }
-  h4 { font-size: 1.25rem; }
-  h5 { font-size: 1.125rem; }
-  h6 { font-size: 1rem; }
-  
   p {
-    color: rgb(var(--color-text-muted));
+    color: var(--color-foreground-muted);
     line-height: 1.625;
   }
+}
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
+@layer utilities {
+  /* Background utilities */
+  .bg-background { background-color: var(--color-background); }
+  .bg-background-secondary { background-color: var(--color-background-secondary); }
+  .bg-background-card { background-color: var(--color-background-card); }
+  
+  /* Text utilities */
+  .text-foreground { color: var(--color-foreground); }
+  .text-foreground-muted { color: var(--color-foreground-muted); }
+  .text-foreground-subtle { color: var(--color-foreground-subtle); }
+  .text-foreground-inverse { color: var(--color-foreground-inverse); }
+  
+  /* Primary colors */
+  .text-primary-100 { color: var(--color-primary-100); }
+  .text-primary-300 { color: var(--color-primary-300); }
+  .text-primary-400 { color: var(--color-primary-400); }
+  .text-primary-500 { color: var(--color-primary-500); }
+  .text-primary-600 { color: var(--color-primary-600); }
+  .text-primary-700 { color: var(--color-primary-700); }
+  .bg-primary-50 { background-color: var(--color-primary-50); }
+  .bg-primary-100 { background-color: var(--color-primary-100); }
+  .bg-primary-600 { background-color: var(--color-primary-600); }
+  .bg-primary-700 { background-color: var(--color-primary-700); }
+  
+  /* Coral colors */
+  .text-coral-500 { color: var(--color-coral-500); }
+  .text-coral-600 { color: var(--color-coral-600); }
+  .bg-coral-100 { background-color: var(--color-coral-100); }
+  .bg-coral-500 { background-color: var(--color-coral-500); }
+  .bg-coral-600 { background-color: var(--color-coral-600); }
+  .hover\:bg-coral-600:hover { background-color: var(--color-coral-600); }
+  .hover\:bg-coral-700:hover { background-color: var(--color-coral-700); }
+  
+  /* Neutral colors - Enhanced for Navbar/Footer */
+  .text-neutral-500 { color: var(--color-neutral-500); }
+  .text-neutral-600 { color: var(--color-neutral-600); }
+  .text-neutral-700 { color: var(--color-neutral-700); }
+  .text-neutral-900 { color: var(--color-neutral-900); }
+  .bg-neutral-100 { background-color: var(--color-neutral-100); }
+  .bg-neutral-200 { background-color: var(--color-neutral-200); }
+  .bg-neutral-700 { background-color: var(--color-neutral-700); }
+  .bg-neutral-800 { background-color: var(--color-neutral-800); }
+  .bg-neutral-900 { background-color: var(--color-neutral-900); }
+  .hover\:bg-neutral-100:hover { background-color: var(--color-neutral-100); }
+  .hover\:bg-neutral-200:hover { background-color: var(--color-neutral-200); }
+  .hover\:bg-neutral-700:hover { background-color: var(--color-neutral-700); }
+  .hover\:bg-neutral-800:hover { background-color: var(--color-neutral-800); }
+  
+  /* Border utilities - Enhanced for components */
+  .border-border { border-color: var(--color-border); }
+  .border-border-muted { border-color: var(--color-border-muted); }
+  .border-neutral-200 { border-color: var(--color-neutral-200); }
+  .border-neutral-300 { border-color: var(--color-neutral-300); }
+  .border-neutral-700 { border-color: var(--color-neutral-700); }
+  
+  /* Accent utilities */
+  .bg-accent { background-color: var(--color-accent); }
+  .hover\:bg-accent\/70:hover { background-color: color-mix(in srgb, var(--color-accent) 70%, transparent); }
+  .hover\:bg-accent\/90:hover { background-color: color-mix(in srgb, var(--color-accent) 90%, transparent); }
+  
+  /* Navbar specific utilities */
+  .navbar-bg { 
+    background-color: var(--color-background); 
+    backdrop-filter: blur(8px);
+    border-color: var(--color-border);
   }
   
-  ::-webkit-scrollbar-track {
-    background-color: rgb(var(--color-neutral-100));
+  /* Footer specific utilities */
+  .footer-bg { 
+    background-color: var(--color-background-secondary); 
+    border-color: var(--color-border);
   }
   
-  ::-webkit-scrollbar-thumb {
-    background-color: rgb(var(--color-neutral-300));
-    border-radius: 9999px;
+  /* Component shadows - Dark mode optimized */
+  .shadow-navbar { 
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   }
   
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(var(--color-primary-400));
+  .dark .shadow-navbar { 
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  }
+  
+  .shadow-footer { 
+    box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.1), 0 -1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+  
+  .dark .shadow-footer { 
+    box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.4), 0 -1px 2px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Utility classes for TailwindCSS integration */
+@layer utilities {
+  .text-foreground {
+    color: var(--color-foreground);
+  }
+  
+  .text-foreground-muted {
+    color: var(--color-foreground-muted);
+  }
+  
+  .bg-background {
+    background-color: var(--color-background);
+  }
+  
+  .border-border {
+    border-color: var(--color-border);
+  }
+  
+  .text-primary-500 {
+    color: var(--color-primary-500);
+  }
+  
+  .text-coral-500 {
+    color: var(--color-coral-500);
+  }
+  
+  .bg-coral-500 {
+    background-color: var(--color-coral-500);
+  }
+  
+  .hover\:bg-coral-600:hover {
+    background-color: var(--color-coral-600);
+  }
+  
+  .text-neutral-500 {
+    color: var(--color-neutral-500);
+  }
+  
+  .bg-neutral-100 {
+    background-color: var(--color-neutral-100);
+  }
+  
+  .hover\:bg-neutral-100:hover {
+    background-color: var(--color-neutral-100);
+  }
+  
+  .dark .hover\:bg-neutral-800:hover {
+    background-color: var(--color-neutral-800);
   }
 }

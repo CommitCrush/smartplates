@@ -198,6 +198,19 @@
   .hover\:bg-accent\/70:hover { background-color: color-mix(in srgb, var(--color-accent) 70%, transparent); }
   .hover\:bg-accent\/90:hover { background-color: color-mix(in srgb, var(--color-accent) 90%, transparent); }
   
+  /* Footer utilities - Light mode dark, Dark mode unchanged */
+  .bg-footer-dark { background-color: var(--color-neutral-900); }
+  .dark .bg-footer-dark { background-color: var(--color-background-secondary); }
+  
+  .text-footer-light { color: white; }
+  .dark .text-footer-light { color: var(--color-foreground); }
+  
+  .text-footer-light-muted { color: rgba(255, 255, 255, 0.8); }
+  .dark .text-footer-light-muted { color: var(--color-foreground-muted); }
+  
+  .text-footer-light-subtle { color: rgba(255, 255, 255, 0.7); }
+  .dark .text-footer-light-subtle { color: var(--color-foreground-secondary); }
+  
   /* Navbar specific utilities */
   .navbar-bg { 
     background-color: var(--color-background); 

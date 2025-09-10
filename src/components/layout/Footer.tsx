@@ -17,7 +17,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-background-secondary border-t border-border">
+    <footer className="bg-footer-dark border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -25,9 +25,9 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
               <ChefHat className="h-8 w-8 text-primary-600" />
-              <span className="text-2xl font-bold text-foreground">SmartPlates</span>
+              <span className="text-2xl font-bold text-footer-light">SmartPlates</span>
             </div>
-            <p className="text-foreground-secondary mb-6">
+            <p className="text-footer-light-muted mb-6">
               Smart meal planning and recipe management made easy. Discover new recipes, 
               plan your meals, and get AI-powered cooking suggestions.
             </p>
@@ -65,12 +65,12 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Quick Links</h3>
+            <h3 className="text-lg font-semibold mb-4 text-footer-light">Quick Links</h3>
             <ul className="space-y-2">
               <li>
                 <Link 
                   href="/recipe" 
-                  className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-2 py-1 rounded-md transition-colors"
+                  className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 block px-2 py-1 rounded-md transition-colors"
                 >
                   Browse Recipes
                 </Link>
@@ -78,7 +78,7 @@ export default function Footer() {
               <li>
                 <Link 
                   href="/cookware" 
-                  className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-2 py-1 rounded-md transition-colors"
+                  className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 block px-2 py-1 rounded-md transition-colors"
                 >
                   Cookware
                 </Link>
@@ -86,7 +86,7 @@ export default function Footer() {
               <li>
                 <Link 
                   href="/about" 
-                  className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-2 py-1 rounded-md transition-colors"
+                  className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 block px-2 py-1 rounded-md transition-colors"
                 >
                   About Us
                 </Link>
@@ -94,7 +94,7 @@ export default function Footer() {
               <li>
                 <Link 
                   href="/contact" 
-                  className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-2 py-1 rounded-md transition-colors"
+                  className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 block px-2 py-1 rounded-md transition-colors"
                 >
                   Contact
                 </Link>
@@ -104,48 +104,48 @@ export default function Footer() {
 
           {/* Features */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Features</h3>
+            <h3 className="text-lg font-semibold mb-4 text-footer-light">Features</h3>
             <ul className="space-y-2">
               <li>
-                <span className="text-foreground-secondary">AI Recipe Suggestions</span>
+                <span className="text-footer-light-muted">AI Recipe Suggestions</span>
               </li>
               <li>
-                <span className="text-foreground-secondary">Meal Planning</span>
+                <span className="text-footer-light-muted">Meal Planning</span>
               </li>
               <li>
-                <span className="text-foreground-secondary">Grocery Lists</span>
+                <span className="text-footer-light-muted">Grocery Lists</span>
               </li>
               <li>
-                <span className="text-foreground-secondary">Recipe Collections</span>
+                <span className="text-footer-light-muted">Recipe Collections</span>
               </li>
               <li>
-                <span className="text-foreground-secondary">Cookware Recommendations</span>
+                <span className="text-footer-light-muted">Cookware Recommendations</span>
               </li>
             </ul>
           </div>
 
           {/* Contact Information */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-foreground">Get in Touch</h3>
+            <h3 className="text-lg font-semibold mb-4 text-footer-light">Get in Touch</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-primary-600" />
-                <span className="text-foreground-secondary">hello@smartplates.com</span>
+                <span className="text-footer-light-muted">hello@smartplates.com</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-primary-600" />
-                <span className="text-foreground-secondary">+1 (555) 123-4567</span>
+                <span className="text-footer-light-muted">+1 (555) 123-4567</span>
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="h-5 w-5 text-primary-600" />
-                <span className="text-foreground-secondary">San Francisco, CA</span>
+                <span className="text-footer-light-muted">San Francisco, CA</span>
               </div>
             </div>
 
             {/* Newsletter Signup Placeholder */}
             <div className="mt-6">
-              <h4 className="text-sm font-semibold mb-2 text-foreground">Stay Updated</h4>
-              <p className="text-foreground-secondary text-sm">
+              <h4 className="text-sm font-semibold mb-2 text-footer-light">Stay Updated</h4>
+              <p className="text-footer-light-muted text-sm">
                 Get the latest recipes and cooking tips delivered to your inbox.
               </p>
               {/* Future: Newsletter signup form */}
@@ -157,11 +157,11 @@ export default function Footer() {
         <div className="border-t border-border py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <span className="text-foreground-secondary">
+              <span className="text-footer-light-muted">
                 © {currentYear} SmartPlates. Made with
               </span>
               <Heart className="h-4 w-4 text-coral-600" />
-              <span className="text-foreground-secondary">
+              <span className="text-footer-light-muted">
                 for food lovers everywhere.
               </span>
             </div>
@@ -169,19 +169,19 @@ export default function Footer() {
             <div className="flex space-x-6">
               <Link 
                 href="/privacy" 
-                className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors text-sm"
+                className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors text-sm"
               >
                 Privacy Policy
               </Link>
               <Link 
                 href="/terms" 
-                className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors text-sm"
+                className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors text-sm"
               >
                 Terms of Service
               </Link>
               <Link 
                 href="/cookies" 
-                className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors text-sm"
+                className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors text-sm"
               >
                 Cookie Policy
               </Link>

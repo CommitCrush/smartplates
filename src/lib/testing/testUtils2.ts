@@ -54,10 +54,14 @@ async function createTestIndexes(): Promise<void> {
     
     // Users Collection Indizes (entspricht SmartPlates User Interface)
     await testDatabase.collection(COLLECTIONS.USERS).createIndex({ email: 1 }, { unique: true });
+    // await testDatabase.collection(COLLECTIONS.USERS).createIndex(
+    //   { googleId: 1 }, 
+    //   { unique: true, sparse: true }
+    // );
     await testDatabase.collection(COLLECTIONS.USERS).createIndex(
-      { googleId: 1 }, 
-      { unique: true, sparse: true }
-    );
+  { googleId: 1 },
+  { unique: true, partialFilterExpression: { googleId: { $type: "string" } } }
+);
     await testDatabase.collection(COLLECTIONS.USERS).createIndex({ role: 1 });
     
     // Recipes Collection Indizes

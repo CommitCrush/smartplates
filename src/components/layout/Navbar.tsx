@@ -24,13 +24,13 @@ export default function Navbar() {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <nav className="bg-brand shadow-sm border-b border-border-muted sticky top-0 z-50">
+    <nav className="shadow-sm border-b border-border-muted sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <ChefHat className="h-8 w-8 text-primary-500" />
+              <ChefHat className="h-8 w-8 text-foreground" />
               <span className="text-xl font-bold text-foreground">
                 SmartPlates
               </span>
@@ -43,19 +43,19 @@ export default function Navbar() {
               {/* Public Navigation */}
               <Link
                 href="/recipe"
-                className="text-foreground-muted hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="text-foreground hover:text-coral-500 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Recipes
               </Link>
               <Link
                 href="/cookware"
-                className="text-foreground-muted hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="text-foreground hover:text-coral-500 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Cookware
               </Link>
               <Link
                 href="/about"
-                className="text-foreground hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="text-foreground hover:text-coral-500 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 About
               </Link>
@@ -98,12 +98,13 @@ export default function Navbar() {
                   <Button
                     variant="outline"
                     onClick={() => signIn('google')}
-                    className="text-sm"
+                    className="text-sm bg-accent hover:bg-accent/70 text-white"
                   >
                     Sign In
                   </Button>
+                  
                   <Link href="/register">
-                    <Button className="text-sm bg-accent hover:bg-accent/90">
+                    <Button variant="outline" className="text-sm bg-accent hover:bg-accent/70 text-white">
                       Get Started
                     </Button>
                   </Link>
@@ -164,21 +165,21 @@ export default function Navbar() {
             {/* Public Mobile Navigation */}
             <Link
               href="/recipe"
-              className="text-foreground hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium"
+              className="text-foreground hover:text-coral-500 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Recipes
             </Link>
             <Link
               href="/cookware"
-              className="text-foreground hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium"
+              className="text-foreground hover:text-coral-500 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Cookware
             </Link>
             <Link
               href="/about"
-              className="text-foreground hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium"
+              className="text-foreground hover:text-coral-500 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               About

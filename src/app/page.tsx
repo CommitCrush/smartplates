@@ -17,29 +17,42 @@ export default function Home() {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-50 to-primary-100 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex justify-center mb-6">
-              <ChefHat className="h-16 w-16 text-primary-500" />
+      <section 
+        className="relative py-20 min-h-[80vh] bg-no-repeat"
+        style={{
+          backgroundImage: "url('/hero-background.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+          imageRendering: 'crisp-edges',
+          backfaceVisibility: 'hidden',
+          transform: 'translateZ(0)',
+        }}
+      >
+        {/* Overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/30"></div>
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl">
+            <div className="flex mb-6">
+              <ChefHat className="h-16 w-16 text-white drop-shadow-lg" />
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
               Smart Meal Planning
-              <span className="block text-primary-500">Made Simple</span>
+              <span className="block text-primary-300">Made Simple</span>
             </h1>
-            <p className="text-xl text-foreground-muted mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-white/90 mb-8 drop-shadow-md">
               Discover delicious recipes, plan your weekly meals, and get AI-powered cooking suggestions. 
               SmartPlates makes home cooking easier and more organized than ever.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/register">
-                <Button size="lg" className="bg-primary-500 hover:bg-primary-600 text-foreground-inverse px-8 py-3">
+                <Button size="lg" className="bg-coral-500 hover:bg-coral-600 text-white px-8 py-3 shadow-lg">
                   Get Started Free
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/recipe">
-                <Button variant="outline" size="lg" className="px-8 py-3">
+                <Button variant="outline" size="lg" className="px-8 py-3 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20">
                   Browse Recipes
                 </Button>
               </Link>
@@ -155,7 +168,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary-600">
+      <section className="py-20 bg-primary-700">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground-inverse mb-4">
             Ready to Transform Your Cooking?
@@ -164,7 +177,7 @@ export default function Home() {
             Join thousands of home cooks who are already making meal planning easier with SmartPlates.
           </p>
           <Link href="/register">
-            <Button size="lg" variant="secondary" className="bg-background text-primary-600 hover:bg-background-secondary px-8 py-3">
+            <Button variant="outline" size="lg" className=" text-foreground-inverse bg-accent hover:bg-accent/70 px-8 py-3">
               Start Your Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>

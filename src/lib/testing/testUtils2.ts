@@ -86,7 +86,7 @@ export async function setupTestDatabase(): Promise<Db> {
     
     // Set test environment
     process.env.NODE_ENV = 'test';
-    process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/smartplates_test';
+    process.env.MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/smartplates_test';
     process.env.DATABASE_NAME = 'smartplates_test';
     
     // Connect to real MongoDB instance

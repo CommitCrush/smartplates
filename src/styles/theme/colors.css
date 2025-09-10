@@ -1,0 +1,109 @@
+/**
+ * SmartPlates Color System - TailwindCSS v4
+ * Inspiriert vom Home.png Design
+ */
+
+@theme {
+  /* Primary Brand Colors (Sanftes Grün aus dem Design) */
+  --color-primary-50: #f8fcf6;
+  --color-primary-100: #f1f8eb;
+  --color-primary-200: #e6f0da;
+  --color-primary-300: #d7e4c6;
+  --color-primary-400: #d0dcc2;
+  --color-primary-500: #c8d4be;    /* Hauptgrün aus Home.png */
+  --color-primary-600: #b4c0ab;
+  --color-primary-700: #a0ac98;
+  --color-primary-800: #8c9885;
+  --color-primary-900: #788472;
+
+  /* Coral/Orange Accent (Button-Farbe aus dem Design) */
+  --color-coral-50: #fef8f7;
+  --color-coral-100: #fdf1ee;
+  --color-coral-200: #fbe2dc;
+  --color-coral-300: #f9c9c0;
+  --color-coral-400: #f89787;
+  --color-coral-500: #f7654e;       /* Button-Coral aus Home.png */
+  --color-coral-600: #de5b46;
+  --color-coral-700: #c5513e;
+  --color-coral-800: #ac4736;
+  --color-coral-900: #933d2e;
+
+  /* Neutral Colors (Saubere Grautöne) */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-200: #e4e4e7;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-500: #71717a;
+  --color-neutral-600: #52525b;
+  --color-neutral-700: #3f3f46;
+  --color-neutral-800: #27272a;
+  --color-neutral-900: #18181b;
+
+  /* Background Colors (Fast-weiße Töne aus dem Design) */
+  --color-background: #fefefe;      /* Haupt-Background */
+  --color-background-secondary: #fbfcfa;
+  --color-background-card: #ffffff;
+  --color-background-hero: #f8fbf6; /* Sanfter Grün-Tint für Hero */
+  --color-background-muted: #f7f9f5;
+
+  /* Semantic Colors */
+  --color-success: #c8d4be;         /* Nutzt Primary Green */
+  --color-warning: #f59e0b;          /* Amber */
+  --color-error: #ef4444;             /* Red */
+  --color-info: #3b82f6;             /* Blue */
+
+  /* Text Colors */
+  --color-foreground: #111827;         /* Dunkler Text */
+  --color-foreground-muted: #64748b;
+  --color-foreground-subtle: #94a3b8;
+  --color-foreground-inverse: #ffffff;
+
+  /* Border & UI Colors */
+  --color-border: #e5e7eb;
+  --color-border-muted: #f3f4f6;
+  --color-input: #e5e7eb;
+  --color-ring: #d0dcc2;            /* Primary-400 für Focus */
+
+  /* Component Aliases für einfache Nutzung */
+  --color-accent: #f7654e;           /* Coral für Buttons */
+  --color-muted: #f4f4f5;           /* Neutral-100 */
+  --color-brand: #c8d4be;           /* Primary-500 */
+
+  /* Typography */
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-heading: 'Inter', system-ui, sans-serif;
+
+  /* Spacing (TailwindCSS v4 kompatibel) */
+  --spacing-0: 0;
+  --spacing-px: 1px;
+  --spacing-0_5: 0.125rem;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-5: 1.25rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+  --spacing-24: 6rem;
+
+  /* Border Radius */
+  --radius-none: 0;
+  --radius-sm: 0.125rem;
+  --radius: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}

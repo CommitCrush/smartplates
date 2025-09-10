@@ -18,7 +18,7 @@ export default function Home() {
     <Layout>
       {/* Hero Section */}
       <section 
-        className="relative py-20 min-h-[80vh] bg-no-repeat"
+        className="relative pt-52 pb-10 min-h-[80vh] bg-no-repeat"
         style={{
           backgroundImage: "url('/hero-background.png')",
           backgroundSize: 'cover',
@@ -34,7 +34,6 @@ export default function Home() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <div className="flex mb-6">
-              <ChefHat className="h-16 w-16 text-white drop-shadow-lg" />
             </div>
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
               Smart Meal Planning

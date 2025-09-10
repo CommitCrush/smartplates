@@ -75,8 +75,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* AI Recipe Suggestions */}
             <div className="text-center">
-              <div className="bg-primary-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Brain className="h-8 w-8 text-primary-600" />
+              <div className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Brain className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 AI-Powered Suggestions
@@ -88,8 +88,8 @@ export default function Home() {
 
             {/* Meal Planning */}
             <div className="text-center">
-              <div className="bg-coral-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-coral-600" />
+              <div className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 Weekly Meal Planning
@@ -101,8 +101,8 @@ export default function Home() {
 
             {/* Smart Grocery Lists */}
             <div className="text-center">
-              <div className="bg-primary-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <ShoppingCart className="h-8 w-8 text-primary-600" />
+              <div className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <ShoppingCart className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 Smart Grocery Lists
@@ -114,8 +114,8 @@ export default function Home() {
 
             {/* Recipe Collections */}
             <div className="text-center">
-              <div className="bg-coral-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Star className="h-8 w-8 text-coral-600" />
+              <div className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Star className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 Recipe Collections

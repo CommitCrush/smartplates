@@ -6,7 +6,13 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "db:check": "bun run tests/check-atlas-connection.ts",
+    "db:reset": "bun run tests/reset-database.ts",
+    "demo:testutils2": "bun run tests/demo-testutils2.ts"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",

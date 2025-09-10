@@ -6,7 +6,13 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "db:check": "bun run tests/check-atlas-connection.ts",
+    "db:reset": "bun run tests/reset_database.ts",
+    "demo:testutils2": "bun run tests/demo_testutils2.ts"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",
@@ -14,6 +20,7 @@
     "@google-cloud/vision": "^5.3.3",
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/postcss": "^4.1.12",
+    "@types/mongodb-memory-server": "^2.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.542.0",
@@ -29,7 +36,11 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@jest/globals": "^30.1.2",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
     "@types/bcrypt": "^6.0.0",
+    "@types/jest": "^30.0.0",
     "@types/js-cookie": "^3.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongodb": "^4.0.7",
@@ -37,13 +48,18 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/supertest": "^6.0.3",
     "@types/validator": "^13.15.2",
     "bcrypt": "^6.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
+    "jest": "^30.1.3",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
+    "mongodb-memory-server": "^10.2.0",
     "mongoose": "^8.18.0",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.1",
     "typescript": "^5",
     "validator": "^13.15.15"
   }

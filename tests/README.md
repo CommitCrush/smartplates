@@ -18,7 +18,8 @@ tests/
 │   └── fixtures/       # Test Data
 ├── __mocks__/          # Mock Files
 ├── setup/              # Test Setup Files
-└── coverage/           # Coverage Reports
+├── coverage/           # Coverage Reports
+└── TESTING_SETUP.md    # Test Environment Setup Guide
 ```
 
 ## Testing Strategy
@@ -81,3 +82,19 @@ npm run test:all
 - **Utilities**: 95%+ coverage
 - **API Routes**: 85%+ coverage
 - **Critical Paths**: 100% E2E coverage
+
+## Setup & Installation
+
+Für detaillierte Anweisungen zur Test-Umgebung siehe: [`TESTING_SETUP.md`](./TESTING_SETUP.md)
+
+### Quick Start
+```bash
+# Dependencies installieren
+npm install --save-dev @types/jest jest ts-jest mongodb-memory-server
+
+# Tests ausführen
+npm test
+
+# Tests mit Coverage
+npm run test:coverage
+```

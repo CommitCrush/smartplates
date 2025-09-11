@@ -1,6 +1,6 @@
 # Admin Foundation
 
-## Status: 🔄 Not Started
+## Status: ✅ Completed
 
 ## Zuständig: Developer 3 (Hana)
 

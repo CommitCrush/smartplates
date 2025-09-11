@@ -9,64 +9,36 @@
  */
 
 import Link from 'next/link';
-import { ChefHat, Brain, Calendar, ShoppingCart, Star, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Layout from '@/components/layout/Layout';
-import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
+import { ChefHat, Search, Calendar, ShoppingCart, Users, Star, Clock, Heart } from 'lucide-react';
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <Layout>
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <section 
-        className="relative pt-52 pb-10 min-h-[80vh] bg-no-repeat"
-        style={{
-          backgroundImage: "url('/hero-background.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          imageRendering: 'crisp-edges',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
-        }}
-      >
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/30"></div>
-        
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl">
-            <div className="flex mb-6">
+      <section className="bg-gradient-to-br from-primary-50 to-coral-50 dark:from-primary-950 dark:to-coral-950 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="flex justify-center mb-6">
+              <ChefHat className="h-16 w-16 text-primary-600" />
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
-              Smart Meal Planning
-              <span className="block text-primary-300">Made Simple</span>
+            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
+              Smart<span className="text-primary-600">Plates</span>
             </h1>
-            <p className="text-xl text-white/90 mb-8 drop-shadow-md">
-              Discover delicious recipes, plan your weekly meals, and get AI-powered cooking suggestions. 
-              SmartPlates makes home cooking easier and more organized than ever.
+            <p className="text-xl md:text-2xl text-foreground-muted mb-8 max-w-3xl mx-auto">
+              Revolutioniere deine Küchenplanung mit intelligenter Rezeptorganisation, 
+              KI-gestützter Analyse und nahtloser Essensplanung.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
-                <Button 
-                  size="lg" 
-                  className={cn(
-                    "bg-coral-500 hover:bg-coral-600 text-white",
-                    "px-8 py-3 shadow-lg"
-                  )}
-                >
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                <Button size="lg" className="w-full sm:w-auto">
+                  Jetzt starten
                 </Button>
               </Link>
               <Link href="/recipe">
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className={cn(
-                    "px-8 py-3 bg-white/10 backdrop-blur-sm",
-                    "border-white/30 text-white hover:bg-white/20"
-                  )}
-                >
-                  Browse Recipes
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  Rezepte entdecken
                 </Button>
               </Link>
             </div>
@@ -79,141 +51,201 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Everything You Need for Smart Cooking
+              Alles was du für perfekte Mahlzeiten brauchst
             </h2>
-            <p className="text-xl text-foreground-muted max-w-2xl mx-auto">
-              From recipe discovery to meal planning, we&apos;ve got your kitchen covered with intelligent features.
+            <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
+              SmartPlates vereint moderne Technologie mit traditionellem Kochen
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* AI Recipe Suggestions */}
-            <div className="text-center">
-              <div className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Brain className="h-8 w-8 text-white" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Recipe Discovery */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search className="h-8 w-8 text-primary-600" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                AI-Powered Suggestions
-              </h3>
+              <h3 className="text-xl font-semibold mb-4">Rezept-Entdeckung</h3>
               <p className="text-foreground-muted">
-                Get personalized recipe recommendations based on your ingredients and preferences.
+                Durchsuche tausende von Rezepten mit intelligenten Filtern für Allergien, 
+                Kochzeit und verfügbare Zutaten.
               </p>
-            </div>
+            </Card>
 
             {/* Meal Planning */}
-            <div className="text-center">
-              <div className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-white" />
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-coral-100 dark:bg-coral-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Calendar className="h-8 w-8 text-coral-600" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                Weekly Meal Planning
-              </h3>
+              <h3 className="text-xl font-semibold mb-4">Wochenplanung</h3>
               <p className="text-foreground-muted">
-                Plan your meals for the week with our intuitive drag-and-drop calendar.
+                Plane deine Mahlzeiten für die ganze Woche mit unserem intuitiven 
+                Drag-and-Drop Kalender.
               </p>
-            </div>
+            </Card>
 
-            {/* Smart Grocery Lists */}
-            <div className="text-center">
-              <div className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <ShoppingCart className="h-8 w-8 text-white" />
+            {/* Shopping Lists */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <ShoppingCart className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                Smart Grocery Lists
-              </h3>
+              <h3 className="text-xl font-semibold mb-4">Einkaufslisten</h3>
               <p className="text-foreground-muted">
-                Automatically generate shopping lists from your meal plans and recipes.
+                Automatische Einkaufslisten basierend auf deinen geplanten Mahlzeiten 
+                mit intelligenter Mengenberechnung.
               </p>
-            </div>
+            </Card>
 
-            {/* Recipe Collections */}
-            <div className="text-center">
-              <div className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Star className="h-8 w-8 text-white" />
+            {/* AI Features */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Star className="h-8 w-8 text-purple-600" />
               </div>
-              <h3 className="text-xl font-semibold text-foreground mb-2">
-                Recipe Collections
-              </h3>
+              <h3 className="text-xl font-semibold mb-4">KI-Unterstützung</h3>
               <p className="text-foreground-muted">
-                Save and organize your favorite recipes in personalized collections.
+                Lade Fotos deines Kühlschranks hoch und erhalte personalisierte 
+                Rezeptvorschläge basierend auf verfügbaren Zutaten.
               </p>
-            </div>
+            </Card>
+
+            {/* Community */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4">Community</h3>
+              <p className="text-foreground-muted">
+                Teile deine eigenen Rezepte, bewerte andere und entdecke 
+                kulinarische Inspirationen aus der Community.
+              </p>
+            </Card>
+
+            {/* Quick & Easy */}
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+              <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Clock className="h-8 w-8 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4">Schnell & Einfach</h3>
+              <p className="text-foreground-muted">
+                Finde Rezepte für jede Gelegenheit - von 15-Minuten-Gerichten 
+                bis zu aufwendigen Wochenend-Projekten.
+              </p>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* Popular Recipes Preview */}
-            {/* Recipe Showcase */}
-      <section className="py-20  ">
+      <section className="py-20 bg-background-secondary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Featured Recipes
+              Beliebte Rezepte
             </h2>
-            <p className="text-xl text-foreground-muted max-w-2xl mx-auto">
-              Discover popular recipes loved by our community of home cooks.
+            <p className="text-lg text-foreground-muted">
+              Entdecke was andere Köche gerade zubereiten
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <div 
-                key={i} 
-                className={cn(
-                  "bg-background-card rounded-lg shadow-sm border border-border overflow-hidden",
-                  "transform transition-[transform,shadow,border-color] duration-700 ease-out",
-                  "hover:scale-102 hover:shadow-md hover:border-primary-200 cursor-pointer"
-                )}
-              >
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Sample Recipe Cards */}
+            {[
+              {
+                title: "Spaghetti Carbonara",
+                time: "20 Min",
+                difficulty: "Einfach",
+                image: "🍝",
+                rating: 4.8,
+                likes: 234
+              },
+              {
+                title: "Vegetarische Buddha Bowl",
+                time: "25 Min",
+                difficulty: "Mittel",
+                image: "🥗",
+                rating: 4.9,
+                likes: 189
+              },
+              {
+                title: "Schokoladen-Brownies",
+                time: "45 Min",
+                difficulty: "Einfach",
+                image: "🍫",
+                rating: 4.7,
+                likes: 312
+              }
+            ].map((recipe, index) => (
+              <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="h-48 bg-gradient-to-br from-primary-100 to-coral-100 dark:from-primary-900 dark:to-coral-900 flex items-center justify-center">
+                  <span className="text-6xl">{recipe.image}</span>
+                </div>
                 <div className="p-6">
-                  <ChefHat className={cn(
-                    "h-12 w-12 text-primary-600 mb-4",
-                    "transition-colors duration-400 ease-out hover:text-coral-500"
-                  )} />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Delicious Recipe {i}
-                  </h3>
-                  <p className="text-foreground-muted mb-4">
-                    A wonderful recipe description that makes your mouth water and inspires you to cook.
-                  </p>
+                  <h3 className="text-xl font-semibold mb-2">{recipe.title}</h3>
+                  <div className="flex items-center justify-between text-sm text-foreground-muted mb-4">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {recipe.time}
+                    </div>
+                    <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 rounded">
+                      {recipe.difficulty}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-foreground-subtle">30 min</span>
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-coral-500 fill-current" />
-                      <span className="ml-1 text-sm text-foreground-muted">4.8</span>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-amber-500 fill-current" />
+                      <span className="font-medium">{recipe.rating}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-coral-600">
+                      <Heart className="h-4 w-4" />
+                      <span>{recipe.likes}</span>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
             ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link href="/recipe">
+              <Button variant="outline" size="lg">
+                Alle Rezepte anzeigen
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary-700">
+      <section className="py-20 bg-gradient-to-r from-primary-600 to-coral-600 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground-inverse mb-4">
-            Ready to Transform Your Cooking?
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Bereit für smarteres Kochen?
           </h2>
-          <p className="text-xl text-primary-100 mb-8">
-            Join thousands of home cooks who are already making meal planning easier with SmartPlates.
+          <p className="text-xl mb-8 opacity-90">
+            Schließe dich tausenden von Köchen an, die bereits ihre Küchenplanung 
+            revolutioniert haben.
           </p>
-          <Link href="/register">
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className={cn(
-                "text-foreground-inverse bg-accent hover:bg-accent/70",
-                "px-8 py-3"
-              )}
-            >
-              Start Your Free Trial
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/register">
+              <Button 
+                size="lg" 
+                variant="secondary"
+                className="w-full sm:w-auto bg-white text-primary-600 hover:bg-gray-100"
+              >
+                Kostenlos registrieren
+              </Button>
+            </Link>
+            <Link href="/about">
+              <Button 
+                size="lg" 
+                variant="outline"
+                className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary-600"
+              >
+                Mehr erfahren
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
-    </Layout>
+    </div>
   );
 }

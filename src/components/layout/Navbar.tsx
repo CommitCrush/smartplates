@@ -244,24 +244,8 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Mobile menu button and dark mode toggle */}
-          <div className="md:hidden flex items-center space-x-2">
-            {/* Mobile Dark Mode Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleDarkMode}
-              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              aria-pressed={isDarkMode}
-            >
-              {isDarkMode ? (
-                <Sun className="h-5 w-5 text-foreground" />
-              ) : (
-                <Moon className="h-5 w-5 text-foreground" />
-              )}
-            </Button>
-            
+          {/* Mobile menu button */}
+          <div className="md:hidden">
             <Button
               variant="ghost"
               onClick={toggleMenu}

@@ -17,28 +17,28 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [x] Middleware für Route Protection
 - [x] Basis Layout Components (Navbar, Footer)
 
-### 👥 **Developer 2: User Management System** (Balta)
-- [ ] User Model & Types Definition
-- [ ] Registrierung/Login Forms
-- [ ] User Context & State Management
+### 👥 **Developer 2: User Management System** (Balta) ⚠️ **TEILWEISE IMPLEMENTIERT**
+- [x] User Model & Types Definition
+- [x] Registrierung/Login Forms (Basic)
+- [x] User Context & State Management (AuthContext)
 - [ ] Profile Management Interface
-- [ ] Admin User Management System
+- [ ] Admin User Management System (Komponenten existieren, Integration fehlt)
 - [ ] User Settings Grundstruktur
 
-### 🔒 **Developer 3: Admin Foundation** (Hana)
-- [ ] Admin Dashboard Layout
-- [ ] Admin Authentication Flow
-- [ ] Admin Sidebar Navigation
-- [ ] Basis Admin Components (Tables, Forms)
-- [ ] Admin Statistics Grundstruktur
-- [ ] Error Handling & Logging System
+### 🔒 **Developer 3: Admin Foundation** (Hana) ⚠️ **TEILWEISE IMPLEMENTIERT**
+- [x] Admin Dashboard Layout (Komponenten vorhanden)
+- [x] Admin Authentication Flow 
+- [ ] Admin Sidebar Navigation (Layout-Integration fehlt)
+- [x] Basis Admin Components (Tables, Forms)
+- [ ] Admin Statistics Grundstruktur (Widgets vorhanden, Daten-Integration fehlt)
+- [x] Error Handling & Logging System (Basis vorhanden)
 
-### 🎨 **Developer 4: UI/UX Foundation** (Rozn)
-- [ ] Design System Components (Buttons, Inputs, Cards)
-- [ ] Responsive Layout System
-- [ ] Dark/Light Theme Implementation
-- [ ] Homepage Design & Implementation
-- [ ] Mobile-First Responsive Design
+### 🎨 **Developer 4: UI/UX Foundation** (Rozn) ⚠️ **TEILWEISE IMPLEMENTIERT**
+- [x] Design System Components (Basic Buttons, teilweise)
+- [x] Responsive Layout System (TailwindCSS konfiguriert)
+- [x] Dark/Light Theme Implementation (CSS Variables definiert)
+- [ ] Homepage Design & Implementation (Basic vorhanden, Professional Design fehlt)
+- [x] Mobile-First Responsive Design (TailwindCSS Setup)
 - [ ] Component Library Dokumentation
 
 ### 📊 **Developer 5: Database & API Foundation** (Monika) ✅ **COMPLETED**
@@ -86,13 +86,14 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Meal Plan CRUD Operations
 - [ ] Quick Add to Meal Plan
 
-### 🛒 **Developer 5: Grocery List Generation**
+### 🛒 **Developer 5: Grocery List Generation & External API Integration**
 - [ ] Ingredient Extraction from Recipes
 - [ ] Shopping List Generation Logic
 - [ ] Shopping List Components
 - [ ] Ingredient Quantity Calculation
 - [ ] Shopping List Export/Print
 - [ ] Ingredient Database Setup
+- [ ] **Spoonacular API Integration** - External recipe import and suggestions
 
 ---
 

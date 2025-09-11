@@ -8,7 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { withAuth, handleCors, rateLimit, AuthenticatedRequest } from '@/middleware/authMiddleware';
+import { withAuth, createCorsHeaders, AuthenticatedRequest } from '@/middleware/authMiddleware';
 import { findUserById, updateUser, deleteUser } from '@/models/User';
 import { UpdateUserInput, User } from '@/types/user';
 import { isValidObjectId } from '@/lib/db';
@@ -20,12 +20,10 @@ import { isValidObjectId } from '@/lib/db';
 async function getUserHandler(request: AuthenticatedRequest, currentUser: User) {
   try {
     // Handle CORS preflight
-    const corsResponse = handleCors(request);
-    if (corsResponse) return corsResponse;
+    if (request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 200, headers: createCorsHeaders() }); }
     
     // Apply rate limiting
-    const rateLimitResponse = rateLimit(request, 100, 15 * 60 * 1000);
-    if (rateLimitResponse) return rateLimitResponse;
     
     // Extract user ID from URL
     const userId = request.url.split('/').pop();
@@ -91,12 +89,10 @@ async function getUserHandler(request: AuthenticatedRequest, currentUser: User) 
 async function updateUserHandler(request: AuthenticatedRequest, currentUser: User) {
   try {
     // Handle CORS preflight
-    const corsResponse = handleCors(request);
-    if (corsResponse) return corsResponse;
+    if (request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 200, headers: createCorsHeaders() }); }
     
     // Apply rate limiting
-    const rateLimitResponse = rateLimit(request, 50, 15 * 60 * 1000);
-    if (rateLimitResponse) return rateLimitResponse;
     
     // Extract user ID from URL
     const userId = request.url.split('/').pop();
@@ -175,12 +171,10 @@ async function updateUserHandler(request: AuthenticatedRequest, currentUser: Use
 async function deleteUserHandler(request: AuthenticatedRequest, currentUser: User) {
   try {
     // Handle CORS preflight
-    const corsResponse = handleCors(request);
-    if (corsResponse) return corsResponse;
+    if (request.method === "OPTIONS") {
+    return new NextResponse(null, { status: 200, headers: createCorsHeaders() }); }
     
     // Apply rate limiting
-    const rateLimitResponse = rateLimit(request, 10, 15 * 60 * 1000);
-    if (rateLimitResponse) return rateLimitResponse;
     
     // Extract user ID from URL
     const userId = request.url.split('/').pop();

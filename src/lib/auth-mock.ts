@@ -47,7 +47,8 @@ export const authOptions: NextAuthOptions = {
               id: user.id,
               email: user.email,
               name: user.name,
-              role: user.role
+              role: user.role as 'admin' | 'user',
+              emailVerified: true // Required by NextAuth User type
             };
           }
         }
@@ -81,7 +82,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        session.user.role = token.role as 'admin' | 'user';
       }
       return session;
     },

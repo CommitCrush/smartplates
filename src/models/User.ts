@@ -23,42 +23,6 @@ import {
 export async function createUser(userData: CreateUserInput): Promise<User> {
   try {
     const usersCollection = await getCollection<User>(COLLECTIONS.USERS);
-
-//     // Create user object with default values and timestamps
-//     const newUser: Omit<User, "_id"> = {
-//       email: userData.email,
-//       name: userData.name,
-//       avatar: userData.avatar,
-//       role: userData.role || "user", // Default to 'user' role
-//       // googleId: userData.googleId,
-//       isEmailVerified: false, // Default to false
-//       dietaryRestrictions: userData.dietaryRestrictions || [],
-//       favoriteCategories: userData.favoriteCategories || [],
-//       savedRecipes: [], // Empty array initially
-//       createdRecipes: [], // Empty array initially
-//       createdAt: new Date(),
-//       updatedAt: new Date(),
-//     };
-//     // Nur setzen, wenn vorhanden
-//     if (userData.googleId) {
-//       newUser.googleId = userData.googleId;
-//     }
-//     // Insert user into database
-//     const result = await usersCollection.insertOne(newUser);
-
-//     // Return the created user with the new _id
-//     return {
-//       _id: result.insertedId,
-//       ...newUser,
-//     };
-//   } catch (error) {
-//     console.error("Error creating user:", error);
-//     throw new Error("Failed to create user");
-//   }
-// }
-export async function createUser(userData: CreateUserInput): Promise<User> {
-  try {
-    const usersCollection = await getCollection<User>(COLLECTIONS.USERS);
     // Basisdaten mit Defaults
     const newUser: Omit<User, "_id"> = {
       email: userData.email,

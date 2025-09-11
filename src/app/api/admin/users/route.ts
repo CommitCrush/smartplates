@@ -5,7 +5,7 @@
  * In a real implementation, this would query the MongoDB users collection.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAuth } from '@/middleware/authMiddleware';
 
 interface MockUser {

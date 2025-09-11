@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuth, handleCors, rateLimit } from '@/middleware/authMiddleware';
+import { withAuth, createCorsHeaders } from '@/middleware/authMiddleware';
 import { findAllCategories, createCategory } from '@/utils/category-operations';
 import { createCategoryValidation } from '@/lib/validation/categorySchemas';
 
@@ -24,8 +24,13 @@ type CategoryUser = {
  */
 export async function GET(req: NextRequest) {
   try {
-    const response = handleCors(req);
-    if (response) return response;
+    // Handle CORS for GET requests
+    if (req.method === 'OPTIONS') {
+      return new NextResponse(null, {
+        status: 200,
+        headers: createCorsHeaders(),
+      });
+    }
 
     const url = new URL(req.url);
     const searchParams = url.searchParams;
@@ -64,12 +69,14 @@ async function createCategoryHandler(request: NextRequest, user: CategoryUser) {
   
   try {
     // Handle CORS preflight
-    const corsResponse = handleCors(request);
-    if (corsResponse) return corsResponse;
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, {
+        status: 200,
+        headers: createCorsHeaders(),
+      });
+    }
     
-    // Apply rate limiting
-    const rateLimitResponse = rateLimit(request, 10, 15 * 60 * 1000);
-    if (rateLimitResponse) return rateLimitResponse;
+    // Note: Rate limiting would be implemented here in production
     
     // Parse request body
     const categoryData = await request.json();
@@ -99,7 +106,7 @@ async function createCategoryHandler(request: NextRequest, user: CategoryUser) {
     
     if (!result.success) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        { success: false, error: result.error || 'Failed to create category' },
         { status: 400 }
       );
     }
@@ -107,7 +114,7 @@ async function createCategoryHandler(request: NextRequest, user: CategoryUser) {
     return NextResponse.json({
       success: true,
       data: result.data,
-      message: result.message
+      message: result.message || 'Category created successfully'
     }, { status: 201 });
     
   } catch (error) {

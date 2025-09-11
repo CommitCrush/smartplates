@@ -116,6 +116,28 @@ export interface UpdateRecipeInput extends Partial<CreateRecipeInput> {
   id: string;
 }
 
+// Filter and query types
+export interface RecipeFilter extends RecipeSearchFilters {
+  // Legacy alias for RecipeSearchFilters
+}
+
+// Card display types for UI
+export interface RecipeCard {
+  id: string;
+  title: string;
+  description: string;
+  image?: string;
+  category: RecipeCategory;
+  difficulty: RecipeDifficulty;
+  totalTime: number;
+  servings: number;
+  rating: number;
+  likesCount: number;
+  authorName: string;
+  dietaryRestrictions: DietaryRestriction[];
+  tags: string[];
+}
+
 // Search and filter types
 export interface RecipeSearchFilters {
   query?: string;

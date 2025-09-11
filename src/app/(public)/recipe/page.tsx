@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Clock, Users, Star, Heart, ChefHat, Filter } from 'lucide-react';
+import { Search, Clock, Users, Star, Heart, ChefHat } from 'lucide-react';
 import { Recipe } from '@/types/recipe';
 
 export default function RecipePage() {

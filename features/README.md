@@ -18,11 +18,11 @@ Dieses Verzeichnis trackt den Implementierungsstatus aller SmartPlates Features.
 
 | Feature | Status | Assignee | File |
 |---------|--------|----------|------|
-| Project Setup & Auth | 🔄 | Developer 1 | `01-project-setup.md` |
-| User Management | 🔄 | Developer 2 | `02-user-management.md` |
-| Admin Foundation | 🔄 | Developer 3 | `03-admin-foundation.md` |
-| UI/UX Foundation | 🔄 | Developer 4 | `04-ui-foundation.md` |
-| Database & API | 🔄 | Developer 5 | `05-database-api.md` |
+| Project Setup & Auth | ✅ | Developer 1 (Ese) | `01-project-setup.md` |
+| User Management | ⚠️ | Developer 2 (Balta) | `02-user-management.md` |
+| Admin Foundation | ⚠️ | Developer 3 (Hana) | `03-admin-foundation.md` |
+| UI/UX Foundation | ⚠️ | Developer 4 (Rozn) | `04-ui-foundation.md` |
+| Database & API | ✅ | Developer 5 (Monika) | `05-database-api.md` |
 
 ### Phase 2: Core Recipe System (Wochen 4-7)
 
@@ -33,6 +33,7 @@ Dieses Verzeichnis trackt den Implementierungsstatus aller SmartPlates Features.
 | Recipe Display | 🔄 | Developer 3 | `08-recipe-display.md` |
 | Meal Planning Core | 🔄 | Developer 4 | `09-meal-planning.md` |
 | Grocery Lists | 🔄 | Developer 5 | `10-grocery-lists.md` |
+| **Spoonacular API Integration** | 📋 | **Developer 5** | `06b-spoonacular-api-integration.md` |
 
 ### Phase 3: Advanced Features (Wochen 8-11)
 

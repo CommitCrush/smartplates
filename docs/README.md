@@ -31,7 +31,7 @@ Dieses Verzeichnis enthält die gesamte Projektdokumentation für SmartPlates.
 
 ### 🔧 Konfiguration
 - `environment-setup.md` - Environment Variables und Konfiguration
-- `external-services.md` - Externe APIs und Services Integration
+- `spoonacular-api-integration.md` - Spoonacular API Integration Guide
 
 ## Wartung
 

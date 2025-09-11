@@ -32,11 +32,7 @@ yarn-error.log*
 next-env.d.ts
 .github/ui_ux_issus/
 
-
-
-
-
-
+public/
 
 
 config/*.json

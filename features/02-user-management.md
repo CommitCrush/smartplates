@@ -1,6 +1,6 @@
 # User Management System
 
-## Status: ⚠️ Teilweise Implementiert
+## Status: ⚠️ 75% Implementiert (11. September 2025)
 
 ## Zuständig: Developer 2 (Balta)
 

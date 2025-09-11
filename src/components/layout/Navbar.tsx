@@ -113,7 +113,7 @@ export default function Navbar() {
               variant="ghost"
               size="sm"
               onClick={toggleDarkMode}
-              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-lg"
+              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-lg shadow-lg"
               aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {isDarkMode ? (
@@ -185,13 +185,13 @@ export default function Navbar() {
                   <Button
                     variant="outline"
                     onClick={() => signIn('google')}
-                    className="text-sm bg-accent hover:bg-accent/70 text-white"
+                    className="text-sm bg-accent hover:bg-accent/70 text-white shadow-lg"
                   >
                     Sign In
                   </Button>
                   
                   <Link href="/register">
-                    <Button variant="outline" className="text-sm bg-accent hover:bg-accent/70 text-white">
+                    <Button variant="outline" className="text-sm bg-accent hover:bg-accent/70 text-white shadow-lg">
                       Get Started
                     </Button>
                   </Link>
@@ -235,7 +235,7 @@ export default function Navbar() {
               variant="ghost"
               size="sm"
               onClick={toggleDarkMode}
-              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shadow-lg"
               aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {isDarkMode ? (
@@ -248,7 +248,7 @@ export default function Navbar() {
             <Button
               variant="ghost"
               onClick={toggleMenu}
-              className="text-foreground"
+              className="text-foreground shadow-lg"
             >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -342,12 +342,12 @@ export default function Navbar() {
                       signIn('google');
                       setIsMenuOpen(false);
                     }}
-                    className="w-full"
+                    className="w-full shadow-lg"
                   >
                     Sign In with Google
                   </Button>
                   <Link href="/register" onClick={() => setIsMenuOpen(false)}>
-                    <Button className="w-full bg-accent hover:bg-accent/90">
+                    <Button className="w-full bg-accent hover:bg-accent/90 shadow-lg">
                       Get Started
                     </Button>
                   </Link>

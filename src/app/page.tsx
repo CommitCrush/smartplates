@@ -62,7 +62,7 @@ export default function Home() {
                   variant="outline" 
                   size="lg" 
                   className={cn(
-                    "px-8 py-3 bg-white/10 backdrop-blur-sm",
+                    "px-8 py-3 bg-white/10 backdrop-blur-sm shadow-lg",
                     "border-white/30 text-white hover:bg-white/20"
                   )}
                 >
@@ -204,7 +204,7 @@ export default function Home() {
               variant="outline" 
               size="lg" 
               className={cn(
-                "text-foreground-inverse bg-accent hover:bg-accent/70",
+                "text-foreground-inverse bg-accent hover:bg-accent/70 shadow-lg",
                 "px-8 py-3"
               )}
             >

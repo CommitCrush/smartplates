@@ -22,6 +22,7 @@ export interface User {
   role: UserRole;                    // User's role (user, admin, viewer)
   
   // Authentication related
+  password?: string;                 // Hashed password (optional for OAuth users)
   googleId?: string;                 // Google OAuth ID (optional)
   isEmailVerified: boolean;          // Email verification status
   
@@ -43,6 +44,7 @@ export interface User {
 export interface CreateUserInput {
   email: string;
   name: string;
+  password?: string;                 // Plain text password (will be hashed)
   avatar?: string;
   role?: UserRole;                   // Optional, defaults to 'user'
   googleId?: string;

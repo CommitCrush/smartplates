@@ -7,6 +7,7 @@
 
 import { ObjectId } from "mongodb";
 import { getCollection, COLLECTIONS, toObjectId } from "@/lib/db";
+import { hashPassword } from "@/utils/password";
 import {
   User,
   CreateUserInput,
@@ -23,6 +24,13 @@ import {
 export async function createUser(userData: CreateUserInput): Promise<User> {
   try {
     const usersCollection = await getCollection<User>(COLLECTIONS.USERS);
+    
+    // Hash password if provided
+    let hashedPassword: string | undefined;
+    if (userData.password) {
+      hashedPassword = await hashPassword(userData.password);
+    }
+    
     // Basisdaten mit Defaults
     const newUser: Omit<User, "_id"> = {
       email: userData.email,
@@ -37,10 +45,17 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    
+    // Add password if provided
+    if (hashedPassword) {
+      newUser.password = hashedPassword;
+    }
+    
     // googleId nur setzen, wenn wirklich vorhanden
     if (userData.googleId && userData.googleId.trim() !== "") {
       newUser.googleId = userData.googleId;
     }
+    
     const result = await usersCollection.insertOne(newUser);
     return { _id: result.insertedId, ...newUser };
   } catch (error) {

@@ -53,57 +53,79 @@
   --color-error: #ef4444;             /* Red */
   --color-info: #3b82f6;             /* Blue */
 
-  /* Text Colors */
-  --color-foreground: #111827;         /* Dunkler Text */
-  --color-foreground-muted: #64748b;
-  --color-foreground-subtle: #94a3b8;
-  --color-foreground-inverse: #ffffff;
 
-  /* Border & UI Colors */
-  --color-border: #e5e7eb;
-  --color-border-muted: #f3f4f6;
-  --color-input: #e5e7eb;
-  --color-ring: #d0dcc2;            /* Primary-400 für Focus */
+  /* Dark Mode Farbvariablen für SmartPlates */
+  .dark {
+    /* Hintergrundfarben */
+    --color-background: #101112;
+    --color-background-secondary: #181a1b;
+    --color-background-card: #181a1b;
+    --color-background-hero: #16201a;
+    --color-background-muted: #232627;
 
-  /* Component Aliases für einfache Nutzung */
-  --color-accent: #f7654e;           /* Coral für Buttons */
-  --color-muted: #f4f4f5;           /* Neutral-100 */
-  --color-brand: #c8d4be;           /* Primary-500 */
+    /* Textfarben */
+    --color-foreground: #f3f4f6;
+    --color-foreground-muted: #a3adc2;
+    --color-foreground-subtle: #64748b;
+    --color-foreground-inverse: #18181b;
 
-  /* Typography */
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-  --font-family-heading: 'Inter', system-ui, sans-serif;
+    /* Primärfarben (Grün) */
+    --color-primary-50: #1a211a;
+    --color-primary-100: #223022;
+    --color-primary-200: #2d4332;
+    --color-primary-300: #3a5740;
+    --color-primary-400: #4a6d50;
+    --color-primary-500: #c8d4be;
+    --color-primary-600: #d7e4c6;
+    --color-primary-700: #e6f0da;
+    --color-primary-800: #f1f8eb;
+    --color-primary-900: #f8fcf6;
 
-  /* Spacing (TailwindCSS v4 kompatibel) */
-  --spacing-0: 0;
-  --spacing-px: 1px;
-  --spacing-0_5: 0.125rem;
-  --spacing-1: 0.25rem;
-  --spacing-2: 0.5rem;
-  --spacing-3: 0.75rem;
-  --spacing-4: 1rem;
-  --spacing-5: 1.25rem;
-  --spacing-6: 1.5rem;
-  --spacing-8: 2rem;
-  --spacing-10: 2.5rem;
-  --spacing-12: 3rem;
-  --spacing-16: 4rem;
-  --spacing-20: 5rem;
-  --spacing-24: 6rem;
+    /* Coral/Orange Accent */
+    --color-coral-50: #2d1a16;
+    --color-coral-100: #4a2b22;
+    --color-coral-200: #6b3d2e;
+    --color-coral-300: #8c4f3a;
+    --color-coral-400: #ad6146;
+    --color-coral-500: #f7654e;
+    --color-coral-600: #f89787;
+    --color-coral-700: #f9c9c0;
+    --color-coral-800: #fbe2dc;
+    --color-coral-900: #fef8f7;
 
-  /* Border Radius */
-  --radius-none: 0;
-  --radius-sm: 0.125rem;
-  --radius: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
-  --radius-full: 9999px;
+    /* Neutral Colors */
+    --color-neutral-50: #18181b;
+    --color-neutral-100: #27272a;
+    --color-neutral-200: #3f3f46;
+    --color-neutral-300: #52525b;
+    --color-neutral-400: #71717a;
+    --color-neutral-500: #a1a1aa;
+    --color-neutral-600: #d4d4d8;
+    --color-neutral-700: #e4e4e7;
+    --color-neutral-800: #f4f4f5;
+    --color-neutral-900: #fafafa;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    /* Semantic Colors */
+    --color-success: #22c55e;
+    --color-warning: #fbbf24;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+
+    /* Border & UI */
+    --color-border: #23272e;
+    --color-border-muted: #23272e;
+    --color-input: #23272e;
+    --color-ring: #4a6d50;
+
+    /* Komponenten Aliase */
+    --color-accent: #f7654e;
+    --color-muted: #232627;
+    --color-brand: #c8d4be;
+
+    /* Schatten */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.6), 0 1px 2px -1px rgb(0 0 0 / 0.6);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.7), 0 2px 4px -2px rgb(0 0 0 / 0.7);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.8), 0 4px 6px -4px rgb(0 0 0 / 0.8);
+  }
 }

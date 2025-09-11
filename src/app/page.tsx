@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { ChefHat, Brain, Calendar, ShoppingCart, Star, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Layout from '@/components/layout/Layout';
+import { cn } from '@/lib/utils';
 
 export default function Home() {
   return (
@@ -45,13 +46,26 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/register">
-                <Button size="lg" className="bg-coral-500 hover:bg-coral-600 text-white px-8 py-3 shadow-lg">
+                <Button 
+                  size="lg" 
+                  className={cn(
+                    "bg-coral-500 hover:bg-coral-600 text-white",
+                    "px-8 py-3 shadow-lg"
+                  )}
+                >
                   Get Started Free
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/recipe">
-                <Button variant="outline" size="lg" className="px-8 py-3 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className={cn(
+                    "px-8 py-3 bg-white/10 backdrop-blur-sm",
+                    "border-white/30 text-white hover:bg-white/20"
+                  )}
+                >
                   Browse Recipes
                 </Button>
               </Link>
@@ -75,8 +89,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* AI Recipe Suggestions */}
             <div className="text-center">
-              <div className="bg-primary-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Brain className="h-8 w-8 text-primary-600" />
+              <div className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Brain className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 AI-Powered Suggestions
@@ -88,8 +102,8 @@ export default function Home() {
 
             {/* Meal Planning */}
             <div className="text-center">
-              <div className="bg-coral-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-coral-600" />
+              <div className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 Weekly Meal Planning
@@ -101,8 +115,8 @@ export default function Home() {
 
             {/* Smart Grocery Lists */}
             <div className="text-center">
-              <div className="bg-primary-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <ShoppingCart className="h-8 w-8 text-primary-600" />
+              <div className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <ShoppingCart className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 Smart Grocery Lists
@@ -114,8 +128,8 @@ export default function Home() {
 
             {/* Recipe Collections */}
             <div className="text-center">
-              <div className="bg-coral-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Star className="h-8 w-8 text-coral-600" />
+              <div className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Star className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
                 Recipe Collections
@@ -130,7 +144,7 @@ export default function Home() {
 
       {/* Popular Recipes Preview */}
             {/* Recipe Showcase */}
-      <section className="py-20 bg-background-secondary">
+      <section className="py-20  ">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -143,9 +157,19 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-background-card rounded-lg shadow-sm border border-border overflow-hidden">
+              <div 
+                key={i} 
+                className={cn(
+                  "bg-background-card rounded-lg shadow-sm border border-border overflow-hidden",
+                  "transform transition-[transform,shadow,border-color] duration-700 ease-out",
+                  "hover:scale-102 hover:shadow-md hover:border-primary-200 cursor-pointer"
+                )}
+              >
                 <div className="p-6">
-                  <ChefHat className="h-12 w-12 text-primary-600 mb-4" />
+                  <ChefHat className={cn(
+                    "h-12 w-12 text-primary-600 mb-4",
+                    "transition-colors duration-400 ease-out hover:text-coral-500"
+                  )} />
                   <h3 className="text-lg font-semibold text-foreground mb-2">
                     Delicious Recipe {i}
                   </h3>
@@ -176,7 +200,14 @@ export default function Home() {
             Join thousands of home cooks who are already making meal planning easier with SmartPlates.
           </p>
           <Link href="/register">
-            <Button variant="outline" size="lg" className=" text-foreground-inverse bg-accent hover:bg-accent/70 px-8 py-3">
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className={cn(
+                "text-foreground-inverse bg-accent hover:bg-accent/70",
+                "px-8 py-3"
+              )}
+            >
               Start Your Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>

@@ -10,30 +10,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format a date to a readable string
- */
-export function formatDate(date: Date | string): string {
-  const d = new Date(date)
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
-
-/**
- * Format a date to a short string
- */
-export function formatDateShort(date: Date | string): string {
-  const d = new Date(date)
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  })
-}
-
-/**
  * Capitalize the first letter of a string
  */
 export function capitalize(str: string): string {

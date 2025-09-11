@@ -28,9 +28,10 @@ export default function Home() {
           backfaceVisibility: 'hidden',
           transform: 'translateZ(0)',
         }}
+        aria-label="Hero section"
       >
         {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="absolute inset-0 bg-black/30" aria-hidden="true"></div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
@@ -50,11 +51,12 @@ export default function Home() {
                   size="lg" 
                   className={cn(
                     "bg-coral-500 hover:bg-coral-600 text-white",
-                    "px-8 py-3 shadow-lg"
+                    "px-8 py-3 shadow-lg focus:outline-none focus:ring-2 focus:ring-coral-300 focus:ring-offset-2"
                   )}
+                  aria-label="Get started with SmartPlates for free"
                 >
                   Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
                 </Button>
               </Link>
               <Link href="/recipe">
@@ -63,8 +65,10 @@ export default function Home() {
                   size="lg" 
                   className={cn(
                     "px-8 py-3 bg-white/10 backdrop-blur-sm shadow-lg",
-                    "border-white/30 text-white hover:bg-white/20"
+                    "border-white/30 text-white hover:bg-white/20",
+                    "focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2"
                   )}
+                  aria-label="Browse available recipes"
                 >
                   Browse Recipes
                 </Button>
@@ -75,7 +79,10 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-background">
+      <section 
+        className="py-20 bg-background"
+        aria-label="Features and benefits"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -86,10 +93,13 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" role="list">
             {/* AI Recipe Suggestions */}
-            <div className="text-center">
-              <div className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <div className="text-center" role="listitem">
+              <div 
+                className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"
+                aria-hidden="true"
+              >
                 <Brain className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -101,8 +111,11 @@ export default function Home() {
             </div>
 
             {/* Meal Planning */}
-            <div className="text-center">
-              <div className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <div className="text-center" role="listitem">
+              <div 
+                className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"
+                aria-hidden="true"
+              >
                 <Calendar className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -114,8 +127,11 @@ export default function Home() {
             </div>
 
             {/* Smart Grocery Lists */}
-            <div className="text-center">
-              <div className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <div className="text-center" role="listitem">
+              <div 
+                className="bg-primary-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"
+                aria-hidden="true"
+              >
                 <ShoppingCart className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -127,8 +143,11 @@ export default function Home() {
             </div>
 
             {/* Recipe Collections */}
-            <div className="text-center">
-              <div className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <div className="text-center" role="listitem">
+              <div 
+                className="bg-coral-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4"
+                aria-hidden="true"
+              >
                 <Star className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">
@@ -205,11 +224,12 @@ export default function Home() {
               size="lg" 
               className={cn(
                 "text-foreground-inverse bg-accent hover:bg-accent/70 shadow-lg",
-                "px-8 py-3"
+                "px-8 py-3 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
               )}
+              aria-label="Start your free trial with SmartPlates"
             >
               Start Your Free Trial
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
             </Button>
           </Link>
         </div>

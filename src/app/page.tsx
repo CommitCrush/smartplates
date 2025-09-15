@@ -11,17 +11,18 @@
 import Link from 'next/link';
 import { ArrowRight, Brain, Calendar, ChefHat, ShoppingCart, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ChefHat, Search, Calendar, ShoppingCart, Users, Star, Clock, Heart } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import Layout from '@/components/layout/Layout';
+
 
 export default function HomePage() {
   return (
     <Layout>
       {/* Hero Section - Mobile-First Responsive */}
       <section 
-        className="relative pt-20 sm:pt-32 md:pt-40 lg:pt-52 pb-10 sm:pb-12 md:pb-16 lg:pb-20 min-h-[70vh] sm:min-h-[75vh] md:min-h-[80vh] bg-no-repeat"
+        className="relative pt-20 sm:pt-32 md:pt-40 lg:pt-52 pb-10 sm:pb-12 md:pb-16 lg:pb-20 min-h-[100vh] w-full bg-no-repeat"
         style={{
-          backgroundImage: "url('/hero-background.png')",
+          backgroundImage: "url('/hero-sction-background.png')",
           backgroundSize: 'cover',
           backgroundPosition: 'center center',
           imageRendering: 'crisp-edges',
@@ -31,15 +32,15 @@ export default function HomePage() {
         aria-label="Hero section"
       >
         {/* Overlay for better text readability - Darker on mobile */}
-        <div className="absolute inset-0 bg-black/40 sm:bg-black/30" aria-hidden="true"></div>
+        <div aria-hidden="true"></div>
         
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-full sm:max-w-2xl lg:max-w-3xl">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 drop-shadow-lg leading-tight">
+        <div className="relative z-10 pl-2 sm:pl-4 lg:pl-6">
+          <div className="max-w-full sm:max-w-2xl lg:max-w-3xl ml-0 mt-20 sm:mt-32 md:mt-40">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-900 mb-4 sm:mb-6 drop-shadow-lg leading-tight">
               Smart Meal Planning
-              <span className="block text-primary-300">Made Simple</span>
+              <span className="block text-primary-700">Made Simple</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 drop-shadow-md leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-primary-800 mb-6 sm:mb-8 drop-shadow-md leading-relaxed">
               Discover delicious recipes, plan your weekly meals, and get AI-powered cooking suggestions. 
               SmartPlates makes home cooking easier and more organized than ever.
             </p>
@@ -63,10 +64,10 @@ export default function HomePage() {
                   variant="outline" 
                   className={cn(
                     "w-full sm:w-auto px-3 sm:px-8 py-1.5 sm:py-4 text-xs sm:text-lg",
-                    "bg-white/15 sm:bg-white/10 backdrop-blur-sm shadow-lg",
-                    "border-white/40 sm:border-white/30 text-white hover:bg-white/25 sm:hover:bg-white/20",
+                    "bg-primary-100/20 backdrop-blur-sm shadow-lg",
+                    "border-primary-700 text-primary-900 hover:bg-primary-200 hover:text-primary-900",
                     "min-h-[32px] sm:min-h-[56px] h-auto rounded-md", 
-                    "focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2"
+                    "focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2"
                   )}
                   aria-label="Browse available recipes"
                 >
@@ -109,7 +110,7 @@ export default function HomePage() {
               <p className="text-sm sm:text-base text-foreground-muted leading-relaxed">
                 Get personalized recipe recommendations based on your ingredients and preferences.
               </p>
-            </Card>
+            </div>
 
             {/* Meal Planning */}
             <div className="text-center p-4 sm:p-0" role="listitem">
@@ -157,7 +158,7 @@ export default function HomePage() {
               <p className="text-sm sm:text-base text-foreground-muted leading-relaxed">
                 Save and organize your favorite recipes in personalized collections.
               </p>
-            </Card>
+            </div>
           </div>
         </div>
       </section>
@@ -293,12 +294,12 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section - Mobile-First Responsive */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-primary-700">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-primary-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground-inverse mb-3 sm:mb-4 leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-primary-900 mb-3 sm:mb-4 leading-tight">
             Ready to Transform Your Cooking?
           </h2>
-          <p className="text-base sm:text-lg md:text-xl text-primary-100 mb-6 sm:mb-8 leading-relaxed px-4 sm:px-0">
+          <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-primary-700 mb-6 sm:mb-8 leading-relaxed px-4 sm:px-0">
             Join thousands of home cooks who are already making meal planning easier with SmartPlates.
           </p>
           <Link href="/register">
@@ -321,6 +322,6 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
-    </div>
+    </Layout>
   );
 }

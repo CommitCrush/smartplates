@@ -3,29 +3,41 @@
 
 @layer base {
   :root {
-    /* Primary Brand Colors */
-    --color-primary-50: #f8fcf6;
-    --color-primary-100: #f1f8eb;
-    --color-primary-200: #e6f0da;
-    --color-primary-300: #d7e4c6;
-    --color-primary-400: #d0dcc2;
-    --color-primary-500: #c8d4be;
-    --color-primary-600: #b4c0ab;
-    --color-primary-700: #a0ac98;
-    --color-primary-800: #8c9885;
-    --color-primary-900: #788472;
+    /* Primary Brand Colors - Sage Green (#A6BA8D) */
+    --color-primary-50: #f6f8f4;
+    --color-primary-100: #EEF3E6;
+    --color-primary-200: #d9e3cf;
+    --color-primary-300: #c6d5b7;
+    --color-primary-400: #b3c79f;
+    --color-primary-500: #a6ba8d;
+    --color-primary-600: #94a67a;
+    --color-primary-700: #829267;
+    --color-primary-800: #707e54;
+    --color-primary-900: #5e6a41;
 
-    /* Coral Colors */
+    /* Coral/Orange Contrast Colors (#FA6552) */
     --color-coral-50: #fef8f7;
-    --color-coral-100: #fdf1ee;
-    --color-coral-200: #fbe2dc;
-    --color-coral-300: #f9c9c0;
-    --color-coral-400: #f89787;
-    --color-coral-500: #f7654e;
-    --color-coral-600: #de5b46;
-    --color-coral-700: #c5513e;
-    --color-coral-800: #ac4736;
-    --color-coral-900: #933d2e;
+    --color-coral-100: #fdf1ef;
+    --color-coral-200: #fbe3df;
+    --color-coral-300: #f9d5cf;
+    --color-coral-400: #f7a798;
+    --color-coral-500: #fa6552;
+    --color-coral-600: #e15c4a;
+    --color-coral-700: #c85242;
+    --color-coral-800: #af493a;
+    --color-coral-900: #963f32;
+
+    /* Statistics Green (#0BB669) - Future Use */
+    --color-success-50: #f0fdf4;
+    --color-success-100: #dcfce7;
+    --color-success-200: #bbf7d0;
+    --color-success-300: #86efac;
+    --color-success-400: #4ade80;
+    --color-success-500: #0bb669;
+    --color-success-600: #16a34a;
+    --color-success-700: #15803d;
+    --color-success-800: #166534;
+    --color-success-900: #14532d;
 
     /* Neutral Colors */
     --color-neutral-50: #fafafa;
@@ -43,13 +55,16 @@
     --color-background: #fefefe;
     --color-background-secondary: #fbfcfa;
     --color-background-card: #ffffff;
+    --color-background-cta: #eef3e6;
+    --color-background-footer: #eef3e6;
     --color-foreground: #18181b;
     --color-foreground-muted: #71717a;
     --color-foreground-subtle: #a1a1aa;
     --color-foreground-inverse: #fefefe;
+    --color-foreground-cta: #18181b;
     --color-border: #e4e4e7;
     --color-border-muted: #f4f4f5;
-    --color-accent: #f7654e;
+    --color-accent: #fa6552;
     --color-muted: #f4f4f5;
 
     /* Design Tokens */
@@ -115,44 +130,47 @@
     --color-background: #0d1117;          /* GitHub-inspired deep dark */
     --color-background-secondary: #161b22; /* Subtly lighter for sections */
     --color-background-card: #21262d;     /* Card backgrounds with depth */
+    --color-background-cta: #1a2b1e;      /* Dark sage green for CTA section */
+    --color-background-footer: #1a2b1e;   /* Dark sage green for footer */
     
     /* Professional Dark Mode Text - Optimierte Kontraste */
     --color-foreground: #f0f6fc;          /* Soft white, easy on eyes */
     --color-foreground-muted: #8b949e;    /* Perfect gray for secondary text */
     --color-foreground-subtle: #6e7681;   /* Subtle gray for tertiary content */
     --color-foreground-inverse: #0d1117;  /* Dark text on light backgrounds */
+    --color-foreground-cta: #f0f6fc;      /* Light text for dark CTA background */
     
     /* Professional Dark Mode Borders - Subtle divisions */
     --color-border: #30363d;              /* Subtle border that doesn't clash */
     --color-border-muted: #21262d;        /* Even more subtle borders */
     
-    /* Dark Mode Accent - Warm and inviting */
-    --color-accent: #fd7e47;              /* Warmer coral for better visibility */
+    /* Dark Mode Accent - Updated with new coral */
+    --color-accent: #fa6552;              /* New coral color for consistency */
     --color-muted: #161b22;               /* Consistent with secondary bg */
     
-    /* Dark Mode Primary Colors - Sophisticated green palette */
-    --color-primary-50: #0c1910;          /* Very dark green for deep backgrounds */
-    --color-primary-100: #1a2b1e;         /* Dark green accents */
-    --color-primary-200: #2d4a34;         /* Medium dark green */
-    --color-primary-300: #3d5f47;         /* Professional green for UI elements */
-    --color-primary-400: #4d7357;         /* Balanced green */
-    --color-primary-500: #6ba76f;         /* Vibrant but not harsh green */
-    --color-primary-600: #81bb85;         /* Light green for hover states */
-    --color-primary-700: #98d09c;         /* Bright green for highlights */
-    --color-primary-800: #b0e5b4;         /* Very light green */
-    --color-primary-900: #c7f0ca;         /* Pale green for backgrounds */
+    /* Dark Mode Primary Colors - Updated Sage Green (#A6BA8D) for dark mode */
+    --color-primary-50: #0f1411;          /* Very dark sage for deep backgrounds */
+    --color-primary-100: #1d241b;         /* Dark sage accents */
+    --color-primary-200: #2e3b2a;         /* Medium dark sage */
+    --color-primary-300: #3f5239;         /* Professional sage for UI elements */
+    --color-primary-400: #506948;         /* Balanced sage */
+    --color-primary-500: #a6ba8d;         /* Main sage color */
+    --color-primary-600: #b4c49c;         /* Light sage for hover states */
+    --color-primary-700: #c2ceab;         /* Bright sage for highlights */
+    --color-primary-800: #d0d8ba;         /* Very light sage */
+    --color-primary-900: #dee2c9;         /* Pale sage for backgrounds */
     
-    /* Dark Mode Coral Colors - Warmer and more sophisticated */
-    --color-coral-50: #2c1810;            /* Deep warm brown */
-    --color-coral-100: #4a2818;           /* Dark coral base */
-    --color-coral-200: #6b3d2a;           /* Medium coral */
-    --color-coral-300: #8c4f3a;           /* Balanced coral */
-    --color-coral-400: #b5644a;           /* Professional coral */
-    --color-coral-500: #fd7e47;           /* Main coral - warmer tone */
-    --color-coral-600: #ff9a6b;           /* Light coral for hover */
-    --color-coral-700: #ffb892;           /* Bright coral */
-    --color-coral-800: #ffd4b8;           /* Very light coral */
-    --color-coral-900: #ffebde;           /* Pale coral */
+    /* Dark Mode Coral Colors - Updated (#FA6552) */
+    --color-coral-50: #2c1612;            /* Deep warm brown */
+    --color-coral-100: #4a261c;           /* Dark coral base */
+    --color-coral-200: #6b3826;           /* Medium coral */
+    --color-coral-300: #8c4a30;           /* Balanced coral */
+    --color-coral-400: #b55c3a;           /* Professional coral */
+    --color-coral-500: #fa6552;           /* Main coral - new color */
+    --color-coral-600: #fb7f6f;           /* Light coral for hover */
+    --color-coral-700: #fc998c;           /* Bright coral */
+    --color-coral-800: #fdb3a9;           /* Very light coral */
+    --color-coral-900: #fecdc6;           /* Pale coral */
     
     /* Dark Mode Neutral Colors - Professional gray scale */
     --color-neutral-50: #0d1117;          /* Deepest dark */
@@ -265,18 +283,14 @@
   .hover\:bg-accent\/70:hover { background-color: color-mix(in srgb, var(--color-accent) 70%, transparent); }
   .hover\:bg-accent\/90:hover { background-color: color-mix(in srgb, var(--color-accent) 90%, transparent); }
   
-  /* Footer utilities - Light mode dark, Dark mode unchanged */
-  .bg-footer-dark { background-color: var(--color-neutral-900); }
-  .dark .bg-footer-dark { background-color: var(--color-background-secondary); }
+  /* Footer utilities - Updated with new background color */
+  .bg-footer-dark { background-color: var(--color-background-footer); }
   
-  .text-footer-light { color: white; }
-  .dark .text-footer-light { color: var(--color-foreground); }
+  .text-footer-light { color: var(--color-foreground); }
   
-  .text-footer-light-muted { color: rgba(255, 255, 255, 0.8); }
-  .dark .text-footer-light-muted { color: var(--color-foreground-muted); }
+  .text-footer-light-muted { color: var(--color-foreground-muted); }
   
-  .text-footer-light-subtle { color: rgba(255, 255, 255, 0.7); }
-  .dark .text-footer-light-subtle { color: var(--color-foreground-secondary); }
+  .text-footer-light-subtle { color: var(--color-foreground-subtle); }
   
   /* Navbar specific utilities */
   .navbar-bg { 
@@ -518,5 +532,19 @@
 
   .skip-link:focus {
     top: 6px;
+  }
+
+  /* CTA Section Utility Classes */
+  .bg-cta {
+    background-color: var(--color-background-cta);
+  }
+
+  .text-cta {
+    color: var(--color-foreground-cta);
+  }
+
+  /* Footer Utility Classes */
+  .bg-footer {
+    background-color: var(--color-background-footer);
   }
 }

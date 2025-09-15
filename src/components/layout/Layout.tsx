@@ -10,6 +10,7 @@
 
 import Navbar from './Navbar';
 import Footer from './Footer';
+import { SKIP_LINK_STYLES } from '@/utils/accessibility';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,11 +20,24 @@ interface LayoutProps {
 export default function Layout({ children, className = '' }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Skip to main content link for keyboard users */}
+      <a 
+        href="#main-content" 
+        className={SKIP_LINK_STYLES}
+      >
+        Skip to main content
+      </a>
+      
       {/* Navigation */}
       <Navbar />
       
       {/* Main Content */}
-      <main className={`flex-1 ${className}`}>
+      <main 
+        id="main-content"
+        className={`flex-1 ${className}`}
+        role="main"
+        tabIndex={-1}
+      >
         {children}
       </main>
       

@@ -96,7 +96,11 @@ export default function Navbar() {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <nav className="navbar-bg shadow-navbar border-b border-border sticky top-0 z-50">
+    <nav 
+      className="navbar-bg shadow-navbar border-b border-border sticky top-0 z-50"
+      role="navigation"
+      aria-label="Main navigation"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
@@ -113,8 +117,9 @@ export default function Navbar() {
               variant="ghost"
               size="sm"
               onClick={toggleDarkMode}
-              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-lg"
+              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-pressed={isDarkMode}
             >
               {isDarkMode ? (
                 <Sun className="h-5 w-5 text-foreground" />
@@ -126,23 +131,29 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
+            <div className="ml-10 flex items-baseline space-x-4" role="menubar">
               {/* Public Navigation */}
               <Link
                 href="/recipe"
-                className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                role="menuitem"
+                tabIndex={0}
               >
                 Recipes
               </Link>
               <Link
                 href="/cookware"
-                className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                role="menuitem"
+                tabIndex={0}
               >
                 Cookware
               </Link>
               <Link
                 href="/about"
-                className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                role="menuitem"
+                tabIndex={0}
               >
                 About
               </Link>
@@ -185,13 +196,18 @@ export default function Navbar() {
                   <Button
                     variant="outline"
                     onClick={() => signIn('google')}
-                    className="text-sm bg-accent hover:bg-accent/70 text-white"
+                    className="text-sm bg-accent hover:bg-accent/70 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                    aria-label="Sign in with Google"
                   >
                     Sign In
                   </Button>
                   
                   <Link href="/register">
-                    <Button variant="outline" className="text-sm bg-accent hover:bg-accent/70 text-white">
+                    <Button 
+                      variant="outline" 
+                      className="text-sm bg-accent hover:bg-accent/70 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                      aria-label="Get started with SmartPlates"
+                    >
                       Get Started
                     </Button>
                   </Link>
@@ -228,27 +244,15 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Mobile menu button and dark mode toggle */}
-          <div className="md:hidden flex items-center space-x-2">
-            {/* Mobile Dark Mode Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleDarkMode}
-              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDarkMode ? (
-                <Sun className="h-5 w-5 text-foreground" />
-              ) : (
-                <Moon className="h-5 w-5 text-foreground" />
-              )}
-            </Button>
-            
+          {/* Mobile menu button */}
+          <div className="md:hidden">
             <Button
               variant="ghost"
               onClick={toggleMenu}
-              className="text-foreground"
+              className="text-foreground shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+              aria-label={isMenuOpen ? 'Close main menu' : 'Open main menu'}
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
             >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -262,27 +266,38 @@ export default function Navbar() {
 
       {/* Mobile Navigation Menu */}
       {isMenuOpen && (
-        <div className="md:hidden">
+        <div 
+          className="md:hidden"
+          id="mobile-menu"
+          role="menu"
+          aria-label="Mobile navigation menu"
+        >
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-background-card border-t border-border">
             {/* Public Mobile Navigation */}
             <Link
               href="/recipe"
-              className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+              className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               onClick={() => setIsMenuOpen(false)}
+              role="menuitem"
+              tabIndex={0}
             >
               Recipes
             </Link>
             <Link
               href="/cookware"
-              className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+              className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               onClick={() => setIsMenuOpen(false)}
+              role="menuitem"
+              tabIndex={0}
             >
               Cookware
             </Link>
             <Link
               href="/about"
-              className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+              className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               onClick={() => setIsMenuOpen(false)}
+              role="menuitem"
+              tabIndex={0}
             >
               About
             </Link>
@@ -336,16 +351,22 @@ export default function Navbar() {
             <div className="pt-4 pb-3 border-t border-border">
               {!isAuthenticated ? (
                 <div className="space-y-2">
-                  <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                    >
-                      Sign In
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      signIn('google');
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                    aria-label="Sign in with Google"
+                  >
+                    Sign In with Google
+                  </Button>
                   <Link href="/register" onClick={() => setIsMenuOpen(false)}>
-                    <Button className="w-full bg-accent hover:bg-accent/90">
+                    <Button 
+                      className="w-full bg-accent hover:bg-accent/90 shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                      aria-label="Get started with SmartPlates"
+                    >
                       Get Started
                     </Button>
                   </Link>

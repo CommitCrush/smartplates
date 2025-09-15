@@ -22,7 +22,7 @@ export default function HomePage() {
       <section 
         className="relative pt-20 sm:pt-32 md:pt-40 lg:pt-52 pb-10 sm:pb-12 md:pb-16 lg:pb-20 min-h-[100vh] w-full bg-no-repeat"
         style={{
-          backgroundImage: "url('/hero-sction-background.png')",
+          backgroundImage: "url('/images/hero-background.png')",
           backgroundSize: 'cover',
           backgroundPosition: 'center center',
           imageRendering: 'crisp-edges',

@@ -55,7 +55,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 ## Phase 2: Core Recipe System (Woche 2)
 **Priorität: HOCH - Hauptfunktionalität**
 
-### 🍳 **Developer 1: Recipe Management**
+### 🍳 **Developer 1: Recipe Management** (Rozn)
 - [ ] Recipe Model & Schema
 - [ ] Recipe CRUD API Endpoints
 - [ ] Recipe Upload Form mit Validierung
@@ -63,7 +63,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Image/Video Upload Integration
 - [ ] Recipe Categories & Tags System
 
-### 🔍 **Developer 2: Search & Filter System**
+### 🔍 **Developer 2: Search & Filter System** ()
 - [ ] Advanced Recipe Search Functionality
 - [ ] Filter System (Kategorien, Allergien, Zeit)
 - [ ] Search Results Components
@@ -71,7 +71,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Quick & Easy Recipe Filters
 - [ ] Search Performance Optimization
 
-### 📱 **Developer 3: Recipe Display & Interaction**
+### 📱 **Developer 3: Recipe Display & Interaction** (Monika)
 - [ ] Recipe Card Components
 - [ ] Recipe Detail Page
 - [ ] Recipe Rating System
@@ -79,7 +79,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Favorite/Save Recipe Functionality
 - [ ] Recipe Sharing Features
 
-### 🗓️ **Developer 4: Meal Planning Core**
+### 🗓️ **Developer 4: Meal Planning Core** (Ese)
 - [ ] Meal Plan Model & Database Schema
 - [ ] Calendar View Component
 - [ ] Drag & Drop Meal Planning

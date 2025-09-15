@@ -1,1 +1,550 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Primary Brand Colors - Sage Green (#A6BA8D) */
+    --color-primary-50: #f6f8f4;
+    --color-primary-100: #EEF3E6;
+    --color-primary-200: #d9e3cf;
+    --color-primary-300: #c6d5b7;
+    --color-primary-400: #b3c79f;
+    --color-primary-500: #a6ba8d;
+    --color-primary-600: #94a67a;
+    --color-primary-700: #829267;
+    --color-primary-800: #707e54;
+    --color-primary-900: #5e6a41;
+
+    /* Coral/Orange Contrast Colors (#FA6552) */
+    --color-coral-50: #fef8f7;
+    --color-coral-100: #fdf1ef;
+    --color-coral-200: #fbe3df;
+    --color-coral-300: #f9d5cf;
+    --color-coral-400: #f7a798;
+    --color-coral-500: #fa6552;
+    --color-coral-600: #e15c4a;
+    --color-coral-700: #c85242;
+    --color-coral-800: #af493a;
+    --color-coral-900: #963f32;
+
+    /* Statistics Green (#0BB669) - Future Use */
+    --color-success-50: #f0fdf4;
+    --color-success-100: #dcfce7;
+    --color-success-200: #bbf7d0;
+    --color-success-300: #86efac;
+    --color-success-400: #4ade80;
+    --color-success-500: #0bb669;
+    --color-success-600: #16a34a;
+    --color-success-700: #15803d;
+    --color-success-800: #166534;
+    --color-success-900: #14532d;
+
+    /* Neutral Colors */
+    --color-neutral-50: #fafafa;
+    --color-neutral-100: #f4f4f5;
+    --color-neutral-200: #e4e4e7;
+    --color-neutral-300: #d4d4d8;
+    --color-neutral-400: #a1a1aa;
+    --color-neutral-500: #71717a;
+    --color-neutral-600: #52525b;
+    --color-neutral-700: #3f3f46;
+    --color-neutral-800: #27272a;
+    --color-neutral-900: #18181b;
+
+    /* Semantic Colors */
+    --color-background: #fefefe;
+    --color-background-secondary: #fbfcfa;
+    --color-background-card: #ffffff;
+    --color-background-cta: #eef3e6;
+    --color-background-footer: #eef3e6;
+    --color-foreground: #18181b;
+    --color-foreground-muted: #71717a;
+    --color-foreground-subtle: #a1a1aa;
+    --color-foreground-inverse: #fefefe;
+    --color-foreground-cta: #18181b;
+    --color-border: #e4e4e7;
+    --color-border-muted: #f4f4f5;
+    --color-accent: #fa6552;
+    --color-muted: #f4f4f5;
+
+    /* Design Tokens */
+    
+    /* Spacing Scale - Based on 4px grid system */
+    --space-1: 0.25rem;   /* 4px */
+    --space-2: 0.5rem;    /* 8px */
+    --space-3: 0.75rem;   /* 12px */
+    --space-4: 1rem;      /* 16px */
+    --space-5: 1.25rem;   /* 20px */
+    --space-6: 1.5rem;    /* 24px */
+    --space-7: 1.75rem;   /* 28px */
+    --space-8: 2rem;      /* 32px */
+    --space-9: 2.25rem;   /* 36px */
+    --space-10: 2.5rem;   /* 40px */
+    --space-11: 2.75rem;  /* 44px */
+    --space-12: 3rem;     /* 48px */
+
+    /* Border Radius Scale */
+    --radius-none: 0;
+    --radius-xs: 0.125rem;   /* 2px */
+    --radius-sm: 0.25rem;    /* 4px */
+    --radius-md: 0.375rem;   /* 6px */
+    --radius-lg: 0.5rem;     /* 8px */
+    --radius-xl: 0.75rem;    /* 12px */
+    --radius-2xl: 1rem;      /* 16px */
+    --radius-3xl: 1.5rem;    /* 24px */
+    --radius-full: 9999px;   /* Fully rounded */
+
+    /* Shadow Scale */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+    --shadow-none: 0 0 #0000;
+
+    /* Typography Scale */
+    --text-xs: 0.75rem;     /* 12px */
+    --text-sm: 0.875rem;    /* 14px */
+    --text-base: 1rem;      /* 16px */
+    --text-lg: 1.125rem;    /* 18px */
+    --text-xl: 1.25rem;     /* 20px */
+    --text-2xl: 1.5rem;     /* 24px */
+    --text-3xl: 1.875rem;   /* 30px */
+    --text-4xl: 2.25rem;    /* 36px */
+    --text-5xl: 3rem;       /* 48px */
+    --text-6xl: 3.75rem;    /* 60px */
+
+    /* Line Heights for Typography */
+    --leading-none: 1;
+    --leading-tight: 1.25;
+    --leading-snug: 1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+    --leading-loose: 2;
+  }
+
+  .dark {
+    /* Professional Dark Mode Backgrounds - Warme, tiefe Töne */
+    --color-background: #0d1117;          /* GitHub-inspired deep dark */
+    --color-background-secondary: #161b22; /* Subtly lighter for sections */
+    --color-background-card: #21262d;     /* Card backgrounds with depth */
+    --color-background-cta: #1a2b1e;      /* Dark sage green for CTA section */
+    --color-background-footer: #1a2b1e;   /* Dark sage green for footer */
+    
+    /* Professional Dark Mode Text - Optimierte Kontraste */
+    --color-foreground: #f0f6fc;          /* Soft white, easy on eyes */
+    --color-foreground-muted: #8b949e;    /* Perfect gray for secondary text */
+    --color-foreground-subtle: #6e7681;   /* Subtle gray for tertiary content */
+    --color-foreground-inverse: #0d1117;  /* Dark text on light backgrounds */
+    --color-foreground-cta: #f0f6fc;      /* Light text for dark CTA background */
+    
+    /* Professional Dark Mode Borders - Subtle divisions */
+    --color-border: #30363d;              /* Subtle border that doesn't clash */
+    --color-border-muted: #21262d;        /* Even more subtle borders */
+    
+    /* Dark Mode Accent - Updated with new coral */
+    --color-accent: #fa6552;              /* New coral color for consistency */
+    --color-muted: #161b22;               /* Consistent with secondary bg */
+    
+    /* Dark Mode Primary Colors - Updated Sage Green (#A6BA8D) for dark mode */
+    --color-primary-50: #0f1411;          /* Very dark sage for deep backgrounds */
+    --color-primary-100: #1d241b;         /* Dark sage accents */
+    --color-primary-200: #2e3b2a;         /* Medium dark sage */
+    --color-primary-300: #3f5239;         /* Professional sage for UI elements */
+    --color-primary-400: #506948;         /* Balanced sage */
+    --color-primary-500: #a6ba8d;         /* Main sage color */
+    --color-primary-600: #b4c49c;         /* Light sage for hover states */
+    --color-primary-700: #c2ceab;         /* Bright sage for highlights */
+    --color-primary-800: #d0d8ba;         /* Very light sage */
+    --color-primary-900: #dee2c9;         /* Pale sage for backgrounds */
+    
+    /* Dark Mode Coral Colors - Updated (#FA6552) */
+    --color-coral-50: #2c1612;            /* Deep warm brown */
+    --color-coral-100: #4a261c;           /* Dark coral base */
+    --color-coral-200: #6b3826;           /* Medium coral */
+    --color-coral-300: #8c4a30;           /* Balanced coral */
+    --color-coral-400: #b55c3a;           /* Professional coral */
+    --color-coral-500: #fa6552;           /* Main coral - new color */
+    --color-coral-600: #fb7f6f;           /* Light coral for hover */
+    --color-coral-700: #fc998c;           /* Bright coral */
+    --color-coral-800: #fdb3a9;           /* Very light coral */
+    --color-coral-900: #fecdc6;           /* Pale coral */
+    
+    /* Dark Mode Neutral Colors - Professional gray scale */
+    --color-neutral-50: #0d1117;          /* Deepest dark */
+    --color-neutral-100: #161b22;         /* Dark gray */
+    --color-neutral-200: #21262d;         /* Medium dark gray */
+    --color-neutral-300: #30363d;         /* Balanced gray */
+    --color-neutral-400: #484f58;         /* Medium gray */
+    --color-neutral-500: #6e7681;         /* Light gray */
+    --color-neutral-600: #8b949e;         /* Lighter gray */
+    --color-neutral-700: #adb5bd;         /* Very light gray */
+    --color-neutral-800: #ced4da;         /* Near white gray */
+    --color-neutral-900: #f0f6fc;         /* Almost white */
+
+    /* Dark Mode Shadow Scale - Enhanced shadows for dark backgrounds */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+    --shadow-none: 0 0 #0000;
+  }
+
+  /* Base element styling */
+  * {
+    border-color: var(--color-border);
+  }
+  
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-foreground);
+    font-weight: 600;
+    line-height: 1.25;
+  }
+  
+  p {
+    color: var(--color-foreground-muted);
+    line-height: 1.625;
+  }
+}
+
+@layer utilities {
+  /* Background utilities */
+  .bg-background { background-color: var(--color-background); }
+  .bg-background-secondary { background-color: var(--color-background-secondary); }
+  .bg-background-card { background-color: var(--color-background-card); }
+  
+  /* Text utilities */
+  .text-foreground { color: var(--color-foreground); }
+  .text-foreground-muted { color: var(--color-foreground-muted); }
+  .text-foreground-subtle { color: var(--color-foreground-subtle); }
+  .text-foreground-inverse { color: var(--color-foreground-inverse); }
+  
+  /* Primary colors */
+  .text-primary-100 { color: var(--color-primary-100); }
+  .text-primary-300 { color: var(--color-primary-300); }
+  .text-primary-400 { color: var(--color-primary-400); }
+  .text-primary-500 { color: var(--color-primary-500); }
+  .text-primary-600 { color: var(--color-primary-600); }
+  .text-primary-700 { color: var(--color-primary-700); }
+  .bg-primary-50 { background-color: var(--color-primary-50); }
+  .bg-primary-100 { background-color: var(--color-primary-100); }
+  .bg-primary-600 { background-color: var(--color-primary-600); }
+  .bg-primary-700 { background-color: var(--color-primary-700); }
+  
+  /* Coral colors */
+  .text-coral-500 { color: var(--color-coral-500); }
+  .text-coral-600 { color: var(--color-coral-600); }
+  .bg-coral-100 { background-color: var(--color-coral-100); }
+  .bg-coral-500 { background-color: var(--color-coral-500); }
+  .bg-coral-600 { background-color: var(--color-coral-600); }
+  .hover\:bg-coral-600:hover { background-color: var(--color-coral-600); }
+  .hover\:bg-coral-700:hover { background-color: var(--color-coral-700); }
+  
+  /* Neutral colors - Enhanced for Navbar/Footer */
+  .text-neutral-500 { color: var(--color-neutral-500); }
+  .text-neutral-600 { color: var(--color-neutral-600); }
+  .text-neutral-700 { color: var(--color-neutral-700); }
+  .text-neutral-900 { color: var(--color-neutral-900); }
+  .bg-neutral-100 { background-color: var(--color-neutral-100); }
+  .bg-neutral-200 { background-color: var(--color-neutral-200); }
+  .bg-neutral-700 { background-color: var(--color-neutral-700); }
+  .bg-neutral-800 { background-color: var(--color-neutral-800); }
+  .bg-neutral-900 { background-color: var(--color-neutral-900); }
+  .hover\:bg-neutral-100:hover { background-color: var(--color-neutral-100); }
+  .hover\:bg-neutral-200:hover { background-color: var(--color-neutral-200); }
+  .hover\:bg-neutral-700:hover { background-color: var(--color-neutral-700); }
+  .hover\:bg-neutral-800:hover { background-color: var(--color-neutral-800); }
+  
+  /* Border utilities - Enhanced for components */
+  .border-border { border-color: var(--color-border); }
+  .border-border-muted { border-color: var(--color-border-muted); }
+  .border-neutral-200 { border-color: var(--color-neutral-200); }
+  .border-neutral-300 { border-color: var(--color-neutral-300); }
+  .border-neutral-700 { border-color: var(--color-neutral-700); }
+  
+  /* Accent utilities */
+  .bg-accent { background-color: var(--color-accent); }
+  .hover\:bg-accent\/70:hover { background-color: color-mix(in srgb, var(--color-accent) 70%, transparent); }
+  .hover\:bg-accent\/90:hover { background-color: color-mix(in srgb, var(--color-accent) 90%, transparent); }
+  
+  /* Footer utilities - Updated with new background color */
+  .bg-footer-dark { background-color: var(--color-background-footer); }
+  
+  .text-footer-light { color: var(--color-foreground); }
+  
+  .text-footer-light-muted { color: var(--color-foreground-muted); }
+  
+  .text-footer-light-subtle { color: var(--color-foreground-subtle); }
+  
+  /* Navbar specific utilities */
+  .navbar-bg { 
+    background-color: var(--color-background); 
+    backdrop-filter: blur(8px);
+    border-color: var(--color-border);
+  }
+  
+  /* Footer specific utilities */
+  .footer-bg { 
+    background-color: var(--color-background-secondary); 
+    border-color: var(--color-border);
+  }
+  
+  /* Component shadows - Dark mode optimized */
+  .shadow-navbar { 
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+  
+  .dark .shadow-navbar { 
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  }
+  
+  .shadow-footer { 
+    box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.1), 0 -1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+  
+  .dark .shadow-footer { 
+    box-shadow: 0 -1px 3px 0 rgba(0, 0, 0, 0.4), 0 -1px 2px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Utility classes for TailwindCSS integration */
+@layer utilities {
+  .text-foreground {
+    color: var(--color-foreground);
+  }
+  
+  .text-foreground-muted {
+    color: var(--color-foreground-muted);
+  }
+  
+  .bg-background {
+    background-color: var(--color-background);
+  }
+  
+  .border-border {
+    border-color: var(--color-border);
+  }
+  
+  .text-primary-500 {
+    color: var(--color-primary-500);
+  }
+  
+  .text-coral-500 {
+    color: var(--color-coral-500);
+  }
+  
+  .bg-coral-500 {
+    background-color: var(--color-coral-500);
+  }
+  
+  .hover\:bg-coral-600:hover {
+    background-color: var(--color-coral-600);
+  }
+  
+  .text-neutral-500 {
+    color: var(--color-neutral-500);
+  }
+  
+  .bg-neutral-100 {
+    background-color: var(--color-neutral-100);
+  }
+  
+  .hover\:bg-neutral-100:hover {
+    background-color: var(--color-neutral-100);
+  }
+  
+  .dark .hover\:bg-neutral-800:hover {
+    background-color: var(--color-neutral-800);
+  }
+
+  /* Design Token Utilities */
+  
+  /* Spacing Utilities */
+  .space-1 { margin: var(--space-1); }
+  .space-2 { margin: var(--space-2); }
+  .space-3 { margin: var(--space-3); }
+  .space-4 { margin: var(--space-4); }
+  .space-5 { margin: var(--space-5); }
+  .space-6 { margin: var(--space-6); }
+  .space-7 { margin: var(--space-7); }
+  .space-8 { margin: var(--space-8); }
+  .space-9 { margin: var(--space-9); }
+  .space-10 { margin: var(--space-10); }
+  .space-11 { margin: var(--space-11); }
+  .space-12 { margin: var(--space-12); }
+  
+  .gap-1 { gap: var(--space-1); }
+  .gap-2 { gap: var(--space-2); }
+  .gap-3 { gap: var(--space-3); }
+  .gap-4 { gap: var(--space-4); }
+  .gap-5 { gap: var(--space-5); }
+  .gap-6 { gap: var(--space-6); }
+  .gap-7 { gap: var(--space-7); }
+  .gap-8 { gap: var(--space-8); }
+  .gap-9 { gap: var(--space-9); }
+  .gap-10 { gap: var(--space-10); }
+  .gap-11 { gap: var(--space-11); }
+  .gap-12 { gap: var(--space-12); }
+
+  /* Border Radius Utilities */
+  .rounded-none { border-radius: var(--radius-none); }
+  .rounded-xs { border-radius: var(--radius-xs); }
+  .rounded-sm { border-radius: var(--radius-sm); }
+  .rounded-md { border-radius: var(--radius-md); }
+  .rounded-lg { border-radius: var(--radius-lg); }
+  .rounded-xl { border-radius: var(--radius-xl); }
+  .rounded-2xl { border-radius: var(--radius-2xl); }
+  .rounded-3xl { border-radius: var(--radius-3xl); }
+  .rounded-full { border-radius: var(--radius-full); }
+
+  /* Shadow Utilities */
+  .shadow-xs { box-shadow: var(--shadow-xs); }
+  .shadow-sm { box-shadow: var(--shadow-sm); }
+  .shadow-md { box-shadow: var(--shadow-md); }
+  .shadow-lg { box-shadow: var(--shadow-lg); }
+  .shadow-xl { box-shadow: var(--shadow-xl); }
+  .shadow-2xl { box-shadow: var(--shadow-2xl); }
+  .shadow-inner { box-shadow: var(--shadow-inner); }
+  .shadow-none { box-shadow: var(--shadow-none); }
+
+  /* Typography Utilities */
+  .text-xs { font-size: var(--text-xs); }
+  .text-sm { font-size: var(--text-sm); }
+  .text-base { font-size: var(--text-base); }
+  .text-lg { font-size: var(--text-lg); }
+  .text-xl { font-size: var(--text-xl); }
+  .text-2xl { font-size: var(--text-2xl); }
+  .text-3xl { font-size: var(--text-3xl); }
+  .text-4xl { font-size: var(--text-4xl); }
+  .text-5xl { font-size: var(--text-5xl); }
+  .text-6xl { font-size: var(--text-6xl); }
+
+  /* Line Height Utilities */
+  .leading-none { line-height: var(--leading-none); }
+  .leading-tight { line-height: var(--leading-tight); }
+  .leading-snug { line-height: var(--leading-snug); }
+  .leading-normal { line-height: var(--leading-normal); }
+  .leading-relaxed { line-height: var(--leading-relaxed); }
+  .leading-loose { line-height: var(--leading-loose); }
+
+  /* Accessibility Utilities */
+  
+  /* Screen Reader Only - Hide visually but keep for screen readers */
+  .sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  /* Show screen reader content when focused */
+  .sr-only:focus,
+  .sr-only:active {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    padding: inherit !important;
+    margin: inherit !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: inherit !important;
+  }
+
+  /* Focus Visible - Only show focus ring for keyboard navigation */
+  .focus-visible:focus {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+
+  /* High Contrast Mode Support */
+  @media (prefers-contrast: high) {
+    .border {
+      border-width: 2px;
+    }
+    
+    .shadow-sm,
+    .shadow-md,
+    .shadow-lg,
+    .shadow-xl,
+    .shadow-2xl {
+      box-shadow: none;
+      border: 2px solid var(--color-border);
+    }
+  }
+
+  /* Reduced Motion Support */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Enhanced Focus Indicators */
+  .focus-ring-default:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-primary-500), 0 0 0 4px var(--color-primary-200);
+  }
+
+  .focus-ring-coral:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-coral-500), 0 0 0 4px var(--color-coral-200);
+  }
+
+  /* Skip Link Styles */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 6px;
+    background: var(--color-primary-600);
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 1000;
+    border-radius: 4px;
+    transition: top 0.3s;
+  }
+
+  .skip-link:focus {
+    top: 6px;
+  }
+
+  /* CTA Section Utility Classes */
+  .bg-cta {
+    background-color: var(--color-background-cta);
+  }
+
+  .text-cta {
+    color: var(--color-foreground-cta);
+  }
+
+  /* Footer Utility Classes */
+  .bg-footer {
+    background-color: var(--color-background-footer);
+  }
+}

@@ -30,12 +30,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.github/ui_ux_issus/
 
 
 
 
-
-
-
-
-
+config/*.json
+.github/ui_ux_issus/

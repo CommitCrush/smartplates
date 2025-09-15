@@ -504,6 +504,359 @@ NEXTAUTH_URL=http://localhost:3000
 - **Centralized Config**: Use configuration files like `src/config/app.ts` for reliable access
 - **Testing**: Test environment variable access in both development and production builds
 
+## Next.js Performance Optimization Guidelines
+
+### Critical Performance Patterns
+
+Langsames Laden in Next.js-Projekten kann verschiedene Gründe haben. Häufig liegt es an einem großen JavaScript-Bundle, langsamer Datenabfrage oder unoptimierten Bildern.
+
+#### 1. JavaScript Bundle Size Optimization
+
+**Problem**: Große JavaScript-Bundle-Größe durch viele Komponenten, Bibliotheken oder Stylesheets.
+
+**Lösungen**:
+
+```tsx
+// ✅ Use next/dynamic for code splitting
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy components
+const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
+  loading: () => <div>Loading...</div>,
+  ssr: false // Disable SSR for client-only components
+});
+
+// Lazy load admin components only when needed
+const AdminDashboard = dynamic(() => import('@/components/admin/Dashboard'), {
+  loading: () => <div className="animate-pulse">Loading Dashboard...</div>
+});
+
+// Conditional imports for role-based components
+const ConditionalComponent = dynamic(() => 
+  import('@/components/AdminPanel').then(mod => ({ default: mod.AdminPanel })), 
+  { ssr: false }
+);
+```
+
+**Bundle Analysis Commands**:
+```bash
+# Analyze bundle size
+ANALYZE=true bun run build
+
+# Check bundle composition
+bun add --dev @next/bundle-analyzer
+```
+
+#### 2. Data Fetching Optimization
+
+**Problem**: Langsame Datenabfrage blockiert Server-Side Rendering.
+
+**Lösungen**:
+
+```tsx
+// ✅ Use Static Site Generation for static content
+export async function generateStaticParams() {
+  const recipes = await getPopularRecipes();
+  return recipes.map((recipe) => ({ id: recipe.id }));
+}
+
+// ✅ Cache API requests
+import { unstable_cache } from 'next/cache';
+
+const getCachedRecipes = unstable_cache(
+  async () => getRecipes(),
+  ['recipes'],
+  { revalidate: 60 * 60 } // 1 hour cache
+);
+
+// ✅ Use streaming for better UX
+import { Suspense } from 'react';
+
+export default function RecipePage() {
+  return (
+    <div>
+      <Suspense fallback={<RecipeSkeleton />}>
+        <RecipeContent />
+      </Suspense>
+      <Suspense fallback={<CommentsSkeleton />}>
+        <RecipeComments />
+      </Suspense>
+    </div>
+  );
+}
+
+// ✅ Parallel data fetching
+async function getRecipeData(id: string) {
+  const [recipe, comments, related] = await Promise.all([
+    getRecipe(id),
+    getComments(id),
+    getRelatedRecipes(id)
+  ]);
+  return { recipe, comments, related };
+}
+```
+
+#### 3. Client-Side Hydration Optimization
+
+**Problem**: Langsame Client-Side-Hydration bei komplexen Komponenten.
+
+**Lösungen**:
+
+```tsx
+// ✅ Minimize hydration complexity
+import { useState, useEffect } from 'react';
+
+// Avoid heavy computations during hydration
+function OptimizedComponent() {
+  const [data, setData] = useState<any>(null);
+  
+  useEffect(() => {
+    // Heavy operations after hydration
+    processHeavyData().then(setData);
+  }, []);
+
+  // Simple initial render
+  if (!data) return <Skeleton />;
+  
+  return <ComplexComponent data={data} />;
+}
+
+// ✅ Use next/dynamic for client-only components
+const ClientOnlyComponent = dynamic(
+  () => import('./ClientOnlyComponent'),
+  { ssr: false }
+);
+
+// ✅ Selective hydration for interactive elements
+function MealPlanPage() {
+  return (
+    <div>
+      {/* Static content - no hydration needed */}
+      <StaticHeader />
+      
+      {/* Interactive content - selective hydration */}
+      <Suspense fallback={<CalendarSkeleton />}>
+        <InteractiveCalendar />
+      </Suspense>
+    </div>
+  );
+}
+```
+
+#### 4. Image Optimization (CRITICAL for SmartPlates)
+
+**Problem**: Unoptimierte Bilder verursachen lange Ladezeiten.
+
+**Lösungen**:
+
+```tsx
+// ✅ Always use next/image for recipe images
+import Image from 'next/image';
+
+function RecipeCard({ recipe }: { recipe: Recipe }) {
+  return (
+    <div className="recipe-card">
+      <Image
+        src={recipe.image}
+        alt={recipe.title}
+        width={400}
+        height={300}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        className="rounded-lg object-cover"
+        priority={recipe.featured} // For hero images
+        placeholder="blur"
+        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBD..." // Base64 placeholder
+      />
+    </div>
+  );
+}
+
+// ✅ Lazy loading for recipe galleries
+function RecipeGallery({ images }: { images: string[] }) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      {images.map((image, index) => (
+        <Image
+          key={index}
+          src={image}
+          alt={`Recipe step ${index + 1}`}
+          width={300}
+          height={200}
+          loading="lazy" // Explicit lazy loading
+          className="rounded"
+        />
+      ))}
+    </div>
+  );
+}
+
+// ✅ Optimize uploaded images before storage
+async function optimizeAndUploadImage(file: File) {
+  // Client-side compression before upload
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  
+  img.onload = () => {
+    // Resize and compress
+    canvas.width = Math.min(800, img.width);
+    canvas.height = Math.min(600, img.height);
+    ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+    
+    canvas.toBlob(async (blob) => {
+      if (blob) {
+        await uploadToCloudStorage(blob);
+      }
+    }, 'image/webp', 0.8); // WebP format, 80% quality
+  };
+  
+  img.src = URL.createObjectURL(file);
+}
+```
+
+#### 5. Performance Monitoring & Metrics
+
+```tsx
+// ✅ Monitor Core Web Vitals
+export function reportWebVitals(metric: any) {
+  if (process.env.NODE_ENV === 'production') {
+    // Send to analytics
+    console.log(metric);
+    
+    // Critical metrics for SmartPlates:
+    // - LCP (Largest Contentful Paint): Recipe images loading
+    // - FID (First Input Delay): Meal planning interactions
+    // - CLS (Cumulative Layout Shift): Recipe card layouts
+  }
+}
+
+// ✅ Performance budgets in next.config.ts
+const nextConfig = {
+  experimental: {
+    optimizeCss: true,
+    bundlePagesRouterDependencies: true
+  },
+  images: {
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384]
+  }
+};
+```
+
+#### 6. SmartPlates-Specific Performance Patterns
+
+```tsx
+// ✅ Optimize meal planning calendar
+function MealPlanCalendar() {
+  // Virtual scrolling for large meal plans
+  const [visibleWeeks, setVisibleWeeks] = useState(2);
+  
+  // Debounced drag-and-drop updates
+  const debouncedUpdate = useCallback(
+    debounce(async (planData) => {
+      await updateMealPlan(planData);
+    }, 500),
+    []
+  );
+
+  return (
+    <div className="meal-calendar">
+      {/* Only render visible weeks */}
+      {visibleWeeks.map(week => (
+        <WeekView key={week.id} week={week} />
+      ))}
+    </div>
+  );
+}
+
+// ✅ Optimize recipe search
+function RecipeSearch() {
+  const [searchResults, setSearchResults] = useState([]);
+  
+  // Debounced search with caching
+  const debouncedSearch = useCallback(
+    debounce(async (query: string) => {
+      const cached = sessionStorage.getItem(`search:${query}`);
+      if (cached) {
+        setSearchResults(JSON.parse(cached));
+        return;
+      }
+      
+      const results = await searchRecipes(query);
+      sessionStorage.setItem(`search:${query}`, JSON.stringify(results));
+      setSearchResults(results);
+    }, 300),
+    []
+  );
+
+  return (
+    <div>
+      <SearchInput onChange={debouncedSearch} />
+      <Suspense fallback={<SearchSkeleton />}>
+        <SearchResults results={searchResults} />
+      </Suspense>
+    </div>
+  );
+}
+
+// ✅ Optimize admin dashboard
+const AdminDashboard = dynamic(() => import('@/components/admin/Dashboard'), {
+  loading: () => <AdminSkeleton />,
+  ssr: false // Admin dashboard doesn't need SEO
+});
+
+// ✅ Optimize AI features
+function FridgeAnalysis() {
+  const [analyzing, setAnalyzing] = useState(false);
+  
+  const analyzeImage = useCallback(async (imageFile: File) => {
+    setAnalyzing(true);
+    
+    try {
+      // Compress image before sending to AI
+      const compressedImage = await compressImage(imageFile);
+      const result = await analyzeWithAI(compressedImage);
+      return result;
+    } finally {
+      setAnalyzing(false);
+    }
+  }, []);
+
+  return (
+    <div className="ai-analysis">
+      {analyzing ? (
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin h-4 w-4 border-2 border-primary border-r-transparent rounded-full" />
+          <span>Analyzing ingredients...</span>
+        </div>
+      ) : (
+        <ImageUpload onUpload={analyzeImage} />
+      )}
+    </div>
+  );
+}
+```
+
+### Performance Checklist for SmartPlates
+
+#### Before Deployment:
+- [ ] Bundle size analysis completed (`ANALYZE=true bun run build`)
+- [ ] All recipe images use `next/image` with proper sizing
+- [ ] Heavy admin components use `dynamic` imports
+- [ ] API routes implement caching where appropriate
+- [ ] Core Web Vitals tested on mobile and desktop
+- [ ] Meal planning interactions are smooth (< 100ms response)
+- [ ] Recipe search is debounced and cached
+- [ ] AI features have proper loading states and error handling
+
+#### Production Monitoring:
+- [ ] Web Vitals tracking implemented
+- [ ] Performance budgets defined
+- [ ] Critical user paths tested regularly
+- [ ] Image optimization metrics monitored
+- [ ] Bundle size increases tracked
+
 ## Key Files to Reference
 
 - `src/types/recipe.d.ts` - Core TypeScript definitions

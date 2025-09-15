@@ -1,0 +1,131 @@
+/**
+ * SmartPlates Color System - TailwindCSS v4
+ * Inspiriert vom Home.png Design
+ */
+
+@theme {
+  /* Primary Brand Colors (Sanftes Grün aus dem Design) */
+  --color-primary-50: #f8fcf6;
+  --color-primary-100: #f1f8eb;
+  --color-primary-200: #e6f0da;
+  --color-primary-300: #d7e4c6;
+  --color-primary-400: #d0dcc2;
+  --color-primary-500: #c8d4be;    /* Hauptgrün aus Home.png */
+  --color-primary-600: #b4c0ab;
+  --color-primary-700: #a0ac98;
+  --color-primary-800: #8c9885;
+  --color-primary-900: #788472;
+
+  /* Coral/Orange Accent (Button-Farbe aus dem Design) */
+  --color-coral-50: #fef8f7;
+  --color-coral-100: #fdf1ee;
+  --color-coral-200: #fbe2dc;
+  --color-coral-300: #f9c9c0;
+  --color-coral-400: #f89787;
+  --color-coral-500: #f7654e;       /* Button-Coral aus Home.png */
+  --color-coral-600: #de5b46;
+  --color-coral-700: #c5513e;
+  --color-coral-800: #ac4736;
+  --color-coral-900: #933d2e;
+
+  /* Neutral Colors (Saubere Grautöne) */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-200: #e4e4e7;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-500: #71717a;
+  --color-neutral-600: #52525b;
+  --color-neutral-700: #3f3f46;
+  --color-neutral-800: #27272a;
+  --color-neutral-900: #18181b;
+
+  /* Background Colors (Fast-weiße Töne aus dem Design) */
+  --color-background: #fefefe;      /* Haupt-Background */
+  --color-background-secondary: #fbfcfa;
+  --color-background-card: #ffffff;
+  --color-background-hero: #f8fbf6; /* Sanfter Grün-Tint für Hero */
+  --color-background-muted: #f7f9f5;
+
+  /* Semantic Colors */
+  --color-success: #c8d4be;         /* Nutzt Primary Green */
+  --color-warning: #f59e0b;          /* Amber */
+  --color-error: #ef4444;             /* Red */
+  --color-info: #3b82f6;             /* Blue */
+
+
+  /* Dark Mode Farbvariablen für SmartPlates */
+  .dark {
+    /* Hintergrundfarben */
+    --color-background: #101112;
+    --color-background-secondary: #181a1b;
+    --color-background-card: #181a1b;
+    --color-background-hero: #16201a;
+    --color-background-muted: #232627;
+
+    /* Textfarben */
+    --color-foreground: #f3f4f6;
+    --color-foreground-muted: #a3adc2;
+    --color-foreground-subtle: #64748b;
+    --color-foreground-inverse: #18181b;
+
+    /* Primärfarben (Grün) */
+    --color-primary-50: #1a211a;
+    --color-primary-100: #223022;
+    --color-primary-200: #2d4332;
+    --color-primary-300: #3a5740;
+    --color-primary-400: #4a6d50;
+    --color-primary-500: #c8d4be;
+    --color-primary-600: #d7e4c6;
+    --color-primary-700: #e6f0da;
+    --color-primary-800: #f1f8eb;
+    --color-primary-900: #f8fcf6;
+
+    /* Coral/Orange Accent */
+    --color-coral-50: #2d1a16;
+    --color-coral-100: #4a2b22;
+    --color-coral-200: #6b3d2e;
+    --color-coral-300: #8c4f3a;
+    --color-coral-400: #ad6146;
+    --color-coral-500: #f7654e;
+    --color-coral-600: #f89787;
+    --color-coral-700: #f9c9c0;
+    --color-coral-800: #fbe2dc;
+    --color-coral-900: #fef8f7;
+
+    /* Neutral Colors */
+    --color-neutral-50: #18181b;
+    --color-neutral-100: #27272a;
+    --color-neutral-200: #3f3f46;
+    --color-neutral-300: #52525b;
+    --color-neutral-400: #71717a;
+    --color-neutral-500: #a1a1aa;
+    --color-neutral-600: #d4d4d8;
+    --color-neutral-700: #e4e4e7;
+    --color-neutral-800: #f4f4f5;
+    --color-neutral-900: #fafafa;
+
+    /* Semantic Colors */
+    --color-success: #22c55e;
+    --color-warning: #fbbf24;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+
+    /* Border & UI */
+    --color-border: #23272e;
+    --color-border-muted: #23272e;
+    --color-input: #23272e;
+    --color-ring: #4a6d50;
+
+    /* Komponenten Aliase */
+    --color-accent: #f7654e;
+    --color-muted: #232627;
+    --color-brand: #c8d4be;
+
+    /* Schatten */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.6), 0 1px 2px -1px rgb(0 0 0 / 0.6);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.7), 0 2px 4px -2px rgb(0 0 0 / 0.7);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.8), 0 4px 6px -4px rgb(0 0 0 / 0.8);
+  }
+}

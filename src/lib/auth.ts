@@ -7,6 +7,7 @@
 
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { shouldBeAdmin } from '@/config/team';
 
 /**
  * Mock NextAuth configuration for development
@@ -23,34 +24,80 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        // Mock users for development
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+        
+        // Mock users for development with individual passwords
         const mockUsers = [
           {
             id: 'admin-1',
             email: 'admin@smartplates.dev',
             name: 'Admin User',
-            role: 'admin'
+            role: 'admin',
+            password: 'admin123'
           },
           {
             id: 'user-1', 
             email: 'user@smartplates.dev',
             name: 'Regular User',
-            role: 'user'
+            role: 'user',
+            password: 'user123'
+          },
+          // Add team members from team.ts
+          {
+            id: 'team-ese',
+            email: 'ese@gmail.com',
+            name: 'Esse (Team)',
+            role: 'admin',
+            password: 'team123'
+          },
+          {
+            id: 'team-rozn',
+            email: 'rozn@gmail.com',
+            name: 'Rozen (Team)',
+            role: 'admin',
+            password: 'team123'
+          },
+          {
+            id: 'team-monika',
+            email: 'monika@gmail.com',
+            name: 'Monika (Team)',
+            role: 'admin',
+            password: 'team123'
+          },
+          {
+            id: 'team-balta',
+            email: 'balta@gmail.com',
+            name: 'Balta (Team)',
+            role: 'admin',
+            password: 'team123'
+          },
+          {
+            id: 'team-hana',
+            email: 'hana@gmail.com',
+            name: 'Hana (Team)',
+            role: 'admin',
+            password: 'team123'
           }
         ];
 
-        if (credentials?.email && credentials?.password) {
-          // Simple mock authentication
-          const user = mockUsers.find(u => u.email === credentials.email);
-          if (user && credentials.password === 'password123') {
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              role: user.role as 'admin' | 'user',
-              emailVerified: true
-            };
-          }
+        // Find user by email and check password
+        const user = mockUsers.find(u => 
+          u.email === credentials.email && u.password === credentials.password
+        );
+        
+        if (user) {
+          // Use team.ts configuration to determine final role
+          const finalRole = shouldBeAdmin(user.email) ? 'admin' : user.role;
+          
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: finalRole as 'admin' | 'user',
+            emailVerified: true
+          };
         }
         
         return null;
@@ -102,33 +149,23 @@ export const authOptions: NextAuthOptions = {
 };
 
 /**
- * Team member emails that should have admin access
- * Add team member emails here to grant admin privileges
- */
-const ADMIN_EMAILS = [
-  'admin@smartplates.dev',
-  'team@smartplates.dev',
-  // Add more admin emails as needed
-];
-
-/**
- * Determines user role based on email address
+ * Determines user role based on email address using team.ts configuration
  * 
  * @param email - User's email address
  * @returns UserRole - 'admin' or 'user'
  */
 export function getUserRole(email: string): 'admin' | 'user' {
-  return ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : 'user';
+  return shouldBeAdmin(email) ? 'admin' : 'user';
 }
 
 /**
- * Check if user has admin privileges
+ * Check if user has admin privileges using team.ts configuration
  * 
  * @param userEmail - User's email address
  * @returns boolean - True if user is admin
  */
 export function isAdminUser(userEmail: string): boolean {
-  return getUserRole(userEmail) === 'admin';
+  return shouldBeAdmin(userEmail);
 }
 
 /**

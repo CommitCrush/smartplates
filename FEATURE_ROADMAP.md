@@ -63,7 +63,7 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Image/Video Upload Integration
 - [ ] Recipe Categories & Tags System
 
-### 🔍 **Developer 2: Search & Filter System** ()
+### 🔍 **Developer 2: Search & Filter System** (hana)
 - [ ] Advanced Recipe Search Functionality
 - [ ] Filter System (Kategorien, Allergien, Zeit)
 - [ ] Search Results Components

@@ -51,10 +51,11 @@ interface TodayViewProps {
   currentDate: Date;
   mealPlans: IMealPlan[];
   onAddMeal: (slot: MealPlanningSlot) => void;
+  onEditMeal: (slot: MealPlanningSlot) => void;
   onRemoveMeal: (planId: string, day: number, mealType: string, index: number) => void;
 }
 
-const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal, onRemoveMeal }) => {
+const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal, onEditMeal, onRemoveMeal }) => {
   // Find today's meals across all meal plans
   const todayMeals = mealPlans.flatMap(plan => 
     plan.days
@@ -76,72 +77,180 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
     snacks: todayMeals.filter(meal => meal.mealType === 'snacks'),
   };
 
-  const renderMealSection = (mealType: string, meals: any[], emoji: string) => (
-    <Card key={mealType} className="mb-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <span>{emoji}</span>
-          {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {meals.length > 0 ? (
-          <div className="space-y-2">
-            {meals.map((meal, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                <div>
-                  <div className="font-medium">{meal.recipeName}</div>
-                  <div className="text-sm text-gray-500">
-                    {meal.servings} servings • {meal.prepTime} min
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const dayOfWeek = currentDate.getDay();
-                    onRemoveMeal(meal.planId, dayOfWeek, mealType, index);
-                  }}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </Button>
-              </div>
-            ))}
-          </div>
+  // Meal type configurations with different colors and styles
+  const mealTypeConfig = {
+    breakfast: {
+      emoji: '🍳',
+      title: 'Breakfast',
+      bgColor: 'bg-gradient-to-br from-orange-50 to-amber-50',
+      borderColor: 'border-orange-200',
+      cardBg: 'bg-white/80 backdrop-blur-sm',
+      textColor: 'text-orange-800',
+      buttonColor: 'bg-orange-500 hover:bg-orange-600'
+    },
+    lunch: {
+      emoji: '🥗',
+      title: 'Lunch', 
+      bgColor: 'bg-gradient-to-br from-green-50 to-emerald-50',
+      borderColor: 'border-green-200',
+      cardBg: 'bg-white/80 backdrop-blur-sm',
+      textColor: 'text-green-800',
+      buttonColor: 'bg-green-500 hover:bg-green-600'
+    },
+    dinner: {
+      emoji: '🍽️',
+      title: 'Dinner',
+      bgColor: 'bg-gradient-to-br from-blue-50 to-indigo-50', 
+      borderColor: 'border-blue-200',
+      cardBg: 'bg-white/80 backdrop-blur-sm',
+      textColor: 'text-blue-800',
+      buttonColor: 'bg-blue-500 hover:bg-blue-600'
+    },
+    snacks: {
+      emoji: '🍎',
+      title: 'Snacks',
+      bgColor: 'bg-gradient-to-br from-purple-50 to-pink-50',
+      borderColor: 'border-purple-200', 
+      cardBg: 'bg-white/80 backdrop-blur-sm',
+      textColor: 'text-purple-800',
+      buttonColor: 'bg-purple-500 hover:bg-purple-600'
+    }
+  };
+
+  const renderMealCard = (meal: any, index: number, mealType: string, config: any) => (
+    <div key={index} className={`${config.cardBg} border ${config.borderColor} rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200`}>
+      {/* Meal Image Placeholder */}
+      <div className="w-full h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+        {meal.image ? (
+          <img 
+            src={meal.image} 
+            alt={meal.recipeName}
+            className="w-full h-full object-cover"
+          />
         ) : (
-          <div className="text-center py-4 text-gray-500">
-            <p>No {mealType} planned for today</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const dayOfWeek = currentDate.getDay();
-                onAddMeal({
-                  dayOfWeek,
-                  mealType: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snacks',
-                  recipeId: '',
-                  recipeName: '',
-                  servings: 2,
-                  prepTime: 30,
-                  ingredients: [],
-                  tags: []
-                });
-              }}
-              className="mt-2"
-            >
-              Add {mealType}
-            </Button>
+          <div className="text-4xl opacity-50">
+            {config.emoji}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+      
+      {/* Recipe Name */}
+      <h4 className={`font-semibold text-lg mb-2 ${config.textColor}`}>
+        {meal.recipeName}
+      </h4>
+      
+      {/* Meal Details */}
+      <div className="text-sm text-gray-600 mb-3 space-y-1">
+        <div className="flex items-center gap-2">
+          <span>👥</span>
+          <span>{meal.servings} servings</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>⏱️</span>
+          <span>{meal.prepTime} min</span>
+        </div>
+        {meal.notes && (
+          <div className="flex items-start gap-2">
+            <span>📝</span>
+            <span className="text-xs">{meal.notes}</span>
+          </div>
+        )}
+      </div>
+      
+      {/* Action Buttons */}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const dayOfWeek = currentDate.getDay();
+            onEditMeal({
+              dayOfWeek,
+              mealType: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snacks',
+              recipeId: meal.recipeId,
+              recipeName: meal.recipeName,
+              servings: meal.servings,
+              prepTime: meal.prepTime,
+              ingredients: meal.ingredients || [],
+              tags: meal.tags || [],
+              notes: meal.notes
+            });
+          }}
+          className="flex-1 text-xs"
+        >
+          Edit
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const dayOfWeek = currentDate.getDay();
+            onRemoveMeal(meal.planId, dayOfWeek, mealType, index);
+          }}
+          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+        >
+          Delete
+        </Button>
+      </div>
+    </div>
   );
 
+  const renderMealColumn = (mealType: keyof typeof mealTypeConfig, meals: any[]) => {
+    const config = mealTypeConfig[mealType];
+    
+    return (
+      <div key={mealType} className={`${config.bgColor} ${config.borderColor} border-2 rounded-2xl p-4 min-h-[500px]`}>
+        {/* Column Header */}
+        <div className="text-center mb-6">
+          <div className="text-4xl mb-2">{config.emoji}</div>
+          <h3 className={`text-xl font-bold ${config.textColor}`}>
+            {config.title}
+          </h3>
+          <div className="text-sm text-gray-500">
+            {meals.length} meal{meals.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+
+        {/* Meals Grid */}
+        <div className="space-y-4">
+          {meals.length > 0 ? (
+            meals.map((meal, index) => renderMealCard(meal, index, mealType, config))
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-4">
+                <div className="text-6xl opacity-30 mb-4">{config.emoji}</div>
+                <p>No {mealType} planned</p>
+              </div>
+              <Button
+                className={`${config.buttonColor} text-white`}
+                onClick={() => {
+                  const dayOfWeek = currentDate.getDay();
+                  onAddMeal({
+                    dayOfWeek,
+                    mealType: mealType as 'breakfast' | 'lunch' | 'dinner' | 'snacks',
+                    recipeId: '',
+                    recipeName: '',
+                    servings: 2,
+                    prepTime: 30,
+                    ingredients: [],
+                    tags: []
+                  });
+                }}
+              >
+                Add {config.title}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">
+        <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
           {currentDate.toLocaleDateString('en-US', { 
             weekday: 'long',
             year: 'numeric',
@@ -149,13 +258,16 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
             day: 'numeric'
           })}
         </h2>
-        <p className="text-gray-600">Your meals for today</p>
+        <p className="text-gray-600">Your meal plan for today</p>
       </div>
 
-      {renderMealSection('breakfast', mealsByType.breakfast, '🍳')}
-      {renderMealSection('lunch', mealsByType.lunch, '🥗')}
-      {renderMealSection('dinner', mealsByType.dinner, '🍽️')}
-      {renderMealSection('snacks', mealsByType.snacks, '🍎')}
+      {/* Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {renderMealColumn('breakfast', mealsByType.breakfast)}
+        {renderMealColumn('lunch', mealsByType.lunch)}
+        {renderMealColumn('dinner', mealsByType.dinner)}
+        {renderMealColumn('snacks', mealsByType.snacks)}
+      </div>
     </div>
   );
 };
@@ -637,6 +749,10 @@ export default function MealPlanningPage() {
                 currentDate={currentDate}
                 mealPlans={Array.from(globalMealPlans.values())}
                 onAddMeal={handleAddMeal}
+                onEditMeal={(slot) => {
+                  setSelectedSlot(slot);
+                  setShowQuickAdd(true);
+                }}
                 onRemoveMeal={handleRemoveMeal}
               />
             </div>

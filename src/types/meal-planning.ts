@@ -19,6 +19,7 @@ export interface MealSlot {
   notes?: string; // User notes for this meal
   cookingTime?: number; // In minutes
   prepTime?: number; // In minutes
+  image?: string; // Recipe image URL
 }
 
 /**

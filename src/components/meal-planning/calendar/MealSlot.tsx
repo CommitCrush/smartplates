@@ -117,43 +117,69 @@ export function MealSlotComponent({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Recipe Name */}
-      <div className="flex items-start justify-between mb-2">
-        <h5 className="font-medium text-sm leading-tight pr-2 flex-1">
-          {meal.recipeName || 'Unnamed Recipe'}
-        </h5>
-        
-        {/* Action Menu */}
-        {isHovered && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <MoreVertical className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {onEdit && (
-                <DropdownMenuItem onClick={onEdit}>
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Edit Recipe
-                </DropdownMenuItem>
-              )}
-              {onRemove && (
-                <DropdownMenuItem 
-                  onClick={onRemove}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Remove
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+      {/* Recipe Image & Name */}
+      <div className="flex items-start gap-3 mb-2">
+        {/* Recipe Image */}
+        <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
+          {meal.image ? (
+            <img 
+              src={meal.image} 
+              alt={meal.recipeName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              {/* Meal type emoji based on mealType */}
+              <span className="text-lg">
+                {mealType === 'breakfast' && '🍳'}
+                {mealType === 'lunch' && '🥗'}
+                {mealType === 'dinner' && '🍽️'}
+                {mealType === 'snacks' && '🍎'}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Recipe Name & Actions */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <h5 className="font-medium text-sm leading-tight pr-2 flex-1 truncate">
+              {meal.recipeName || 'Unnamed Recipe'}
+            </h5>
+            
+            {/* Action Menu */}
+            {isHovered && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                  >
+                    <MoreVertical className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {onEdit && (
+                    <DropdownMenuItem onClick={onEdit}>
+                      <Edit3 className="h-4 w-4 mr-2" />
+                      Edit Recipe
+                    </DropdownMenuItem>
+                  )}
+                  {onRemove && (
+                    <DropdownMenuItem 
+                      onClick={onRemove}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Remove
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Recipe Details */}

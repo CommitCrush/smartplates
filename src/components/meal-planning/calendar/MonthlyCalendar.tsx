@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { IMealPlan, DayMeals, MealSlot } from '@/types/meal-planning';
+import { getWeekStartDate } from '@/types/meal-planning';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -105,10 +106,11 @@ interface DayCellProps {
   dayData: DayData;
   onAddRecipe?: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onEditMeal?: (meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
+  onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
   onDayClick?: (date: Date) => void;
 }
 
-function DayCell({ dayData, onAddRecipe, onEditMeal, onDayClick }: DayCellProps) {
+function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick }: DayCellProps) {
   const { date, meals, isToday, isCurrentMonth, hasEvents } = dayData;
   const mealCount = meals ? getMealCountForDay(meals) : 0;
   const mealTypes = meals ? getMealTypesForDay(meals) : [];
@@ -180,37 +182,95 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onDayClick }: DayCellProps)
               {meals?.breakfast?.slice(0, 1).map((meal, index) => (
                 <div
                   key={`breakfast-${index}`}
-                  className="text-xs text-gray-600 truncate bg-orange-100 px-1 rounded cursor-pointer hover:bg-orange-200 transition-colors"
+                  className="group flex items-center gap-1 text-xs text-gray-600 bg-orange-100 px-1 py-0.5 rounded cursor-pointer hover:bg-orange-200 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEditMeal?.(meal, date, 'breakfast');
                   }}
                 >
-                  {meal.recipeName}
+                  <div className="w-3 h-3 bg-orange-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {meal.image ? (
+                      <img src={meal.image} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs">🍳</span>
+                    )}
+                  </div>
+                  <span className="truncate flex-1">{meal.recipeName}</span>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-700 transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Find the meal plan and remove the meal
+                      const weekStart = getWeekStartDate(date);
+                      const daysDiff = Math.floor((date.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+                      onRemoveMeal?.('', daysDiff, 'breakfast', index);
+                    }}
+                    title="Delete meal"
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
               {meals?.lunch?.slice(0, 1).map((meal, index) => (
                 <div
                   key={`lunch-${index}`}
-                  className="text-xs text-gray-600 truncate bg-yellow-100 px-1 rounded cursor-pointer hover:bg-yellow-200 transition-colors"
+                  className="group flex items-center gap-1 text-xs text-gray-600 bg-yellow-100 px-1 py-0.5 rounded cursor-pointer hover:bg-yellow-200 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEditMeal?.(meal, date, 'lunch');
                   }}
                 >
-                  {meal.recipeName}
+                  <div className="w-3 h-3 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {meal.image ? (
+                      <img src={meal.image} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs">🥗</span>
+                    )}
+                  </div>
+                  <span className="truncate flex-1">{meal.recipeName}</span>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-700 transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const weekStart = getWeekStartDate(date);
+                      const daysDiff = Math.floor((date.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+                      onRemoveMeal?.('', daysDiff, 'lunch', index);
+                    }}
+                    title="Delete meal"
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
               {meals?.dinner?.slice(0, 1).map((meal, index) => (
                 <div
                   key={`dinner-${index}`}
-                  className="text-xs text-gray-600 truncate bg-blue-100 px-1 rounded cursor-pointer hover:bg-blue-200 transition-colors"
+                  className="group flex items-center gap-1 text-xs text-gray-600 bg-blue-100 px-1 py-0.5 rounded cursor-pointer hover:bg-blue-200 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEditMeal?.(meal, date, 'dinner');
                   }}
                 >
-                  {meal.recipeName}
+                  <div className="w-3 h-3 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {meal.image ? (
+                      <img src={meal.image} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs">🍽️</span>
+                    )}
+                  </div>
+                  <span className="truncate flex-1">{meal.recipeName}</span>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-700 transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const weekStart = getWeekStartDate(date);
+                      const daysDiff = Math.floor((date.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+                      onRemoveMeal?.('', daysDiff, 'dinner', index);
+                    }}
+                    title="Delete meal"
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
               {mealCount > 3 && (
@@ -396,6 +456,7 @@ export function MonthlyCalendar({
                 dayData={dayData}
                 onAddRecipe={onAddRecipe}
                 onEditMeal={onEditMeal}
+                onRemoveMeal={onRemoveMeal}
                 onDayClick={handleDayClick}
               />
             ))}

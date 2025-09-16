@@ -30,6 +30,8 @@ interface MonthlyCalendarProps {
   mealPlans?: IMealPlan[];
   onMealPlansChange?: (mealPlans: IMealPlan[]) => void;
   onAddRecipe?: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
+  onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
+  onEditMeal?: (meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   className?: string;
 }
 
@@ -102,10 +104,11 @@ function getMealTypesForDay(meals: DayMeals): string[] {
 interface DayCellProps {
   dayData: DayData;
   onAddRecipe?: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
+  onEditMeal?: (meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onDayClick?: (date: Date) => void;
 }
 
-function DayCell({ dayData, onAddRecipe, onDayClick }: DayCellProps) {
+function DayCell({ dayData, onAddRecipe, onEditMeal, onDayClick }: DayCellProps) {
   const { date, meals, isToday, isCurrentMonth, hasEvents } = dayData;
   const mealCount = meals ? getMealCountForDay(meals) : 0;
   const mealTypes = meals ? getMealTypesForDay(meals) : [];
@@ -177,7 +180,11 @@ function DayCell({ dayData, onAddRecipe, onDayClick }: DayCellProps) {
               {meals?.breakfast?.slice(0, 1).map((meal, index) => (
                 <div
                   key={`breakfast-${index}`}
-                  className="text-xs text-gray-600 truncate bg-orange-100 px-1 rounded"
+                  className="text-xs text-gray-600 truncate bg-orange-100 px-1 rounded cursor-pointer hover:bg-orange-200 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditMeal?.(meal, date, 'breakfast');
+                  }}
                 >
                   {meal.recipeName}
                 </div>
@@ -185,7 +192,11 @@ function DayCell({ dayData, onAddRecipe, onDayClick }: DayCellProps) {
               {meals?.lunch?.slice(0, 1).map((meal, index) => (
                 <div
                   key={`lunch-${index}`}
-                  className="text-xs text-gray-600 truncate bg-yellow-100 px-1 rounded"
+                  className="text-xs text-gray-600 truncate bg-yellow-100 px-1 rounded cursor-pointer hover:bg-yellow-200 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditMeal?.(meal, date, 'lunch');
+                  }}
                 >
                   {meal.recipeName}
                 </div>
@@ -193,7 +204,11 @@ function DayCell({ dayData, onAddRecipe, onDayClick }: DayCellProps) {
               {meals?.dinner?.slice(0, 1).map((meal, index) => (
                 <div
                   key={`dinner-${index}`}
-                  className="text-xs text-gray-600 truncate bg-blue-100 px-1 rounded"
+                  className="text-xs text-gray-600 truncate bg-blue-100 px-1 rounded cursor-pointer hover:bg-blue-200 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditMeal?.(meal, date, 'dinner');
+                  }}
                 >
                   {meal.recipeName}
                 </div>
@@ -225,6 +240,8 @@ export function MonthlyCalendar({
   mealPlans = [],
   onMealPlansChange,
   onAddRecipe,
+  onRemoveMeal,
+  onEditMeal,
   className
 }: MonthlyCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(currentDate || new Date());
@@ -257,7 +274,7 @@ export function MonthlyCalendar({
     // Create a new copy of month data
     const updatedMonthData = monthData.map(dayData => ({
       ...dayData,
-      meals: null,
+      meals: null as DayMeals | null,
       hasEvents: false
     }));
     
@@ -280,7 +297,7 @@ export function MonthlyCalendar({
             console.log('MonthlyCalendar: Found meals for', planDayStr, { mealCount });
             updatedMonthData[monthDayIndex] = {
               ...updatedMonthData[monthDayIndex],
-              meals: planDay as DayMeals,
+              meals: planDay,
               hasEvents: true
             };
           }
@@ -378,6 +395,7 @@ export function MonthlyCalendar({
                 key={index}
                 dayData={dayData}
                 onAddRecipe={onAddRecipe}
+                onEditMeal={onEditMeal}
                 onDayClick={handleDayClick}
               />
             ))}

@@ -22,6 +22,16 @@ export interface MealSlot {
 }
 
 /**
+ * Extended meal slot for planning operations
+ */
+export interface MealPlanningSlot extends MealSlot {
+  dayOfWeek?: number; // Day index (0-6) for weekly planning
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snacks'; // Meal type
+  ingredients?: string[]; // Ingredient list
+  tags?: string[]; // Recipe tags
+}
+
+/**
  * All meals for a single day
  */
 export interface DayMeals {

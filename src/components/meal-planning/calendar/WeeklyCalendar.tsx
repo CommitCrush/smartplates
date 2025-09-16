@@ -28,8 +28,11 @@ import type { IMealPlan, DayMeals } from '@/types/meal-planning';
 
 interface WeeklyCalendarProps {
   mealPlan?: IMealPlan;
+  currentDate?: Date;
   onMealPlanChange?: (mealPlan: IMealPlan) => void;
   onAddRecipe?: (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
+  onAddMeal?: (slot: any) => void;
+  onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
   className?: string;
 }
 
@@ -39,15 +42,26 @@ interface WeeklyCalendarProps {
 
 export function WeeklyCalendar({ 
   mealPlan, 
+  currentDate,
   onMealPlanChange, 
   onAddRecipe,
+  onAddMeal,
+  onRemoveMeal,
   className 
 }: WeeklyCalendarProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => 
-    getWeekStartDate(new Date())
+    getWeekStartDate(currentDate || new Date())
   );
   const [weekDates, setWeekDates] = useState<Date[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Sync with parent currentDate prop
+  useEffect(() => {
+    if (currentDate) {
+      const newWeekStart = getWeekStartDate(currentDate);
+      setCurrentWeekStart(newWeekStart);
+    }
+  }, [currentDate]);
 
   // Update week dates when current week changes
   useEffect(() => {
@@ -90,6 +104,23 @@ export function WeeklyCalendar({
     };
 
     onMealPlanChange(updatedMealPlan);
+  };
+
+  // Handle adding a new meal
+  const handleAddRecipe = (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
+    if (onAddMeal) {
+      const mealSlot = {
+        dayOfWeek: dayIndex,
+        mealType: mealType,
+        recipeId: '',
+        recipeName: '',
+        servings: 2,
+        prepTime: 30
+      };
+      onAddMeal(mealSlot);
+    } else if (onAddRecipe) {
+      onAddRecipe(dayIndex, mealType);
+    }
   };
 
   // Handle cross-day meal movement
@@ -195,7 +226,7 @@ export function WeeklyCalendar({
                     date={date}
                     meals={dayMeals}
                     onMealsChange={(meals: DayMeals) => handleMealChange(dayIndex, meals)}
-                    onAddRecipe={onAddRecipe}
+                    onAddRecipe={handleAddRecipe}
                     onCrossDayMealMove={handleCrossDayMealMove}
                     isToday={isToday}
                   />

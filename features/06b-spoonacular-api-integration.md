@@ -13,26 +13,28 @@ Integration der Spoonacular API für externe Rezeptdaten, erweiterte Suchfunktio
 - Erweitert die Recipe-Funktionalität um externe Datenquellen
 
 ## Tasks
-- [ ] **Spoonacular Service Implementation** (`src/services/spoonacularService.ts`)
+
+## Tasks
+✅ **Spoonacular Service Implementation** (`src/services/spoonacularService.ts`)
   - Recipe Search mit verschiedenen Filtern
   - Recipe Details Fetch mit Nutrition Info
   - Ingredient-based Recipe Search
   - Rate Limiting & Error Handling
 
-- [ ] **API Routes Implementation**
+✅ **API Routes Implementation**
   - `src/app/api/recipes/search-spoonacular/route.ts` - External Recipe Search
   - `src/app/api/recipes/import-spoonacular/route.ts` - Recipe Import to Local DB
 
-- [ ] **Frontend Integration**
+✅ **Frontend Integration**
   - `src/hooks/useSpoonacularSearch.ts` - Search Hook with State Management
   - `src/components/recipe/SpoonacularImport.tsx` - Import Interface Component
 
-- [ ] **Caching & Performance**
+✅ **Caching & Performance**
   - `src/lib/cache/spoonacularCache.ts` - API Response Caching
   - Rate Limiting Implementation
   - Error Fallback to Local Database
 
-- [ ] **Environment & Configuration**
+✅ **Environment & Configuration**
   - Spoonacular API Key Setup
   - Environment Variables Configuration
   - Production Environment Setup
@@ -184,3 +186,48 @@ Integration der Spoonacular API für externe Rezeptdaten, erweiterte Suchfunktio
 2. Complete basic Recipe CRUD operations  
 3. Begin Spoonacular service implementation
 4. Integration testing with local recipe system
+
+## Technische Planung: Spoonacular Service
+
+### Ziel
+- Zentrale Service-Klasse für alle Spoonacular API-Requests
+- Einfache Wiederverwendung in API-Routen und Frontend-Hooks
+- Klare Trennung von API-Key und Endpunkt-Logik
+
+### Service-Struktur (src/services/spoonacularService.ts)
+- `searchRecipes(query: string, filters?: object)`
+  - Endpunkt: `/recipes/complexSearch`
+  - Parameter: query, Filter-Objekt (z.B. cuisine, diet, intolerances)
+- `getRecipeDetails(id: number)`
+  - Endpunkt: `/recipes/{id}/information`
+  - Parameter: Rezept-ID
+- `findByIngredients(ingredients: string[])`
+  - Endpunkt: `/recipes/findByIngredients`
+  - Parameter: Zutaten-Array
+- Fehler- und Rate-Limit-Handling integriert
+- API-Key aus Umgebungsvariable (`process.env.SPOONACULAR_API_KEY`)
+
+### Beispiel-Aufruf
+```typescript
+const service = new SpoonacularService();
+const results = await service.searchRecipes('pasta', { cuisine: 'italian' });
+const details = await service.getRecipeDetails(12345);
+const byIngredients = await service.findByIngredients(['tomato', 'cheese']);
+```
+
+### Vorteile für das Team
+- Alle Spoonacular-Requests an einer Stelle
+- Einfaches Mocking und Testing
+- Klare Schnittstelle für API-Routen und UI
+- Schnelle Anpassung bei API-Änderungen
+
+### Nächste Schritte
+1. Service-Klasse in `src/services/spoonacularService.ts` anlegen
+2. API-Key aus `.env` einbinden
+3. Basis-Methoden für Suche, Details, Zutaten-Suche implementieren
+4. Fehler- und Rate-Limit-Handling ergänzen
+5. Erst danach API-Routen und Frontend-Hooks anbinden
+
+---
+
+**Mit dieser Planung kann jeder im Team sofort loslegen und die Spoonacular-Integration ist für alle verständlich!**

@@ -77,9 +77,18 @@ export async function deleteRecipe(recipeId: string): Promise<boolean> {
  * @param recipeId - Recipe ID to retrieve
  * @returns Recipe data or null if not found
  */
-export async function getRecipeById(recipeId: string): Promise<Recipe | null> {
+export async function getRecipe(recipeId: string): Promise<Recipe | null> {
   // For Phase 1, return null (recipe not found)
   return null;
+}
+
+/**
+ * Gets a recipe by ID (alias for getRecipe)
+ * @param recipeId - Recipe ID to retrieve
+ * @returns Recipe data or null if not found
+ */
+export async function getRecipeById(recipeId: string): Promise<Recipe | null> {
+  return getRecipe(recipeId);
 }
 
 /**

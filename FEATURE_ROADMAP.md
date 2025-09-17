@@ -52,8 +52,9 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 
 ---
 
-## Phase 2: Core Recipe System (Woche 2)
-**Priorität: HOCH - Hauptfunktionalität**
+## Phase 2: Core Recipe System (Woche 2) 
+**Priorität: HOCH - Hauptfunktionalität** 
+**Status: 🟡 Teilweise Abgeschlossen (Meal Planning Core ✅ Completed)**
 
 ### 🍳 **Developer 1: Recipe Management** (Rozn)
 - [ ] Recipe Model & Schema
@@ -79,13 +80,16 @@ Das SmartPlates-Projekt wird in 4 Phasen entwickelt, verteilt auf 5 Entwickler �
 - [ ] Favorite/Save Recipe Functionality
 - [ ] Recipe Sharing Features
 
-### 🗓️ **Developer 4: Meal Planning Core** (Ese)
-- [ ] Meal Plan Model & Database Schema
-- [ ] Calendar View Component
-- [ ] Drag & Drop Meal Planning
-- [ ] Weekly Meal Plan Interface
-- [ ] Meal Plan CRUD Operations
-- [ ] Quick Add to Meal Plan
+### 🗓️ **Developer 4: Meal Planning Core** (Ese) ✅ **COMPLETED**
+- [x] Meal Plan Model & Database Schema (Complete MongoDB integration with MealPlan model)
+- [x] Calendar View Component (WeeklyCalendar, MonthlyCalendar, DayColumn components implemented)
+- [x] Drag & Drop Meal Planning (React DnD implementation with MealSlot, DraggableMealItem, DroppableDayCell)
+- [x] Weekly Meal Plan Interface (Complete with Today/Weekly/Monthly views)
+- [x] Meal Plan CRUD Operations (Full API routes: GET/POST/PUT/DELETE /api/meal-plans)
+- [x] Quick Add to Meal Plan (QuickAddRecipeModal with mock recipe service integration)
+- [x] **Route Migration**: Moved from `/meal-planning/page.tsx` to `/user/dashboard/my_meal_plan/[id]/page.tsx`
+- [x] **Enhanced Features**: PDF export, Google Calendar integration, Screenshot capture
+- [x] **Day-of-Week Fix**: Fixed critical JavaScript day conversion bug for proper meal adding
 
 ### 🛒 **Developer 5: Grocery List Generation & External API Integration**
 - [ ] Ingredient Extraction from Recipes

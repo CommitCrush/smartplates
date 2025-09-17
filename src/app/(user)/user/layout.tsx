@@ -21,6 +21,9 @@ export default function UserLayout({ children }: UserLayoutProps) {
               <Link href="/user/profile" className="text-muted-foreground hover:text-foreground">
                 Profile
               </Link>
+              <Link href="/user/dashboard/my_meal_plan/current" className="text-muted-foreground hover:text-foreground">
+                Meal Planning
+              </Link>
             </nav>
           </div>
         </div>

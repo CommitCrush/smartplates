@@ -2,11 +2,13 @@
  * Recipes API Route - CRUD Operations
  * 
  * Handles recipe listing, filtering, and creation operations
+ * Integrated with Spoonacular API for external recipe data
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Recipe, CreateRecipeInput } from '@/types/recipe';
 import { createRecipe } from '@/models/Recipe';
+import { getCachedOrFreshRecipes, searchCachedRecipes } from '@/services/recipeCacheService';
 
 // Mock recipe data for Phase 1
 const mockRecipes: Recipe[] = [
@@ -289,39 +291,79 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
 
-    // Apply basic filtering to mock data
-    let filteredRecipes = mockRecipes;
-    
-    if (filters.category) {
-      filteredRecipes = filteredRecipes.filter(recipe => recipe.category === filters.category);
-    }
-    
-    if (filters.difficulty) {
-      filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === filters.difficulty);
-    }
-    
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredRecipes = filteredRecipes.filter(recipe => 
-        recipe.title.toLowerCase().includes(searchLower) ||
-        recipe.description.toLowerCase().includes(searchLower) ||
-        recipe.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
+    let recipes: Recipe[] = [];
+    let total = 0;
+    let source = 'local';
+
+    // Try to get cached Spoonacular data first
+    try {
+      const cachedData = await getCachedOrFreshRecipes();
+      
+      if (cachedData.recipes.length > 0) {
+        console.log(`📦 Using cached recipes: ${cachedData.totalCount} total`);
+        
+        // Search within cached recipes
+        const searchResults = searchCachedRecipes(
+          cachedData,
+          filters.search || '',
+          filters.category,
+          filters.difficulty
+        );
+
+        // Apply pagination
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        recipes = searchResults.slice(startIndex, endIndex);
+        total = searchResults.length;
+        source = 'spoonacular-cached';
+        
+        console.log(`🔍 Found ${searchResults.length} recipes matching filters, showing ${recipes.length}`);
+      }
+    } catch (cacheError) {
+      console.warn('⚠️ Cache system failed, falling back to mock data:', cacheError);
     }
 
-    // Apply pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedRecipes = filteredRecipes.slice(startIndex, endIndex);
+    // Fallback to mock data if cache is empty or failed
+    if (recipes.length === 0) {
+      console.log('📋 Using mock data as fallback');
+      
+      let filteredRecipes = mockRecipes;
+      
+      if (filters.category) {
+        filteredRecipes = filteredRecipes.filter(recipe => recipe.category === filters.category);
+      }
+      
+      if (filters.difficulty) {
+        filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === filters.difficulty);
+      }
+      
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        filteredRecipes = filteredRecipes.filter(recipe => 
+          recipe.title.toLowerCase().includes(searchLower) ||
+          recipe.description.toLowerCase().includes(searchLower) ||
+          recipe.tags.some(tag => tag.toLowerCase().includes(searchLower))
+        );
+      }
+
+      // Apply pagination
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      recipes = filteredRecipes.slice(startIndex, endIndex);
+      total = filteredRecipes.length;
+      source = 'local';
+    }
 
     // Return paginated response
     return NextResponse.json({
-      recipes: paginatedRecipes,
-      total: filteredRecipes.length,
+      recipes,
+      total,
       page,
-      totalPages: Math.ceil(filteredRecipes.length / limit),
-      hasNext: endIndex < filteredRecipes.length,
-      hasPrev: page > 1
+      totalPages: Math.ceil(total / limit),
+      hasNext: (page * limit) < total,
+      hasPrev: page > 1,
+      source, // 'spoonacular-cached', 'local', etc.
+      message: total > 0 ? `Found ${recipes.length} recipes (${source})` : 'No recipes found'
     });
 
   } catch (error) {

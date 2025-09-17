@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Search, ChefHat, ChevronDown, Plus } from 'lucide-react';
 import { Recipe } from '@/types/recipe';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
+import { CacheInitializer } from '@/components/recipe/CacheInitializer';
 import Link from 'next/link';
 
 export default function RecipePage() {
@@ -103,6 +104,11 @@ export default function RecipePage() {
           <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
             Discover delicious recipes from our community of passionate cooks
           </p>
+        </div>
+
+        {/* Cache Status and Controls */}
+        <div className="bg-background-card border border-border rounded-lg p-4 mb-6">
+          <CacheInitializer />
         </div>
 
         {/* Search and Filters */}

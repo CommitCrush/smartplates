@@ -98,13 +98,41 @@ export async function getRecipeById(recipeId: string): Promise<Recipe | null> {
  * @param limit - Number of recipes per page
  * @returns Array of recipes matching filter
  */
+/**
+ * Gets recipes with filtering and pagination
+ * @param filter - Filter options
+ * @param page - Page number (1-based)
+ * @param limit - Number of recipes per page
+ * @returns Array of recipes matching filter
+ */
 export async function getRecipes(
   filter: any = {},
   page: number = 1,
   limit: number = 10
 ): Promise<Recipe[]> {
-  // For Phase 1, return empty array
-  return [];
+  // Import Spoonacular service
+  const { searchSpoonacularRecipes, getPopularSpoonacularRecipes } = await import('@/services/spoonacularService');
+  
+  try {
+    // If there's a search query, use Spoonacular search
+    if (filter.query || filter.search) {
+      const result = await searchSpoonacularRecipes(filter.query || filter.search, {
+        number: limit,
+        offset: (page - 1) * limit,
+        cuisine: filter.cuisine,
+        diet: filter.diet,
+        type: filter.category
+      });
+      return result.recipes;
+    }
+    
+    // Otherwise get popular recipes
+    const recipes = await getPopularSpoonacularRecipes({ number: limit });
+    return recipes;
+  } catch (error) {
+    console.error('Error fetching recipes:', error);
+    return [];
+  }
 }
 
 /**
@@ -113,9 +141,25 @@ export async function getRecipes(
  * @param options - Search options
  * @returns Array of matching recipes
  */
-export async function searchRecipes(query: string, options: any = {}): Promise<Recipe[]> {
-  // For Phase 1, return empty array
-  return [];
+/**
+ * Searches recipes by text query
+ * @param query - Search query string
+ * @param options - Search options
+ * @returns Array of matching recipes
+ */
+export async function searchRecipes(query: string, options: { limit?: number; category?: string } = {}): Promise<Recipe[]> {
+  const { searchSpoonacularRecipes } = await import('@/services/spoonacularService');
+  
+  try {
+    const result = await searchSpoonacularRecipes(query, {
+      number: options.limit || 12,
+      type: options.category
+    });
+    return result.recipes;
+  } catch (error) {
+    console.error('Error searching recipes:', error);
+    return [];
+  }
 }
 
 /**
@@ -136,8 +180,14 @@ export async function getRecipesByAuthor(authorId: string, page: number = 1, lim
  * @returns Array of popular recipes
  */
 export async function getPopularRecipes(limit: number = 10): Promise<Recipe[]> {
-  // For Phase 1, return empty array
-  return [];
+  const { getPopularSpoonacularRecipes } = await import('@/services/spoonacularService');
+  
+  try {
+    return await getPopularSpoonacularRecipes({ number: limit });
+  } catch (error) {
+    console.error('Error fetching popular recipes:', error);
+    return [];
+  }
 }
 
 /**
@@ -148,8 +198,19 @@ export async function getPopularRecipes(limit: number = 10): Promise<Recipe[]> {
  * @returns Array of recipes in the category
  */
 export async function getRecipesByCategory(category: string, page: number = 1, limit: number = 10): Promise<Recipe[]> {
-  // For Phase 1, return empty array
-  return [];
+  const { searchSpoonacularRecipes } = await import('@/services/spoonacularService');
+  
+  try {
+    const result = await searchSpoonacularRecipes('', {
+      type: category,
+      number: limit,
+      offset: (page - 1) * limit
+    });
+    return result.recipes;
+  } catch (error) {
+    console.error('Error fetching recipes by category:', error);
+    return [];
+  }
 }
 
 /**
@@ -161,6 +222,7 @@ export async function getRecipesByCategory(category: string, page: number = 1, l
  */
 export async function addRecipeRating(recipeId: string, userId: string, rating: number): Promise<number> {
   // For Phase 1, return mock rating
+  console.log(`Rating ${rating} added for recipe ${recipeId} by user ${userId}`);
   return 4.5;
 }
 

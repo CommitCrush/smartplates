@@ -364,37 +364,21 @@ export default function MealPlanningPage() {
     }
   };
 
-  // Initialize meal plan on component mount and when date changes
+  // Initialize meal plan on component mount and when date/view changes
   useEffect(() => {
     const weekStart = getWeekStartDate(currentDate);
     const weekKey = weekStart.toISOString().split('T')[0];
     
+    // Always try to get existing meal plan first, or create if needed
     const currentPlan = getOrCreateMealPlan(currentDate);
-    console.log('Loading meal plan for week:', weekKey, 'with', currentPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'meals');
+    const currentMealPlanKey = mealPlan?.weekStartDate.toISOString().split('T')[0];
     
-    setMealPlan(currentPlan);
-    setMealPlans([currentPlan]);
-  }, [currentDate]); // Update when currentDate changes
-
-  // Sync meal plan when switching between view modes
-  useEffect(() => {
-    if (viewMode === 'weekly' || viewMode === 'today') {
-      // Make sure we have the current week's meal plan loaded
-      const weekStart = getWeekStartDate(currentDate);
-      const weekKey = weekStart.toISOString().split('T')[0];
-      
-      if (globalMealPlans.has(weekKey)) {
-        const existingPlan = globalMealPlans.get(weekKey)!;
-        const currentMealPlanKey = mealPlan?.weekStartDate.toISOString().split('T')[0];
-        
-        if (currentMealPlanKey !== weekKey) {
-          console.log('Syncing meal plan for view mode:', viewMode, 'from week:', currentMealPlanKey, 'to week:', weekKey);
-          setMealPlan(existingPlan);
-          setMealPlans([existingPlan]);
-        }
-      }
+    if (currentMealPlanKey !== weekKey) {
+      console.log('Loading/syncing meal plan for week:', weekKey, 'view mode:', viewMode, 'with', currentPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'meals');
+      setMealPlan(currentPlan);
+      setMealPlans([currentPlan]);
     }
-  }, [viewMode]);
+  }, [currentDate, viewMode]); // Update when currentDate OR viewMode changes
 
   // Function to refresh meal plan data
   const refreshCurrentMealPlan = () => {
@@ -942,6 +926,7 @@ export default function MealPlanningPage() {
           {viewMode === 'weekly' && mealPlan && (
             <WeeklyCalendar
               mealPlan={mealPlan}
+              mealPlans={Array.from(globalMealPlans.values())}
               currentDate={currentDate}
               onMealPlanChange={(updatedPlan) => {
                 console.log('WeeklyCalendar onMealPlanChange called');

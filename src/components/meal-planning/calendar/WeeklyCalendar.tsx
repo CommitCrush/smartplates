@@ -28,6 +28,7 @@ import type { IMealPlan, DayMeals } from '@/types/meal-planning';
 
 interface WeeklyCalendarProps {
   mealPlan?: IMealPlan;
+  mealPlans?: IMealPlan[];
   currentDate?: Date;
   onMealPlanChange?: (mealPlan: IMealPlan) => void;
   onAddRecipe?: (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
@@ -42,6 +43,7 @@ interface WeeklyCalendarProps {
 
 export function WeeklyCalendar({ 
   mealPlan, 
+  mealPlans = [],
   currentDate,
   onMealPlanChange, 
   onAddRecipe,
@@ -85,10 +87,47 @@ export function WeeklyCalendar({
     setCurrentWeekStart(getWeekStartDate(new Date()));
   };
 
-  // Get meals for a specific day
+  // Get meals for a specific day - look across all meal plans for cross-week synchronization
   const getMealsForDay = (dayIndex: number): DayMeals | undefined => {
     if (!mealPlan || !mealPlan.days) return undefined;
-    return mealPlan.days[dayIndex];
+    
+    // First try to get from current meal plan
+    const currentDayMeals = mealPlan.days[dayIndex];
+    if (!currentDayMeals) return undefined;
+    
+    // Check if we have meals from other weeks that should be displayed in this view
+    // by looking at the actual date and finding corresponding meals from globalMealPlans
+    const targetDate = weekDates[dayIndex];
+    if (!targetDate) return currentDayMeals;
+    
+    // Find the correct meal plan that contains this date
+    const targetWeekStart = getWeekStartDate(targetDate);
+    const targetWeekKey = targetWeekStart.toISOString().split('T')[0];
+    
+    // Look through all meal plans for the one that contains this date
+    const matchingPlan = mealPlans.find(plan => {
+      const planWeekKey = getWeekStartDate(plan.weekStartDate).toISOString().split('T')[0];
+      return planWeekKey === targetWeekKey;
+    });
+    
+    if (matchingPlan && matchingPlan.days) {
+      // Find the day in the matching plan that corresponds to our target date
+      const matchingDay = matchingPlan.days.find(day => {
+        const dayDate = new Date(day.date);
+        dayDate.setHours(0, 0, 0, 0);
+        const normalizedTargetDate = new Date(targetDate);
+        normalizedTargetDate.setHours(0, 0, 0, 0);
+        return dayDate.getTime() === normalizedTargetDate.getTime();
+      });
+      
+      if (matchingDay) {
+        console.log('WeeklyCalendar: Found meals for', targetDate.toDateString(), 'from week', targetWeekStart.toDateString());
+        return matchingDay;
+      }
+    }
+    
+    // Fallback to current day meals
+    return currentDayMeals;
   };
 
   // Handle meal changes

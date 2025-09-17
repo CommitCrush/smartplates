@@ -19,8 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { IMealPlan, DayMeals, MealSlot } from '@/types/meal-planning';
 import { getWeekStartDate } from '@/types/meal-planning';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+
 
 // ========================================
 // Types
@@ -339,34 +338,74 @@ export function MonthlyCalendar({
     }));
     
     // Process each meal plan
-    mealPlans.forEach(plan => {
-      console.log('Processing plan with weekStart:', plan.weekStartDate.toDateString());
+    mealPlans.forEach((plan, planIndex) => {
+      console.log(`Processing plan ${planIndex} with weekStart:`, plan.weekStartDate.toDateString());
       
-      plan.days.forEach(planDay => {
-        const planDayStr = planDay.date.toDateString();
-        console.log('Checking plan day:', planDayStr);
+      plan.days.forEach((planDay, dayIndex) => {
+        // Normalize dates to avoid timezone issues
+        const planDate = new Date(planDay.date);
+        planDate.setHours(0, 0, 0, 0);
+        const planDayStr = planDate.toDateString();
         
-        // Find matching day in month data
-        const monthDayIndex = updatedMonthData.findIndex(monthDay => 
-          monthDay.date.toDateString() === planDayStr
-        );
+        console.log(`Plan ${planIndex}, Day ${dayIndex}: ${planDayStr}`);
+        
+        // Find matching day in month data with normalized comparison
+        const monthDayIndex = updatedMonthData.findIndex((monthDay, index) => {
+          const monthDate = new Date(monthDay.date);
+          monthDate.setHours(0, 0, 0, 0);
+          const monthDayStr = monthDate.toDateString();
+          const matches = monthDayStr === planDayStr;
+          
+          if (matches) {
+            console.log(`✓ Match found: Month[${index}] ${monthDayStr} = Plan[${planIndex}][${dayIndex}] ${planDayStr}`);
+          }
+          
+          return matches;
+        });
         
         if (monthDayIndex !== -1) {
           const mealCount = getMealCountForDay(planDay);
           if (mealCount > 0) {
-            console.log('MonthlyCalendar: Found meals for', planDayStr, { mealCount });
-            updatedMonthData[monthDayIndex] = {
-              ...updatedMonthData[monthDayIndex],
-              meals: planDay,
-              hasEvents: true
-            };
+            console.log(`MonthlyCalendar: Adding ${mealCount} meals to month day ${monthDayIndex} (${planDayStr})`);
+            
+            // Check if this day already has meals (merge instead of replace)
+            if (updatedMonthData[monthDayIndex].meals) {
+              console.log('WARNING: Day already has meals, merging...');
+              const existingMeals = updatedMonthData[monthDayIndex].meals!;
+              updatedMonthData[monthDayIndex] = {
+                ...updatedMonthData[monthDayIndex],
+                meals: {
+                  date: planDay.date,
+                  breakfast: [...existingMeals.breakfast, ...planDay.breakfast],
+                  lunch: [...existingMeals.lunch, ...planDay.lunch],
+                  dinner: [...existingMeals.dinner, ...planDay.dinner],
+                  snacks: [...existingMeals.snacks, ...planDay.snacks]
+                },
+                hasEvents: true
+              };
+            } else {
+              updatedMonthData[monthDayIndex] = {
+                ...updatedMonthData[monthDayIndex],
+                meals: planDay,
+                hasEvents: true
+              };
+            }
           }
+        } else {
+          console.warn(`MonthlyCalendar: Could not find matching day for ${planDayStr} in month data`);
+          console.warn('Available month dates:', updatedMonthData.slice(0, 5).map(d => d.date.toDateString()), '...');
         }
       });
     });
     
     const daysWithMeals = updatedMonthData.filter(day => day.hasEvents).length;
     console.log('MonthlyCalendar: Days with meals:', daysWithMeals);
+    console.log('MonthlyCalendar: Processed month data summary:', 
+      updatedMonthData.filter(day => day.hasEvents).map(day => ({
+        date: day.date.toDateString(),
+        mealCount: day.meals ? getMealCountForDay(day.meals) : 0
+      }))
+    );
     
     // Update state to trigger re-render
     setProcessedMonthData(updatedMonthData);
@@ -400,88 +439,86 @@ export function MonthlyCalendar({
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <Card className={cn('w-full', className)}>
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              {monthTitle}
-            </CardTitle>
-            
-            {/* Navigation Controls */}
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleToday}
-              >
-                Today
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviousMonth}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextMonth}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-0 border border-gray-200 rounded-lg overflow-hidden">
-            {/* Week Day Headers */}
-            {weekDays.map(day => (
-              <div
-                key={day}
-                className="bg-gray-100 p-3 text-center text-sm font-medium text-gray-700 border-b border-gray-200"
-              >
-                {day}
-              </div>
-            ))}
-            
-            {/* Calendar Days */}
-            {processedMonthData.map((dayData, index) => (
-              <DayCell
-                key={index}
-                dayData={dayData}
-                onAddRecipe={onAddRecipe}
-                onEditMeal={onEditMeal}
-                onRemoveMeal={onRemoveMeal}
-                onDayClick={handleDayClick}
-              />
-            ))}
-          </div>
+    <Card className={cn('w-full', className)}>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            {monthTitle}
+          </CardTitle>
           
-          {/* Month Summary */}
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>
-                Total planned meals this month: {
-                  processedMonthData.reduce((total, day) => 
-                    total + (day.meals ? getMealCountForDay(day.meals) : 0), 0
-                  )
-                }
-              </span>
-              <span>
-                Days with meals: {
-                  processedMonthData.filter(day => day.hasEvents && day.isCurrentMonth).length
-                } / {processedMonthData.filter(day => day.isCurrentMonth).length}
-              </span>
-            </div>
+          {/* Navigation Controls */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleToday}
+            >
+              Today
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousMonth}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextMonth}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-        </CardContent>
-      </Card>
-    </DndProvider>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-0 border border-gray-200 rounded-lg overflow-hidden">
+          {/* Week Day Headers */}
+          {weekDays.map(day => (
+            <div
+              key={day}
+              className="bg-gray-100 p-3 text-center text-sm font-medium text-gray-700 border-b border-gray-200"
+            >
+              {day}
+            </div>
+          ))}
+          
+          {/* Calendar Days */}
+          {processedMonthData.map((dayData, index) => (
+            <DayCell
+              key={index}
+              dayData={dayData}
+              onAddRecipe={onAddRecipe}
+              onEditMeal={onEditMeal}
+              onRemoveMeal={onRemoveMeal}
+              onDayClick={handleDayClick}
+            />
+          ))}
+        </div>
+        
+        {/* Month Summary */}
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>
+              Total planned meals this month: {
+                processedMonthData.reduce((total, day) => 
+                  total + (day.meals ? getMealCountForDay(day.meals) : 0), 0
+                )
+              }
+            </span>
+            <span>
+              Days with meals: {
+                processedMonthData.filter(day => day.hasEvents && day.isCurrentMonth).length
+              } / {processedMonthData.filter(day => day.isCurrentMonth).length}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

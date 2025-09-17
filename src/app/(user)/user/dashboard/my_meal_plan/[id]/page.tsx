@@ -27,6 +27,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import Layout from '@/components/layout/Layout';
 import { WeeklyCalendar } from '@/components/meal-planning/calendar/WeeklyCalendar';
 import { MonthlyCalendar } from '@/components/meal-planning/calendar/MonthlyCalendar';
@@ -327,30 +329,81 @@ export default function MealPlanningPage() {
   // Central meal plan storage - persists across navigation
   const [globalMealPlans, setGlobalMealPlans] = useState<Map<string, IMealPlan>>(new Map());
 
-  // Initialize meal plan on component mount
+  // Get or create meal plan for a specific week
+  const getOrCreateMealPlan = (date: Date): IMealPlan => {
+    const weekStart = getWeekStartDate(date);
+    const weekKey = weekStart.toISOString().split('T')[0];
+    
+    if (globalMealPlans.has(weekKey)) {
+      return globalMealPlans.get(weekKey)!;
+    } else {
+      console.log('Creating new meal plan for week:', weekKey);
+      const newPlan = createEmptyMealPlan('current-user', weekStart);
+      const updatedGlobalPlans = new Map(globalMealPlans);
+      updatedGlobalPlans.set(weekKey, newPlan);
+      setGlobalMealPlans(updatedGlobalPlans);
+      return newPlan;
+    }
+  };
+
+  // Update a specific meal plan and sync with global storage
+  const updateMealPlan = (updatedPlan: IMealPlan) => {
+    const weekKey = updatedPlan.weekStartDate.toISOString().split('T')[0];
+    console.log('Updating meal plan for week:', weekKey, 'with', updatedPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'total meals');
+    
+    // Update global storage
+    const updatedGlobalPlans = new Map(globalMealPlans);
+    updatedGlobalPlans.set(weekKey, updatedPlan);
+    setGlobalMealPlans(updatedGlobalPlans);
+    
+    // Update local state if this is the current week
+    const currentWeekKey = getWeekStartDate(currentDate).toISOString().split('T')[0];
+    if (weekKey === currentWeekKey) {
+      setMealPlan(updatedPlan);
+      setMealPlans([updatedPlan]);
+    }
+  };
+
+  // Initialize meal plan on component mount and when date changes
   useEffect(() => {
-    const initializeMealPlan = () => {
+    const weekStart = getWeekStartDate(currentDate);
+    const weekKey = weekStart.toISOString().split('T')[0];
+    
+    const currentPlan = getOrCreateMealPlan(currentDate);
+    console.log('Loading meal plan for week:', weekKey, 'with', currentPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'meals');
+    
+    setMealPlan(currentPlan);
+    setMealPlans([currentPlan]);
+  }, [currentDate]); // Update when currentDate changes
+
+  // Sync meal plan when switching between view modes
+  useEffect(() => {
+    if (viewMode === 'weekly' || viewMode === 'today') {
+      // Make sure we have the current week's meal plan loaded
       const weekStart = getWeekStartDate(currentDate);
-      const weekKey = weekStart.toISOString().split('T')[0]; // Use date as key
+      const weekKey = weekStart.toISOString().split('T')[0];
       
-      // Check if we already have a meal plan for this week
       if (globalMealPlans.has(weekKey)) {
         const existingPlan = globalMealPlans.get(weekKey)!;
-        setMealPlan(existingPlan);
-        setMealPlans([existingPlan]);
-      } else {
-        // Create new meal plan only if it doesn't exist
-        const newPlan = createEmptyMealPlan('current-user', weekStart);
-        const updatedGlobalPlans = new Map(globalMealPlans);
-        updatedGlobalPlans.set(weekKey, newPlan);
-        setGlobalMealPlans(updatedGlobalPlans);
-        setMealPlan(newPlan);
-        setMealPlans([newPlan]);
+        const currentMealPlanKey = mealPlan?.weekStartDate.toISOString().split('T')[0];
+        
+        if (currentMealPlanKey !== weekKey) {
+          console.log('Syncing meal plan for view mode:', viewMode, 'from week:', currentMealPlanKey, 'to week:', weekKey);
+          setMealPlan(existingPlan);
+          setMealPlans([existingPlan]);
+        }
       }
-    };
+    }
+  }, [viewMode]);
 
-    initializeMealPlan();
-  }, [currentDate]); // Update when currentDate changes
+  // Function to refresh meal plan data
+  const refreshCurrentMealPlan = () => {
+    const currentPlan = getOrCreateMealPlan(currentDate);
+    const weekKey = getWeekStartDate(currentDate).toISOString().split('T')[0];
+    console.log('Refreshing meal plan for week:', weekKey, 'with', currentPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'meals');
+    setMealPlan(currentPlan);
+    setMealPlans([currentPlan]);
+  };
 
   // Navigation handlers
   const handlePrevious = () => {
@@ -420,9 +473,15 @@ export default function MealPlanningPage() {
 
   // Handle adding meal from MonthlyCalendar (date-based)
   const handleAddMealFromDate = (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
+    // Normalize the date to avoid timezone issues
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+    
     // Find which week this date belongs to and convert to dayOfWeek index
-    const weekStart = getWeekStartDate(date);
-    const daysDiff = Math.floor((date.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+    const weekStart = getWeekStartDate(normalizedDate);
+    const daysDiff = Math.floor((normalizedDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+    
+    console.log('Adding meal for date:', normalizedDate.toDateString(), 'weekStart:', weekStart.toDateString(), 'daysDiff:', daysDiff);
     
     // Ensure we have a meal plan for this week
     const weekKey = weekStart.toISOString().split('T')[0];
@@ -439,7 +498,8 @@ export default function MealPlanningPage() {
       recipeId: '',
       recipeName: '',
       servings: 2,
-      prepTime: 30
+      prepTime: 30,
+      targetDate: normalizedDate // Store the actual target date
     };
     
     setSelectedSlot(slot);
@@ -447,61 +507,62 @@ export default function MealPlanningPage() {
   };
 
   const handleRemoveMeal = (planId: string, day: number, mealType: string, index: number) => {
-    if (!mealPlan) return;
+    // Find the correct meal plan (could be from any week if called from monthly view)
+    let targetPlan = mealPlan;
+    
+    // If no current meal plan or if removing from a different week, find the correct one
+    if (!targetPlan) {
+      console.warn('No meal plan available for removal');
+      return;
+    }
 
-    const updatedPlan = { ...mealPlan };
-    const targetDay = updatedPlan.days[day]; // Use array index instead of searching
+    const updatedPlan = { ...targetPlan };
+    const targetDay = updatedPlan.days[day];
     
     if (targetDay) {
       const meals = targetDay[mealType as keyof typeof targetDay] as MealSlot[];
       meals.splice(index, 1);
       updatedPlan.updatedAt = new Date();
       
-      // Update both local state and global storage
-      setMealPlan(updatedPlan);
-      setMealPlans([updatedPlan]);
+      console.log('Removing meal from day:', day, 'date:', targetDay.date.toDateString(), 'mealType:', mealType);
       
-      const weekKey = updatedPlan.weekStartDate.toISOString().split('T')[0];
-      const updatedGlobalPlans = new Map(globalMealPlans);
-      updatedGlobalPlans.set(weekKey, updatedPlan);
-      setGlobalMealPlans(updatedGlobalPlans);
+      // Update meal plan using centralized function
+      updateMealPlan(updatedPlan);
     }
   };
 
-    const handleQuickAddSubmit = async (recipeData: any) => {
+  const handleQuickAddSubmit = async (recipeData: any) => {
     if (!selectedSlot || selectedSlot.dayOfWeek === undefined || !selectedSlot.mealType) return;
 
     try {
       const mealSlot = mockRecipeToMealSlot(recipeData);
       
-      // Determine which week's meal plan to update
-      const targetWeekStart = getWeekStartDate(currentDate);
+      // Determine which week's meal plan to update - use targetDate if available (from monthly calendar)
+      const targetDate = selectedSlot.targetDate || currentDate;
+      const targetWeekStart = getWeekStartDate(targetDate);
       const weekKey = targetWeekStart.toISOString().split('T')[0];
       
-      // Get the correct meal plan (current or from global storage)
-      let targetPlan = mealPlan;
-      if (!targetPlan || targetPlan.weekStartDate.toISOString().split('T')[0] !== weekKey) {
-        targetPlan = globalMealPlans.get(weekKey) || null;
-        if (!targetPlan) {
-          targetPlan = createEmptyMealPlan('current-user', targetWeekStart);
-        }
-      }
+      console.log('handleQuickAddSubmit: Using targetDate:', targetDate.toDateString(), 'weekStart:', targetWeekStart.toDateString(), 'weekKey:', weekKey);
+      console.log('handleQuickAddSubmit: selectedSlot.dayOfWeek:', selectedSlot.dayOfWeek, 'targetDate set by user:', selectedSlot.targetDate?.toDateString());
       
+      // Get or create the meal plan for this week
+      const targetPlan = getOrCreateMealPlan(targetDate);
       const updatedPlan = { ...targetPlan };
       const targetDay = updatedPlan.days[selectedSlot.dayOfWeek]; // Use array index
+      
+      console.log('Adding meal to day:', selectedSlot.dayOfWeek, 'date:', targetDay?.date.toDateString(), 'mealType:', selectedSlot.mealType);
+      console.log('Week plan days:', updatedPlan.days.map((d, i) => `${i}: ${d.date.toDateString()}`));
       
       if (targetDay) {
         const meals = targetDay[selectedSlot.mealType as keyof typeof targetDay] as MealSlot[];
         meals.push(mealSlot);
         updatedPlan.updatedAt = new Date();
         
-        // Update both local state and global storage
-        setMealPlan(updatedPlan);
-        setMealPlans([updatedPlan]);
+        // Update meal plan using centralized function
+        updateMealPlan(updatedPlan);
         
-        const updatedGlobalPlans = new Map(globalMealPlans);
-        updatedGlobalPlans.set(weekKey, updatedPlan);
-        setGlobalMealPlans(updatedGlobalPlans);
+        console.log('Meal added successfully to', targetDay.date.toDateString());
+        console.log('Global meal plans now contain:', Array.from(globalMealPlans.keys()));
       }
       
       setShowQuickAdd(false);
@@ -545,18 +606,37 @@ export default function MealPlanningPage() {
     }
   };
 
-  // Calculate stats
-  const totalRecipes = mealPlan?.days?.reduce((total, day) => 
-    total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0
-  ) || 0;
+  // Calculate stats - always use all meal plans for consistent stats across views
+  const calculateStats = () => {
+    const allMealPlans = Array.from(globalMealPlans.values());
+    
+    if (allMealPlans.length === 0) {
+      return { totalRecipes: 0, plannedDays: 0 };
+    }
+    
+    const totalRecipes = allMealPlans.reduce((total, plan) => 
+      total + plan.days.reduce((dayTotal, day) => 
+        dayTotal + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0
+      ), 0
+    );
+    
+    const plannedDays = allMealPlans.reduce((total, plan) => 
+      total + plan.days.filter(day =>
+        day.breakfast.length > 0 || day.lunch.length > 0 || day.dinner.length > 0 || day.snacks.length > 0
+      ).length, 0
+    );
+    
+    console.log('Stats calculated:', { totalRecipes, plannedDays, mealPlansCount: allMealPlans.length });
+    
+    return { totalRecipes, plannedDays };
+  };
 
-  const plannedDays = mealPlan?.days?.filter(day =>
-    day.breakfast.length > 0 || day.lunch.length > 0 || day.dinner.length > 0 || day.snacks.length > 0
-  ).length || 0;
+  const { totalRecipes, plannedDays } = calculateStats();
 
   return (
-    <Layout>
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <DndProvider backend={HTML5Backend}>
+      <Layout>
+        <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -566,13 +646,6 @@ export default function MealPlanningPage() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={handleExportMealPlan}
-              disabled={!mealPlan && !mealPlans.length}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Screenshot
-            </Button>
-            <Button
               onClick={() => setShowSaveModal(true)}
               disabled={(!mealPlan && !mealPlans.length) || isSaving}
             >
@@ -683,7 +756,7 @@ export default function MealPlanningPage() {
                 <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Daily View
                 </div>
-                <DropdownMenuItem onClick={() => setViewMode('today')} className="hover:bg-gray-50">
+                <DropdownMenuItem onClick={() => { setViewMode('today'); refreshCurrentMealPlan(); }} className="hover:bg-gray-50">
                   📅 Today
                 </DropdownMenuItem>
                 <DropdownMenuItem 
@@ -711,7 +784,7 @@ export default function MealPlanningPage() {
                 <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Weekly View
                 </div>
-                <DropdownMenuItem onClick={() => setViewMode('weekly')} className="hover:bg-gray-50">
+                <DropdownMenuItem onClick={() => { setViewMode('weekly'); refreshCurrentMealPlan(); }} className="hover:bg-gray-50">
                   📆 This Week
                 </DropdownMenuItem>
                 <DropdownMenuItem 
@@ -739,7 +812,7 @@ export default function MealPlanningPage() {
                 <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Monthly View
                 </div>
-                <DropdownMenuItem onClick={() => setViewMode('monthly')} className="hover:bg-gray-50">
+                <DropdownMenuItem onClick={() => { setViewMode('monthly'); refreshCurrentMealPlan(); }} className="hover:bg-gray-50">
                   🗓️ This Month
                 </DropdownMenuItem>
                 <DropdownMenuItem 
@@ -772,6 +845,79 @@ export default function MealPlanningPage() {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
+
+            {/* Export/Download Buttons */}
+            <div className="flex items-center gap-2 ml-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportMealPlan}
+                className="flex items-center gap-2 bg-white hover:bg-gray-50"
+                title="Take Screenshot"
+              >
+                <Download className="h-4 w-4" />
+                Screenshot
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSaveModal(true)}
+                className="flex items-center gap-2 bg-white hover:bg-gray-50"
+                title="Save & Export Options"
+              >
+                <Save className="h-4 w-4" />
+                Save Plan
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    if (!mealPlan) {
+                      alert('No meal plan to download. Please add some meals first.');
+                      return;
+                    }
+                    
+                    // Simple text export as fallback
+                    const mealPlanText = `Meal Plan - ${format(currentDate, 'MMMM do, yyyy')}\n\n` + 
+                      mealPlan.days.map(day => {
+                        const dateStr = format(new Date(day.date), 'EEEE, MMMM do');
+                        const meals = [
+                          `Breakfast: ${day.breakfast.map(m => m.recipeName || 'Unnamed Recipe').join(', ') || 'None'}`,
+                          `Lunch: ${day.lunch.map(m => m.recipeName || 'Unnamed Recipe').join(', ') || 'None'}`,
+                          `Dinner: ${day.dinner.map(m => m.recipeName || 'Unnamed Recipe').join(', ') || 'None'}`,
+                          `Snacks: ${day.snacks.map(m => m.recipeName || 'Unnamed Recipe').join(', ') || 'None'}`
+                        ].join('\n');
+                        
+                        return `${dateStr}\n${meals}\n${'='.repeat(50)}`;
+                      }).join('\n\n');
+
+                    // Create and download the file
+                    const blob = new Blob([mealPlanText], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `meal-plan-${format(currentDate, 'yyyy-MM-dd')}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    console.log('Text download completed');
+                  } catch (error) {
+                    console.error('Download error:', error);
+                    alert('Download failed. Please try again.');
+                  }
+                }}
+                className="flex items-center gap-2 bg-white hover:bg-gray-50"
+                title="Download as Text File"
+              >
+                <Download className="h-4 w-4" />
+                Download
+              </Button>
+            </div>
           </div>
           </CardContent>
         </Card>
@@ -798,14 +944,8 @@ export default function MealPlanningPage() {
               mealPlan={mealPlan}
               currentDate={currentDate}
               onMealPlanChange={(updatedPlan) => {
-                setMealPlan(updatedPlan);
-                setMealPlans([updatedPlan]);
-                
-                // Update global storage
-                const weekKey = updatedPlan.weekStartDate.toISOString().split('T')[0];
-                const updatedGlobalPlans = new Map(globalMealPlans);
-                updatedGlobalPlans.set(weekKey, updatedPlan);
-                setGlobalMealPlans(updatedGlobalPlans);
+                console.log('WeeklyCalendar onMealPlanChange called');
+                updateMealPlan(updatedPlan);
               }}
               onAddMeal={handleAddMeal}
               onRemoveMeal={handleRemoveMeal}
@@ -819,9 +959,13 @@ export default function MealPlanningPage() {
               onAddRecipe={handleAddMealFromDate}
               onRemoveMeal={handleRemoveMeal}
               onEditMeal={(meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
+                // Normalize the date to avoid timezone issues
+                const normalizedDate = new Date(date);
+                normalizedDate.setHours(0, 0, 0, 0);
+                
                 // Convert date to proper slot format for editing
-                const weekStart = getWeekStartDate(date);
-                const daysDiff = Math.floor((date.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
+                const weekStart = getWeekStartDate(normalizedDate);
+                const daysDiff = Math.floor((normalizedDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
                 
                 const slot: MealPlanningSlot = {
                   dayOfWeek: daysDiff,
@@ -863,7 +1007,8 @@ export default function MealPlanningPage() {
             onSave={handleSavePlan}
           />
         )}
-      </div>
-    </Layout>
+        </div>
+      </Layout>
+    </DndProvider>
   );
 }

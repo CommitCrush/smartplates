@@ -30,6 +30,7 @@ export interface MealPlanningSlot extends MealSlot {
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snacks'; // Meal type
   ingredients?: string[]; // Ingredient list
   tags?: string[]; // Recipe tags
+  targetDate?: Date; // Target date when adding from monthly calendar
 }
 
 /**

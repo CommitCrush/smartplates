@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUser, findUserByEmail } from '@/models/User';
 import { generateToken } from '@/utils/generateToken';
+import { shouldBeAdmin } from '@/config/team';
 
 interface RegisterRequest {
   name: string;
@@ -76,12 +77,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine user role based on team.ts configuration
+    const userRole = shouldBeAdmin(email) ? 'admin' : 'user';
+
     // Create user in MongoDB
     const newUser = await createUser({
       name: name.trim(),
       email: email.toLowerCase(),
       password: password, // Will be hashed in createUser function
-      role: 'user',
+      role: userRole,
     });
 
     // Generate session token

@@ -20,15 +20,15 @@ export const teamConfig: TeamConfig = {
   // 👥 Team Member Admin List
   admins: [
     // Core Development Team
-    'esse@gmail.com',           // Team Member - Esse
-    'rozen@gmail.com',          // Team Member - Rozen  
+    'ese@gmail.com',           // Team Member - Esse
+    'rozn@gmail.com',          // Team Member - Rozen  
     'monika@gmail.com',         // Team Member - Monika
     'balta@gmail.com',          // Team Member - Balta
     'hana@gmail.com',           // Team Member - Hana
     
     // Alternative email patterns (add variations if needed)
-    'esse.dev@gmail.com',
-    'rozen.dev@gmail.com', 
+    'ese.dev@gmail.com',
+    'rozn.dev@gmail.com', 
     'monika.dev@gmail.com',
     'balta.dev@gmail.com',
     'hana.dev@gmail.com',

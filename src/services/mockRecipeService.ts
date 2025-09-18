@@ -12,11 +12,10 @@
 
 export interface MockRecipe {
   import { useState, useEffect } from 'react';
-  import { Recipe } from '@/types/recipe';
+  import { Recipe, MealType } from '@/types/recipe';
   import { searchSpoonacularRecipes, getSpoonacularRecipe } from './spoonacularService';
 
   // Hook: Holt alle Rezepte (optional mit Filter)
-  export function useAllRecipes(query = '', options = {}) {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
@@ -25,10 +24,8 @@ export interface MockRecipe {
       setLoading(true);
       searchSpoonacularRecipes(query, options)
         .then(({ recipes }) => {
-          if (recipes.length === 0) {
-            setError('Keine Rezepte gefunden');
-          }
           setRecipes(recipes);
+          setError(recipes.length === 0 ? 'Keine Rezepte gefunden' : '');
           setLoading(false);
         })
         .catch(() => {
@@ -41,7 +38,6 @@ export interface MockRecipe {
   }
 
   // Hook: Holt ein Rezept per ID
-  export function useRecipeById(recipeId: string) {
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
@@ -50,10 +46,8 @@ export interface MockRecipe {
       setLoading(true);
       getSpoonacularRecipe(recipeId)
         .then((data) => {
-          if (!data) {
-            setError('Kein Rezept gefunden');
-          }
           setRecipe(data);
+          setError(!data ? 'Kein Rezept gefunden' : '');
           setLoading(false);
         })
         .catch(() => {
@@ -66,59 +60,93 @@ export interface MockRecipe {
   }
 
   // Hook: Holt Rezepte nach Mahlzeitentyp
-  export function useRecipesByMealType(type: string) {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
       setLoading(true);
-      searchSpoonacularRecipes('', { type })
+      searchSpoonacularRecipes('', { mealType: type as MealType })
         .then(({ recipes }) => {
-          if (recipes.length === 0) {
-            setError('Keine Rezepte gefunden');
-          }
           setRecipes(recipes);
+          setError(recipes.length === 0 ? 'Keine Rezepte gefunden' : '');
           setLoading(false);
         })
         .catch(() => {
           setError('Fehler beim Laden der Rezepte');
           setLoading(false);
         });
-    }, [type]);
+    import { Recipe, MealType } from '@/types/recipe';
+    import { searchSpoonacularRecipes, getSpoonacularRecipe } from './spoonacularService';
 
-    return { recipes, error, loading };
-  }
-  {
-    id: 'breakfast-1',
-    title: 'Fluffy Pancakes',
-    description: 'Light and fluffy pancakes perfect for weekend mornings',
-    cookingTime: 15,
-    prepTime: 10,
-    servings: 4,
-    difficulty: 'easy',
-    category: 'Breakfast',
-    cuisine: 'American',
-    tags: ['quick', 'family-friendly', 'weekend'],
-    ingredients: ['flour', 'eggs', 'milk', 'baking powder', 'sugar', 'butter'],
-    instructions: ['Mix dry ingredients', 'Combine wet ingredients', 'Cook on griddle'],
-    nutrition: { calories: 320, protein: 8, carbs: 45, fat: 12 },
-    rating: 4.7,
-    reviewCount: 124,
-    isVegetarian: true,
-    isVegan: false,
-    isGlutenFree: false,
-    isDairyFree: false,
-    createdBy: 'mock-user-1'
-  },
-  {
-    id: 'breakfast-2',
-    title: 'Avocado Toast',
-    description: 'Healthy and delicious avocado toast with optional toppings',
-    cookingTime: 5,
-    prepTime: 5,
-    servings: 2,
-    difficulty: 'easy',
+    // Holt alle Rezepte (optional mit Filter)
+    export function useAllRecipes(query = '', options = {}) {
+      const [recipes, setRecipes] = useState<Recipe[]>([]);
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        setLoading(true);
+        searchSpoonacularRecipes(query, options)
+          .then(({ recipes }) => {
+            setRecipes(recipes);
+            setError(recipes.length === 0 ? 'Keine Rezepte gefunden' : '');
+            setLoading(false);
+          })
+          .catch(() => {
+            setError('Fehler beim Laden der Rezepte');
+            setLoading(false);
+          });
+      }, [query, JSON.stringify(options)]);
+
+      return { recipes, error, loading };
+    }
+
+    // Holt ein Rezept per ID
+    export function useRecipeById(recipeId: string) {
+      const [recipe, setRecipe] = useState<Recipe | null>(null);
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        setLoading(true);
+        getSpoonacularRecipe(recipeId)
+          .then((data) => {
+            setRecipe(data);
+            setError(!data ? 'Kein Rezept gefunden' : '');
+            setLoading(false);
+          })
+          .catch(() => {
+            setError('Fehler beim Laden des Rezepts');
+            setLoading(false);
+          });
+      }, [recipeId]);
+
+      return { recipe, error, loading };
+    }
+
+    // Holt Rezepte nach Mahlzeitentyp
+    export function useRecipesByMealType(type: string) {
+      const [recipes, setRecipes] = useState<Recipe[]>([]);
+      const [error, setError] = useState('');
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        setLoading(true);
+        searchSpoonacularRecipes('', { mealType: type as MealType })
+          .then(({ recipes }) => {
+            setRecipes(recipes);
+            setError(recipes.length === 0 ? 'Keine Rezepte gefunden' : '');
+            setLoading(false);
+          })
+          .catch(() => {
+            setError('Fehler beim Laden der Rezepte');
+            setLoading(false);
+          });
+      }, [type]);
+
+      return { recipes, error, loading };
+    }
     category: 'Breakfast',
     cuisine: 'Modern',
     tags: ['healthy', 'quick', 'vegetarian'],

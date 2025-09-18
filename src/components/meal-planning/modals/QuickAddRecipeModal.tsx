@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { MockRecipeService, type MockRecipe, mockRecipeToMealSlot } from '@/services/mockRecipeService';
+import { useAllRecipes } from '@/services/mockRecipeService';
 import {
   Dialog,
   DialogContent,
@@ -63,8 +63,7 @@ export function QuickAddRecipeModal({
   dayName = 'today',
   className
 }: QuickAddRecipeModalProps) {
-  const [recipes, setRecipes] = useState<MockRecipe[]>([]);
-  const [filteredRecipes, setFilteredRecipes] = useState<MockRecipe[]>([]);
+  const [filteredRecipes, setFilteredRecipes] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
@@ -72,20 +71,41 @@ export function QuickAddRecipeModal({
   const [selectedDiet, setSelectedDiet] = useState<string>('all');
   const [selectedAllergy, setSelectedAllergy] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>(['all', 'breakfast', 'lunch', 'dinner', 'snacks']);
 
   // Load recipes when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      loadRecipes();
-      loadCategories();
-    }
-  }, [isOpen]);
+  const { recipes, error, loading } = useAllRecipes(searchQuery, {
+    type: selectedCategory !== 'all' ? selectedCategory : undefined,
+    diet: selectedDiet !== 'all' ? selectedDiet : undefined,
+    maxReadyTime: maxCookingTime !== 'all' ? Number(maxCookingTime) : undefined
+  });
 
   // Filter recipes when search/filters change
   useEffect(() => {
-    filterRecipes();
-  }, [recipes, searchQuery, selectedCategory, selectedDifficulty, maxCookingTime, selectedDiet, selectedAllergy]);
+    let filtered = [...recipes];
+    // Text search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(recipe => 
+        recipe.title.toLowerCase().includes(query) ||
+        (recipe.description && recipe.description.toLowerCase().includes(query)) ||
+        (recipe.ingredients && recipe.ingredients.some(ingredient => ingredient.name.toLowerCase().includes(query)))
+      );
+    }
+    // MealType/Kategorie
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(recipe => recipe.mealType === selectedCategory);
+    }
+    // Diät
+    if (selectedDiet !== 'all') {
+      filtered = filtered.filter(recipe => recipe.tags?.map(tag => tag.toLowerCase()).includes(selectedDiet.toLowerCase()));
+    }
+    // Kochzeit
+    if (maxCookingTime !== 'all') {
+      filtered = filtered.filter(recipe => recipe.totalTime <= Number(maxCookingTime));
+    }
+    setFilteredRecipes(filtered);
+  }, [recipes, searchQuery, selectedCategory, maxCookingTime, selectedDiet]);
 
   const loadRecipes = async () => {
     setIsLoading(true);
@@ -169,63 +189,6 @@ export function QuickAddRecipeModal({
     // Allergy filter (exclude recipes with specific allergens)
     if (selectedAllergy !== 'all') {
       filtered = filtered.filter(recipe => {
-        const allergenKeywords = {
-          'nuts': ['nuts', 'almond', 'walnut', 'peanut', 'pecan', 'cashew'],
-          'dairy': ['milk', 'cheese', 'butter', 'cream', 'yogurt'],
-          'eggs': ['egg', 'eggs'],
-          'soy': ['soy', 'tofu', 'soy sauce'],
-          'shellfish': ['shrimp', 'crab', 'lobster', 'shellfish'],
-          'fish': ['fish', 'salmon', 'tuna', 'cod']
-        };
-
-        const keywords = allergenKeywords[selectedAllergy as keyof typeof allergenKeywords] || [];
-        const ingredientsText = recipe.ingredients.join(' ').toLowerCase();
-        const titleText = recipe.title.toLowerCase();
-        const descriptionText = recipe.description.toLowerCase();
-        
-        return !keywords.some(keyword => 
-          ingredientsText.includes(keyword) || 
-          titleText.includes(keyword) || 
-          descriptionText.includes(keyword)
-        );
-      });
-    }
-
-    setFilteredRecipes(filtered);
-  };
-
-  const handleAddRecipe = (recipe: MockRecipe) => {
-    onAddRecipe(recipe.id, recipe.title, recipe.servings);
-    onClose();
-  };
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setSelectedCategory('all');
-    setSelectedDifficulty('all');
-    setMaxCookingTime('all');
-    setSelectedDiet('all');
-    setSelectedAllergy('all');
-  };
-
-  // Get meal type specific recipes as suggestions
-  const suggestedRecipes = useMemo(() => {
-    return recipes
-      .filter(recipe => recipe.category.toLowerCase() === mealType.toLowerCase())
-      .slice(0, 3);
-  }, [recipes, mealType]);
-
-  const mealTypeEmoji = {
-    breakfast: '🌅',
-    lunch: '☀️',
-    dinner: '🌙',
-    snacks: '🍎'
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <span className="text-xl">{mealTypeEmoji[mealType]}</span>
             Add Recipe to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}

@@ -11,40 +11,84 @@
 // ========================================
 
 export interface MockRecipe {
-  id: string;
-  title: string;
-  description: string;
-  cookingTime: number; // in minutes
-  prepTime: number; // in minutes
-  servings: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  category: string;
-  cuisine: string;
-  tags: string[];
-  ingredients: string[];
-  instructions: string[];
-  nutrition?: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  };
-  imageUrl?: string;
-  rating: number;
-  reviewCount: number;
-  isVegetarian: boolean;
-  isVegan: boolean;
-  isGlutenFree: boolean;
-  isDairyFree: boolean;
-  createdBy: string;
-}
+  import { useState, useEffect } from 'react';
+  import { Recipe } from '@/types/recipe';
+  import { searchSpoonacularRecipes, getSpoonacularRecipe } from './spoonacularService';
 
-// ========================================
-// Mock Recipe Database
-// ========================================
+  // Hook: Holt alle Rezepte (optional mit Filter)
+  export function useAllRecipes(query = '', options = {}) {
+    const [recipes, setRecipes] = useState<Recipe[]>([]);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
 
-const MOCK_RECIPES: MockRecipe[] = [
-  // BREAKFAST RECIPES
+    useEffect(() => {
+      setLoading(true);
+      searchSpoonacularRecipes(query, options)
+        .then(({ recipes }) => {
+          if (recipes.length === 0) {
+            setError('Keine Rezepte gefunden');
+          }
+          setRecipes(recipes);
+          setLoading(false);
+        })
+        .catch(() => {
+          setError('Fehler beim Laden der Rezepte');
+          setLoading(false);
+        });
+    }, [query, JSON.stringify(options)]);
+
+    return { recipes, error, loading };
+  }
+
+  // Hook: Holt ein Rezept per ID
+  export function useRecipeById(recipeId: string) {
+    const [recipe, setRecipe] = useState<Recipe | null>(null);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      setLoading(true);
+      getSpoonacularRecipe(recipeId)
+        .then((data) => {
+          if (!data) {
+            setError('Kein Rezept gefunden');
+          }
+          setRecipe(data);
+          setLoading(false);
+        })
+        .catch(() => {
+          setError('Fehler beim Laden des Rezepts');
+          setLoading(false);
+        });
+    }, [recipeId]);
+
+    return { recipe, error, loading };
+  }
+
+  // Hook: Holt Rezepte nach Mahlzeitentyp
+  export function useRecipesByMealType(type: string) {
+    const [recipes, setRecipes] = useState<Recipe[]>([]);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      setLoading(true);
+      searchSpoonacularRecipes('', { type })
+        .then(({ recipes }) => {
+          if (recipes.length === 0) {
+            setError('Keine Rezepte gefunden');
+          }
+          setRecipes(recipes);
+          setLoading(false);
+        })
+        .catch(() => {
+          setError('Fehler beim Laden der Rezepte');
+          setLoading(false);
+        });
+    }, [type]);
+
+    return { recipes, error, loading };
+  }
   {
     id: 'breakfast-1',
     title: 'Fluffy Pancakes',

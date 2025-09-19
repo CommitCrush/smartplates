@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useAllRecipes } from '@/services/mockRecipeService';
+import { useAllRecipes } from '@/services/mockRecipeService'; // Now uses Spoonacular API
 import {
   Dialog,
   DialogContent,
@@ -66,12 +66,16 @@ export function QuickAddRecipeModal({
   const [filteredRecipes, setFilteredRecipes] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [maxCookingTime, setMaxCookingTime] = useState<string>('all');
   const [selectedDiet, setSelectedDiet] = useState<string>('all');
   const [selectedAllergy, setSelectedAllergy] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(false);
-  const [categories, setCategories] = useState<string[]>(['all', 'breakfast', 'lunch', 'dinner', 'snacks']);
+  const categories = ['all', 'breakfast', 'lunch', 'dinner', 'snacks'];
+  const mealTypeEmoji: Record<string, string> = {
+    breakfast: '🍳',
+    lunch: '🥪',
+    dinner: '🍽️',
+    snacks: '🍪',
+  };
 
   // Load recipes when modal opens
   const { recipes, error, loading } = useAllRecipes(searchQuery, {
@@ -83,112 +87,60 @@ export function QuickAddRecipeModal({
   // Filter recipes when search/filters change
   useEffect(() => {
     let filtered = [...recipes];
-    // Text search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(recipe => 
-        recipe.title.toLowerCase().includes(query) ||
-        (recipe.description && recipe.description.toLowerCase().includes(query)) ||
-        (recipe.ingredients && recipe.ingredients.some(ingredient => ingredient.name.toLowerCase().includes(query)))
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      filtered = filtered.filter(recipe =>
+        recipe.title?.toLowerCase().includes(query) ||
+        recipe.description?.toLowerCase().includes(query) ||
+        (recipe.tags && recipe.tags.some((tag: string) => tag.toLowerCase().includes(query)))
       );
     }
-    // MealType/Kategorie
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(recipe => recipe.mealType === selectedCategory);
-    }
-    // Diät
+    // Filter by mealType automatically
+      // Use 'category' for Spoonacular recipes, 'mealType' for local recipes
+      if (mealType && mealType !== 'snacks') {
+    filtered = filtered.filter(recipe => recipe.category === mealType);
+      }
+      if (selectedCategory !== 'all') {
+    filtered = filtered.filter(recipe => recipe.category === selectedCategory);
+      }
     if (selectedDiet !== 'all') {
-      filtered = filtered.filter(recipe => recipe.tags?.map(tag => tag.toLowerCase()).includes(selectedDiet.toLowerCase()));
+      filtered = filtered.filter(recipe => recipe.tags?.includes(selectedDiet));
     }
-    // Kochzeit
     if (maxCookingTime !== 'all') {
       filtered = filtered.filter(recipe => recipe.totalTime <= Number(maxCookingTime));
     }
-    setFilteredRecipes(filtered);
-  }, [recipes, searchQuery, selectedCategory, maxCookingTime, selectedDiet]);
-
-  const loadRecipes = async () => {
-    setIsLoading(true);
-    try {
-      const allRecipes = await MockRecipeService.getAllRecipes();
-      setRecipes(allRecipes);
-    } catch (error) {
-      console.error('Failed to load recipes:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadCategories = async () => {
-    try {
-      const categoryList = await MockRecipeService.getCategories();
-      setCategories(categoryList);
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-    }
-  };
-
-  const filterRecipes = () => {
-    let filtered = [...recipes];
-
-    // Text search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(recipe => 
-        recipe.title.toLowerCase().includes(query) ||
-        recipe.description.toLowerCase().includes(query) ||
-        recipe.ingredients.some(ingredient => 
-          ingredient.toLowerCase().includes(query)
-        ) ||
-        recipe.tags.some(tag => 
-          tag.toLowerCase().includes(query)
-        )
-      );
-    }
-
-    // Category filter
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(recipe => 
-        recipe.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
-
-    // Difficulty filter
-    if (selectedDifficulty !== 'all') {
-      filtered = filtered.filter(recipe => recipe.difficulty === selectedDifficulty);
-    }
-
-    // Cooking time filter
-    if (maxCookingTime !== 'all') {
-      const maxTime = parseInt(maxCookingTime);
-      filtered = filtered.filter(recipe => 
-        (recipe.cookingTime + recipe.prepTime) <= maxTime
-      );
-    }
-
-    // Diet filter
-    if (selectedDiet !== 'all') {
-      filtered = filtered.filter(recipe => {
-        switch (selectedDiet) {
-          case 'vegetarian':
-            return recipe.isVegetarian;
-          case 'vegan':
-            return recipe.tags.some(tag => tag.toLowerCase().includes('vegan'));
-          case 'gluten-free':
-            return recipe.tags.some(tag => tag.toLowerCase().includes('gluten-free'));
-          case 'keto':
-            return recipe.tags.some(tag => tag.toLowerCase().includes('keto'));
-          case 'paleo':
-            return recipe.tags.some(tag => tag.toLowerCase().includes('paleo'));
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Allergy filter (exclude recipes with specific allergens)
     if (selectedAllergy !== 'all') {
-      filtered = filtered.filter(recipe => {
+      filtered = filtered.filter(recipe =>
+        !(recipe.description && recipe.description.toLowerCase().includes(selectedAllergy))
+      );
+    }
+    setFilteredRecipes(filtered);
+  }, [recipes, searchQuery, selectedCategory, maxCookingTime, selectedDiet, selectedAllergy, mealType]);
+
+  // Helper: Clear all filters
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('all');
+    setMaxCookingTime('all');
+    setSelectedDiet('all');
+    setSelectedAllergy('all');
+  };
+
+  // Helper: Suggest top 5 recipes
+  const suggestedRecipes = useMemo(() => {
+    return recipes.slice(0, 5);
+  }, [recipes]);
+
+  // Helper: Add recipe
+  const handleAddRecipe = (recipe: any) => {
+    onAddRecipe(recipe.id, recipe.title, recipe.servings);
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className={cn('max-w-2xl w-full', className)}>
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-xl">{mealTypeEmoji[mealType]}</span>
             Add Recipe to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
@@ -232,18 +184,6 @@ export function QuickAddRecipeModal({
                 </SelectContent>
               </Select>
 
-              <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                <SelectTrigger className="w-32 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="Difficulty" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="all" className="hover:bg-gray-50">Any Level</SelectItem>
-                  <SelectItem value="easy" className="hover:bg-gray-50">Easy</SelectItem>
-                  <SelectItem value="medium" className="hover:bg-gray-50">Medium</SelectItem>
-                  <SelectItem value="hard" className="hover:bg-gray-50">Hard</SelectItem>
-                </SelectContent>
-              </Select>
-
               <Select value={maxCookingTime} onValueChange={setMaxCookingTime}>
                 <SelectTrigger className="w-40 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
                   <SelectValue placeholder="Max Time" />
@@ -265,7 +205,7 @@ export function QuickAddRecipeModal({
                   <SelectItem value="all" className="hover:bg-gray-50">Any Diet</SelectItem>
                   <SelectItem value="vegetarian" className="hover:bg-gray-50">🌱 Vegetarian</SelectItem>
                   <SelectItem value="vegan" className="hover:bg-gray-50">🌿 Vegan</SelectItem>
-                  <SelectItem value="gluten-free" className="hover:bg-gray-50">🌾 Gluten-Free</SelectItem>
+                  <SelectItem value="gluten free" className="hover:bg-gray-50">🌾 Gluten-Free</SelectItem>
                   <SelectItem value="keto" className="hover:bg-gray-50">🥑 Keto</SelectItem>
                   <SelectItem value="paleo" className="hover:bg-gray-50">🍖 Paleo</SelectItem>
                 </SelectContent>
@@ -318,7 +258,7 @@ export function QuickAddRecipeModal({
 
           {/* Recipe Results */}
           <div className="flex-1 overflow-y-auto">
-            {isLoading ? (
+            {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
                   <Utensils className="h-8 w-8 text-gray-400 mx-auto mb-2 animate-pulse" />
@@ -336,62 +276,69 @@ export function QuickAddRecipeModal({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {filteredRecipes.map(recipe => {
-                  const totalTime = recipe.cookingTime + recipe.prepTime;
-                  
-                  return (
-                    <div
-                      key={recipe.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all group"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-sm leading-tight pr-2 flex-1">
-                          {recipe.title}
-                        </h4>
-                        <Button
-                          size="sm"
-                          onClick={() => handleAddRecipe(recipe)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredRecipes.map(recipe => (
+                  <div
+                    key={recipe._id || recipe.title}
+                    className="border border-gray-200 rounded-lg p-4 hover:border-primary/40 hover:shadow-md transition-all group bg-background-card"
+                  >
+                    {/* Recipe Image */}
+                    <div className="w-full h-40 bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                      {recipe.image ? (
+                        <img
+                          src={recipe.image}
+                          alt={recipe.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-4xl opacity-30">🍽️</div>
+                      )}
+                    </div>
 
-                      <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                        {recipe.description}
-                      </p>
+                    {/* Title & Add Button */}
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-base leading-tight pr-2 flex-1">
+                        {recipe.title}
+                      </h4>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAddRecipe(recipe)}
+                        className="opacity-100 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                        aria-label={`Add ${recipe.title}`}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
 
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-3 w-3" />
-                            <span>{totalTime}min</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Users className="h-3 w-3" />
-                            <span>{recipe.servings}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                            <span>{recipe.rating}</span>
-                          </div>
+                    {/* Description */}
+                    <p className="text-xs text-gray-600 mb-2 line-clamp-3">
+                      {recipe.description}
+                    </p>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {recipe.tags?.map((tag: string) => (
+                        <Badge key={tag} variant="secondary" className="text-xs px-2 py-0">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{recipe.totalTime} min</span>
                         </div>
-
-                        <div className="flex gap-1">
-                          <Badge variant="secondary" className="text-xs px-1 py-0">
-                            {recipe.difficulty}
-                          </Badge>
-                          {recipe.isVegetarian && (
-                            <Badge variant="outline" className="text-xs px-1 py-0 text-green-600">
-                              Veggie
-                            </Badge>
-                          )}
+                        <div className="flex items-center space-x-1">
+                          <Users className="h-3 w-3" />
+                          <span>{recipe.servings}</span>
                         </div>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>

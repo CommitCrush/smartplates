@@ -6,20 +6,31 @@ import { Button } from '@/components/ui/button';
 import { Search, ChefHat, ChevronDown, Plus } from 'lucide-react';
 import { Recipe } from '@/types/recipe';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
-import { CacheInitializer } from '@/components/recipe/CacheInitializer';
+import { useAllRecipes } from '@/services/mockRecipeService';
 import Link from 'next/link';
 
 export default function RecipePage() {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const [showMore, setShowMore] = useState(false);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [difficultyDropdownOpen, setDifficultyDropdownOpen] = useState(false);
+  const [selectedDiet, setSelectedDiet] = useState('');
+  const [dietDropdownOpen, setDietDropdownOpen] = useState(false);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const difficultyDropdownRef = useRef<HTMLDivElement>(null);
+  const dietDropdownRef = useRef<HTMLDivElement>(null);
+  const diets = [
+    { value: '', label: 'All Diets' },
+    { value: 'vegetarian', label: 'Vegetarian' },
+    { value: 'vegan', label: 'Vegan' },
+    { value: 'gluten free', label: 'Gluten-Free' },
+    { value: 'ketogenic', label: 'Ketogenic' },
+    { value: 'paleo', label: 'Paleo' },
+    { value: 'primal', label: 'Primal' },
+    { value: 'whole30', label: 'Whole30' },
+  ];
 
   const categories = [
     { value: '', label: 'All Categories' },
@@ -37,41 +48,13 @@ export default function RecipePage() {
     { value: 'hard', label: 'Hard' },
   ];
 
-  const fetchRecipes = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('search', searchQuery);
-      if (selectedCategory) params.append('category', selectedCategory);
-      if (selectedDifficulty) params.append('difficulty', selectedDifficulty);
-      params.append('limit', '50'); // Erhöhe das Limit um alle Rezepte zu sehen
-
-      const response = await fetch(`/api/recipes?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch recipes');
-      }
-      const data = await response.json();
-
-      console.log('API Response:', data); // Debug-Ausgabe
-      console.log('Recipes count:', data.recipes?.length); // Debug-Ausgabe
-
-      if (data.recipes) {
-        setRecipes(data.recipes);
-        setError('');
-      } else {
-        setError('Failed to load recipes');
-      }
-    } catch (err) {
-      setError('Error loading recipes');
-      console.error('Recipes error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [searchQuery, selectedCategory, selectedDifficulty]);
-
-  useEffect(() => {
-    fetchRecipes();
-  }, [fetchRecipes]);
+  // Use Spoonacular API for all recipes
+  const { recipes, error, loading } = useAllRecipes(searchQuery, {
+    type: selectedCategory,
+    diet: selectedDiet,
+    number: showMore ? 60 : 30,
+    // Spoonacular API does not support difficulty, so we filter client-side
+  });
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -81,6 +64,9 @@ export default function RecipePage() {
       }
       if (difficultyDropdownRef.current && !difficultyDropdownRef.current.contains(event.target as Node)) {
         setDifficultyDropdownOpen(false);
+      }
+      if (dietDropdownRef.current && !dietDropdownRef.current.contains(event.target as Node)) {
+        setDietDropdownOpen(false);
       }
     };
 
@@ -106,10 +92,6 @@ export default function RecipePage() {
           </p>
         </div>
 
-        {/* Cache Status and Controls */}
-        <div className="bg-background-card border border-border rounded-lg p-4 mb-6">
-          <CacheInitializer />
-        </div>
 
         {/* Search and Filters */}
         <div className="bg-background-card border border-border rounded-lg p-6 mb-8">
@@ -127,6 +109,7 @@ export default function RecipePage() {
                 />
               </div>
             </div>
+
 
             {/* Category Filter */}
             <div ref={categoryDropdownRef} className="relative">
@@ -149,6 +132,33 @@ export default function RecipePage() {
                       className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
                     >
                       {category.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Diet Filter */}
+            <div ref={dietDropdownRef} className="relative">
+              <button
+                onClick={() => setDietDropdownOpen(!dietDropdownOpen)}
+                className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
+              >
+                <span>{diets.find(d => d.value === selectedDiet)?.label || 'All Diets'}</span>
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              {dietDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10">
+                  {diets.map((diet) => (
+                    <button
+                      key={diet.value}
+                      onClick={() => {
+                        setSelectedDiet(diet.value);
+                        setDietDropdownOpen(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
+                    >
+                      {diet.label}
                     </button>
                   ))}
                 </div>
@@ -194,8 +204,8 @@ export default function RecipePage() {
           </div>
         </div>
 
-        {/* Loading State */}
-        {isLoading && (
+  {/* Loading State */}
+  {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -213,25 +223,53 @@ export default function RecipePage() {
           </div>
         )}
 
-        {/* Error State */}
-        {error && (
+  {/* Error State */}
+  {error && (
           <Card className="p-8 text-center">
             <p className="text-red-500 mb-4">Error: {error}</p>
-            <Button onClick={fetchRecipes}>Retry</Button>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
           </Card>
         )}
 
         {/* Recipe Grid */}
-        {!isLoading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
-            ))}
-          </div>
+        {!loading && !error && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recipes
+                .filter((recipe) => {
+                  if (!selectedDifficulty) return true;
+                  if (selectedDifficulty === 'easy') return recipe.totalTime <= 15;
+                  if (selectedDifficulty === 'medium') return recipe.totalTime > 15 && recipe.totalTime <= 30;
+                  if (selectedDifficulty === 'hard') return recipe.totalTime > 30;
+                  return true;
+                })
+                .map((recipe) => (
+                  <RecipeCard key={recipe.id} recipe={recipe} />
+                ))}
+            </div>
+            {!showMore && recipes.length >= 30 && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  onClick={() => {
+                    // Require login to load more
+                    if (!window.localStorage.getItem('userLoggedIn')) {
+                      alert('Bitte registrieren oder einloggen, um mehr Rezepte zu sehen.');
+                      return;
+                    }
+                    setShowMore(true);
+                  }}
+                  variant="outline"
+                  size="lg"
+                >
+                  Mehr Rezepte anzeigen
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Empty State */}
-        {!isLoading && !error && recipes.length === 0 && (
+  {/* Empty State */}
+  {!loading && !error && recipes.length === 0 && (
           <Card className="p-12 text-center">
             <ChefHat className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Recipes Found</h3>

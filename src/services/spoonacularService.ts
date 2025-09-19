@@ -8,6 +8,7 @@
 import { Recipe } from '@/types/recipe';
 
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
+console.log('DEBUG Spoonacular API Key:', SPOONACULAR_API_KEY);
 const BASE_URL = 'https://api.spoonacular.com/recipes';
 
 if (!SPOONACULAR_API_KEY) {

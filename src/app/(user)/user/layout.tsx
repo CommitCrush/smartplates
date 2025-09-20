@@ -15,9 +15,7 @@ export default function UserLayout({ children }: UserLayoutProps) {
               SmartPlates
             </h1>
             <nav className="space-x-4">
-              <Link href="/user" className="text-primary-600 hover:text-primary-700">
-                Dashboard
-              </Link>
+             
               <Link href="/user/profile" className="text-muted-foreground hover:text-foreground">
                 Profile
               </Link>

@@ -36,7 +36,7 @@ import { QuickAddRecipeModal } from '@/components/meal-planning/modals/QuickAddR
 import { SavePlanModal, type SaveOptions } from '@/components/meal-planning/modals/SavePlanModal';
 import { getWeekStartDate, createEmptyMealPlan } from '@/types/meal-planning';
 import type { IMealPlan, MealSlot, MealPlanningSlot } from '@/types/meal-planning';
-import { mockRecipeToMealSlot, MockRecipeService } from '@/services/mockRecipeService';
+// ...existing code...
 import { MealPlanPDFService } from '@/services/pdfDownloadService';
 import { 
   captureWeeklyCalendarScreenshot, 
@@ -519,7 +519,17 @@ export default function MealPlanningPage() {
     if (!selectedSlot || selectedSlot.dayOfWeek === undefined || !selectedSlot.mealType) return;
 
     try {
-      const mealSlot = mockRecipeToMealSlot(recipeData);
+      // Map Spoonacular API recipe data to MealSlot
+      const mealSlot = {
+        recipeId: recipeData.id,
+        recipeName: recipeData.title,
+        servings: recipeData.servings || 2,
+        prepTime: recipeData.readyInMinutes || 30,
+        image: recipeData.image || '',
+        ingredients: recipeData.extendedIngredients?.map((ing: any) => ing.original) || [],
+        tags: recipeData.diets || [],
+        notes: ''
+      };
       
       // Determine which week's meal plan to update - use targetDate if available (from monthly calendar)
       const targetDate = selectedSlot.targetDate || currentDate;

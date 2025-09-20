@@ -8,6 +8,8 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { shouldBeAdmin } from '@/config/team';
+import { findUserByEmail } from '@/models/User';
+import { verifyPassword } from '@/utils/password';
 
 /**
  * Mock NextAuth configuration for development
@@ -27,80 +29,29 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
-        
-        // Mock users for development with individual passwords
-        const mockUsers = [
-          {
-            id: 'admin-1',
-            email: 'admin@smartplates.dev',
-            name: 'Admin User',
-            role: 'admin',
-            password: 'admin123'
-          },
-          {
-            id: 'user-1', 
-            email: 'user@smartplates.dev',
-            name: 'Regular User',
-            role: 'user',
-            password: 'user123'
-          },
-          // Add team members from team.ts
-          {
-            id: 'team-ese',
-            email: 'ese@gmail.com',
-            name: 'Esse (Team)',
-            role: 'admin',
-            password: 'team123'
-          },
-          {
-            id: 'team-rozn',
-            email: 'rozn@gmail.com',
-            name: 'Rozen (Team)',
-            role: 'admin',
-            password: 'team123'
-          },
-          {
-            id: 'team-monika',
-            email: 'monika@gmail.com',
-            name: 'Monika (Team)',
-            role: 'admin',
-            password: 'team123'
-          },
-          {
-            id: 'team-balta',
-            email: 'balta@gmail.com',
-            name: 'Balta (Team)',
-            role: 'admin',
-            password: 'team123'
-          },
-          {
-            id: 'team-hana',
-            email: 'hana@gmail.com',
-            name: 'Hana (Team)',
-            role: 'admin',
-            password: 'team123'
-          }
-        ];
 
-        // Find user by email and check password
-        const user = mockUsers.find(u => 
-          u.email === credentials.email && u.password === credentials.password
-        );
-        
-        if (user) {
-          // Use team.ts configuration to determine final role
-          const finalRole = shouldBeAdmin(user.email) ? 'admin' : user.role;
-          
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: finalRole as 'admin' | 'user',
-            emailVerified: true
-          };
+        // Find user in MongoDB
+        const user = await findUserByEmail(credentials.email.toLowerCase());
+        if (!user || !user.password) {
+          return null;
         }
-        
-        return null;
+
+        // Verify password
+        const isValid = await verifyPassword(credentials.password, user.password);
+        if (!isValid) {
+          return null;
+        }
+
+        // Determine role from team.ts
+        const finalRole = shouldBeAdmin(user.email) ? 'admin' : (user.role || 'user');
+
+        return {
+          id: user._id?.toString() || '',
+          email: user.email,
+          name: user.name,
+          role: finalRole,
+          emailVerified: user.isEmailVerified || false
+        };
       }
     })
   ],

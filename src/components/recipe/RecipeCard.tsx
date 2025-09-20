@@ -133,7 +133,7 @@ export function RecipeCard({
 
             {/* Tags */}
             <div className="flex gap-1 flex-wrap">
-              {recipe.tags.slice(0, 2).map((tag) => (
+              {(recipe.tags?.slice(0, 2) ?? []).map((tag) => (
                 <Badge 
                   key={tag} 
                   variant="outline" 
@@ -142,7 +142,7 @@ export function RecipeCard({
                   {tag}
                 </Badge>
               ))}
-              {recipe.tags.length > 2 && (
+              {recipe.tags && recipe.tags.length > 2 && (
                 <Badge variant="outline" className="text-xs">
                   +{recipe.tags.length - 2}
                 </Badge>

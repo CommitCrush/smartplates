@@ -18,6 +18,22 @@ export default function RecipePage() {
   const [difficultyDropdownOpen, setDifficultyDropdownOpen] = useState(false);
   const [selectedDiet, setSelectedDiet] = useState('');
   const [dietDropdownOpen, setDietDropdownOpen] = useState(false);
+  const [selectedAllergy, setSelectedAllergy] = useState('');
+  const [allergyDropdownOpen, setAllergyDropdownOpen] = useState(false);
+  const allergyDropdownRef = useRef<HTMLDivElement>(null);
+  const allergies = [
+    { value: '', label: 'Allergies (None)' },
+    { value: 'dairy', label: 'Dairy' },
+    { value: 'egg', label: 'Egg' },
+    { value: 'gluten', label: 'Gluten' },
+    { value: 'peanut', label: 'Peanut' },
+    { value: 'seafood', label: 'Seafood' },
+    { value: 'sesame', label: 'Sesame' },
+    { value: 'soy', label: 'Soy' },
+    { value: 'sulfite', label: 'Sulfite' },
+    { value: 'tree nut', label: 'Tree Nut' },
+    { value: 'wheat', label: 'Wheat' },
+  ];
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const difficultyDropdownRef = useRef<HTMLDivElement>(null);
   const dietDropdownRef = useRef<HTMLDivElement>(null);
@@ -52,6 +68,7 @@ export default function RecipePage() {
   const { recipes, error, loading } = useAllRecipes(searchQuery, {
     type: selectedCategory,
     diet: selectedDiet,
+    intolerances: selectedAllergy,
     number: showMore ? 60 : 30,
     // Spoonacular API does not support difficulty, so we filter client-side
   });
@@ -67,6 +84,9 @@ export default function RecipePage() {
       }
       if (dietDropdownRef.current && !dietDropdownRef.current.contains(event.target as Node)) {
         setDietDropdownOpen(false);
+      }
+      if (allergyDropdownRef.current && !allergyDropdownRef.current.contains(event.target as Node)) {
+        setAllergyDropdownOpen(false);
       }
     };
 
@@ -159,6 +179,33 @@ export default function RecipePage() {
                       className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
                     >
                       {diet.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Allergy Filter */}
+            <div ref={allergyDropdownRef} className="relative">
+              <button
+                onClick={() => setAllergyDropdownOpen(!allergyDropdownOpen)}
+                className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
+              >
+                <span>{allergies.find(a => a.value === selectedAllergy)?.label || 'Allergies (None)'}</span>
+                <ChevronDown className="h-4 w-4" />
+              </button>
+              {allergyDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10">
+                  {allergies.map((allergy) => (
+                    <button
+                      key={allergy.value}
+                      onClick={() => {
+                        setSelectedAllergy(allergy.value);
+                        setAllergyDropdownOpen(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
+                    >
+                      {allergy.label}
                     </button>
                   ))}
                 </div>

@@ -8,7 +8,6 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-# testing
 /coverage
 # next.js
 /.next/
@@ -24,7 +23,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 # env files (can opt-in for committing if needed)
+
+# Google Cloud Credentials (nicht pushen)
 .env*
+src/config/smartplates-project-471422-07dda0656722.json
 # vercel
 .vercel
 # typescript

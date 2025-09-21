@@ -15,12 +15,14 @@ export default function UserLayout({ children }: UserLayoutProps) {
               SmartPlates
             </h1>
             <nav className="space-x-4">
-             
               <Link href="/user/profile" className="text-muted-foreground hover:text-foreground">
                 Profile
               </Link>
               <Link href="/user/dashboard/my_meal_plan/current" className="text-muted-foreground hover:text-foreground">
                 Meal Planning
+              </Link>
+              <Link href="/user/dashboard/ai-recipe" className="text-muted-foreground hover:text-foreground">
+                AI Rezeptideen
               </Link>
             </nav>
           </div>

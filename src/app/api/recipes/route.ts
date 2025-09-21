@@ -295,63 +295,71 @@ export async function GET(request: NextRequest) {
     let total = 0;
     let source = 'local';
 
-    // Try to get cached Spoonacular data first
-    try {
-      const cachedData = await getCachedOrFreshRecipes();
-      
-      if (cachedData.recipes.length > 0) {
-        console.log(`📦 Using cached recipes: ${cachedData.totalCount} total`);
-        
-        // Search within cached recipes
-        const searchResults = searchCachedRecipes(
-          cachedData,
-          filters.search || '',
-          filters.category,
-          filters.difficulty
-        );
-
-        // Apply pagination
+    // If 'search' param is present, treat as ingredient search
+    if (filters.search && filters.search.trim().length > 0) {
+      // Use Spoonacular ingredient search first
+      const { searchRecipesByIngredients, searchSpoonacularRecipes } = await import('@/services/spoonacularService');
+      const ingredientList = filters.search.split(',').map(s => s.trim()).filter(Boolean);
+      let spoonacularRecipes = await searchRecipesByIngredients(ingredientList, { number: limit });
+      // If filter is set, use complexSearch to filter further
+      if (filters.category || filters.dietaryRestrictions.length > 0) {
+        const filterOptions: any = { number: limit };
+        if (filters.category) filterOptions.type = filters.category;
+        if (filters.dietaryRestrictions.length > 0) filterOptions.diet = filters.dietaryRestrictions.join(',');
+        // Use first ingredient as query for complexSearch
+        const query = ingredientList.join(',');
+        const filtered = await searchSpoonacularRecipes(query, filterOptions);
+        recipes = filtered.recipes;
+        total = recipes.length;
+        source = 'spoonacular-filtered';
+      } else {
+        recipes = spoonacularRecipes;
+        total = recipes.length;
+        source = 'spoonacular-ingredients';
+      }
+    } else {
+      // Try to get cached Spoonacular data first
+      try {
+        const cachedData = await getCachedOrFreshRecipes();
+        if (cachedData.recipes.length > 0) {
+          const searchResults = searchCachedRecipes(
+            cachedData,
+            filters.search || '',
+            filters.category,
+            filters.difficulty
+          );
+          const startIndex = (page - 1) * limit;
+          const endIndex = startIndex + limit;
+          recipes = searchResults.slice(startIndex, endIndex);
+          total = searchResults.length;
+          source = 'spoonacular-cached';
+        }
+      } catch (cacheError) {
+        console.warn('⚠️ Cache system failed, falling back to mock data:', cacheError);
+      }
+      // Fallback to mock data if cache is empty or failed
+      if (recipes.length === 0) {
+        let filteredRecipes = mockRecipes;
+        if (filters.category) {
+          filteredRecipes = filteredRecipes.filter(recipe => recipe.category === filters.category);
+        }
+        if (filters.difficulty) {
+          filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === filters.difficulty);
+        }
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          filteredRecipes = filteredRecipes.filter(recipe => 
+            recipe.title.toLowerCase().includes(searchLower) ||
+            recipe.description.toLowerCase().includes(searchLower) ||
+            recipe.tags.some(tag => tag.toLowerCase().includes(searchLower))
+          );
+        }
         const startIndex = (page - 1) * limit;
         const endIndex = startIndex + limit;
-        recipes = searchResults.slice(startIndex, endIndex);
-        total = searchResults.length;
-        source = 'spoonacular-cached';
-        
-        console.log(`🔍 Found ${searchResults.length} recipes matching filters, showing ${recipes.length}`);
+        recipes = filteredRecipes.slice(startIndex, endIndex);
+        total = filteredRecipes.length;
+        source = 'local';
       }
-    } catch (cacheError) {
-      console.warn('⚠️ Cache system failed, falling back to mock data:', cacheError);
-    }
-
-    // Fallback to mock data if cache is empty or failed
-    if (recipes.length === 0) {
-      console.log('📋 Using mock data as fallback');
-      
-      let filteredRecipes = mockRecipes;
-      
-      if (filters.category) {
-        filteredRecipes = filteredRecipes.filter(recipe => recipe.category === filters.category);
-      }
-      
-      if (filters.difficulty) {
-        filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === filters.difficulty);
-      }
-      
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredRecipes = filteredRecipes.filter(recipe => 
-          recipe.title.toLowerCase().includes(searchLower) ||
-          recipe.description.toLowerCase().includes(searchLower) ||
-          recipe.tags.some(tag => tag.toLowerCase().includes(searchLower))
-        );
-      }
-
-      // Apply pagination
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      recipes = filteredRecipes.slice(startIndex, endIndex);
-      total = filteredRecipes.length;
-      source = 'local';
     }
 
     // Return paginated response

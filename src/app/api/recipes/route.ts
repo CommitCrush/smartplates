@@ -275,86 +275,99 @@ const mockRecipes: Recipe[] = [
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    // Extract filter parameters
+
+    // Filter-Parameter extrahieren
+    // dietaryRestrictions und tags als Array verarbeiten
     const filters = {
       category: searchParams.get('category') || undefined,
       difficulty: searchParams.get('difficulty') || undefined,
       cuisine: searchParams.get('cuisine') || undefined,
       search: searchParams.get('search') || undefined,
-      dietaryRestrictions: searchParams.get('dietaryRestrictions')?.split(',') || [],
-      tags: searchParams.get('tags')?.split(',') || [],
+      dietaryRestrictions: searchParams.getAll('dietaryRestrictions').filter(Boolean),
+      tags: searchParams.getAll('tags').filter(Boolean),
       maxTime: searchParams.get('maxTime') ? parseInt(searchParams.get('maxTime')!) : undefined,
     };
+    console.log('API Query Params:', filters);
 
-    // Extract pagination parameters
+    // Pagination
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
 
     let recipes: Recipe[] = [];
     let total = 0;
-    let source = 'local';
+    let source = 'mongodb';
 
-    // Try to get cached Spoonacular data first
+    // 1. Suche in MongoDB
     try {
-      const cachedData = await getCachedOrFreshRecipes();
-      
-      if (cachedData.recipes.length > 0) {
-        console.log(`📦 Using cached recipes: ${cachedData.totalCount} total`);
-        
-        // Search within cached recipes
-        const searchResults = searchCachedRecipes(
-          cachedData,
-          filters.search || '',
-          filters.category,
-          filters.difficulty
-        );
-
-        // Apply pagination
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        recipes = searchResults.slice(startIndex, endIndex);
-        total = searchResults.length;
-        source = 'spoonacular-cached';
-        
-        console.log(`🔍 Found ${searchResults.length} recipes matching filters, showing ${recipes.length}`);
+      const { getCollection, COLLECTIONS } = await import('@/lib/db');
+      const recipeCollection = await getCollection<Recipe>(COLLECTIONS.RECIPES);
+      const mongoQuery: any = {};
+      if (filters.search) {
+        mongoQuery.$or = [
+          { title: { $regex: filters.search, $options: 'i' } },
+          { description: { $regex: filters.search, $options: 'i' } },
+          { tags: { $elemMatch: { $regex: filters.search, $options: 'i' } } }
+        ];
       }
-    } catch (cacheError) {
-      console.warn('⚠️ Cache system failed, falling back to mock data:', cacheError);
+      if (filters.category) mongoQuery.category = filters.category;
+      if (filters.difficulty) mongoQuery.difficulty = filters.difficulty;
+      if (filters.cuisine) mongoQuery.cuisine = filters.cuisine;
+      if (filters.dietaryRestrictions && filters.dietaryRestrictions.length > 0) mongoQuery.dietaryRestrictions = { $all: filters.dietaryRestrictions };
+      if (filters.tags && filters.tags.length > 0) mongoQuery.tags = { $all: filters.tags };
+      if (filters.maxTime) mongoQuery.totalTime = { $lte: filters.maxTime };
+      console.log('MongoDB Query:', mongoQuery);
+
+      const mongoRecipes = await recipeCollection.find(mongoQuery).skip((page - 1) * limit).limit(limit).toArray();
+      recipes = mongoRecipes;
+      total = await recipeCollection.countDocuments(mongoQuery);
+      source = 'mongodb';
+    } catch (dbError) {
+      console.warn('⚠️ MongoDB query failed, fallback to cache:', dbError);
     }
 
-    // Fallback to mock data if cache is empty or failed
-    if (recipes.length === 0) {
-      console.log('📋 Using mock data as fallback');
-      
+    // 2. Fallback: Spoonacular API, falls keine Rezepte gefunden
+    if (!recipes || recipes.length === 0) {
+      try {
+        const { searchSpoonacularRecipes } = await import('@/services/spoonacularService');
+        const spoonacularOptions: any = {
+          number: limit,
+          offset: (page - 1) * limit,
+        };
+        if (filters.category) spoonacularOptions.type = filters.category;
+        if (filters.difficulty) spoonacularOptions.difficulty = filters.difficulty;
+        if (filters.cuisine) spoonacularOptions.cuisine = filters.cuisine;
+        if (filters.dietaryRestrictions.length > 0) spoonacularOptions.diet = filters.dietaryRestrictions.join(',');
+        if (filters.tags.length > 0) spoonacularOptions.tags = filters.tags.join(',');
+        if (filters.maxTime) spoonacularOptions.maxReadyTime = filters.maxTime;
+
+        const result = await searchSpoonacularRecipes(filters.search || '', spoonacularOptions);
+        recipes = result.recipes || [];
+        total = result.totalResults || recipes.length;
+        source = 'spoonacular';
+      } catch (spError) {
+        console.warn('⚠️ Spoonacular API fallback failed:', spError);
+      }
+    }
+
+    // 3. Fallback: Mock Data falls alles fehlschlägt
+    if (!recipes || recipes.length === 0) {
       let filteredRecipes = mockRecipes;
-      
-      if (filters.category) {
-        filteredRecipes = filteredRecipes.filter(recipe => recipe.category === filters.category);
-      }
-      
-      if (filters.difficulty) {
-        filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === filters.difficulty);
-      }
-      
+      if (filters.category) filteredRecipes = filteredRecipes.filter(recipe => recipe.category === filters.category);
+      if (filters.difficulty) filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === filters.difficulty);
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        filteredRecipes = filteredRecipes.filter(recipe => 
+        filteredRecipes = filteredRecipes.filter(recipe =>
           recipe.title.toLowerCase().includes(searchLower) ||
           recipe.description.toLowerCase().includes(searchLower) ||
           (recipe.tags || []).some(tag => tag.toLowerCase().includes(searchLower))
         );
       }
-
-      // Apply pagination
-      const startIndex = (page - 1) * limit;
-      const endIndex = startIndex + limit;
-      recipes = filteredRecipes.slice(startIndex, endIndex);
+      recipes = filteredRecipes.slice((page - 1) * limit, page * limit);
       total = filteredRecipes.length;
-      source = 'local';
+      source = 'mock';
     }
 
-    // Return paginated response
+    // Response
     return NextResponse.json({
       recipes,
       total,
@@ -362,7 +375,7 @@ export async function GET(request: NextRequest) {
       totalPages: Math.ceil(total / limit),
       hasNext: (page * limit) < total,
       hasPrev: page > 1,
-      source, // 'spoonacular-cached', 'local', etc.
+      source,
       message: total > 0 ? `Found ${recipes.length} recipes (${source})` : 'No recipes found'
     });
 

@@ -548,3 +548,22 @@
     background-color: var(--color-background-footer);
   }
 }
+
+/* Hero Section Background Styles */
+.hero-background {
+  background-image: url('/images/hero-background.png');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Optional: Dark mode variant */
+.dark .hero-background {
+  /* Overlay für bessere Lesbarkeit im Dark Mode */
+  background-image: 
+    /* linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), */
+    url('/images/hero-background.png');
+}

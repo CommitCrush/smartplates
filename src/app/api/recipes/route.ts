@@ -342,7 +342,7 @@ export async function GET(request: NextRequest) {
         filteredRecipes = filteredRecipes.filter(recipe => 
           recipe.title.toLowerCase().includes(searchLower) ||
           recipe.description.toLowerCase().includes(searchLower) ||
-          recipe.tags.some(tag => tag.toLowerCase().includes(searchLower))
+          (recipe.tags || []).some(tag => tag.toLowerCase().includes(searchLower))
         );
       }
 

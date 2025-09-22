@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useAllRecipes } from '@/services/mockRecipeService'; // Now uses Spoonacular API
+import { Recipe } from '@/types/recipe';
 import {
   Dialog,
   DialogContent,
@@ -42,10 +43,12 @@ import {
 // Types
 // ========================================
 
+// Using central Recipe type from @/types/recipe
+
 interface QuickAddRecipeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddRecipe: (recipeId: string, recipeName: string, servings?: number) => void;
+  onAddRecipe: (recipeId: string, recipeName: string, servings?: number, cookingTime?: number, image?: string) => void;
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snacks';
   dayName?: string;
   className?: string;
@@ -63,7 +66,7 @@ export function QuickAddRecipeModal({
   dayName = 'today',
   className
 }: QuickAddRecipeModalProps) {
-  const [filteredRecipes, setFilteredRecipes] = useState<any[]>([]);
+  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [maxCookingTime, setMaxCookingTime] = useState<string>('all');
@@ -77,43 +80,73 @@ export function QuickAddRecipeModal({
     snacks: '🍪',
   };
 
-  // Load recipes when modal opens
-  const { recipes, error, loading } = useAllRecipes(searchQuery, {
-    type: selectedCategory !== 'all' ? selectedCategory : undefined,
-    diet: selectedDiet !== 'all' ? selectedDiet : undefined,
-    maxReadyTime: maxCookingTime !== 'all' ? Number(maxCookingTime) : undefined
-  });
+  // Use mockRecipeService to get recipes
+  const { recipes, loading, error } = useAllRecipes();
 
   // Filter recipes when search/filters change
   useEffect(() => {
+    if (!recipes || recipes.length === 0) {
+      setFilteredRecipes([]);
+      return;
+    }
+    
     let filtered = [...recipes];
     const query = searchQuery.trim().toLowerCase();
+    
     if (query) {
       filtered = filtered.filter(recipe =>
         recipe.title?.toLowerCase().includes(query) ||
-        recipe.description?.toLowerCase().includes(query) ||
-        (recipe.tags && recipe.tags.some((tag: string) => tag.toLowerCase().includes(query)))
+        recipe.summary?.toLowerCase().includes(query) ||
+        (typeof recipe.instructions === 'string' && recipe.instructions.toLowerCase().includes(query)) ||
+        (recipe.dishTypes && recipe.dishTypes.some((type: string) => type.toLowerCase().includes(query))) ||
+        (recipe.diets && recipe.diets.some((diet: string) => diet.toLowerCase().includes(query)))
       );
     }
-    // Filter by mealType automatically
-      // Use 'category' for Spoonacular recipes, 'mealType' for local recipes
-      if (mealType && mealType !== 'snacks') {
-    filtered = filtered.filter(recipe => recipe.category === mealType);
-      }
-      if (selectedCategory !== 'all') {
-    filtered = filtered.filter(recipe => recipe.category === selectedCategory);
-      }
+    
+    // Filter by meal type using dishTypes from Spoonacular
+    if (mealType && mealType !== 'snacks') {
+      filtered = filtered.filter(recipe => 
+        recipe.dishTypes?.some((type: string) => 
+          type.toLowerCase().includes(mealType) ||
+          (mealType === 'breakfast' && (type.toLowerCase().includes('morning meal') || type.toLowerCase().includes('brunch'))) ||
+          (mealType === 'lunch' && (type.toLowerCase().includes('main course') || type.toLowerCase().includes('lunch'))) ||
+          (mealType === 'dinner' && (type.toLowerCase().includes('main course') || type.toLowerCase().includes('dinner')))
+        ) || !recipe.dishTypes || recipe.dishTypes.length === 0
+      );
+    }
+    
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(recipe => 
+        recipe.dishTypes?.some((type: string) => type.toLowerCase().includes(selectedCategory)) ||
+        (!recipe.dishTypes || recipe.dishTypes.length === 0)
+      );
+    }
+    
     if (selectedDiet !== 'all') {
-      filtered = filtered.filter(recipe => recipe.tags?.includes(selectedDiet));
-    }
-    if (maxCookingTime !== 'all') {
-      filtered = filtered.filter(recipe => recipe.totalTime <= Number(maxCookingTime));
-    }
-    if (selectedAllergy !== 'all') {
-      filtered = filtered.filter(recipe =>
-        !(recipe.description && recipe.description.toLowerCase().includes(selectedAllergy))
+      filtered = filtered.filter(recipe => 
+        recipe.diets?.some((diet: string) => diet.toLowerCase().includes(selectedDiet.toLowerCase())) ||
+        recipe.summary?.toLowerCase().includes(selectedDiet.toLowerCase())
       );
     }
+    
+    if (maxCookingTime !== 'all') {
+      const maxTime = Number(maxCookingTime);
+      filtered = filtered.filter(recipe => 
+        (recipe.readyInMinutes && recipe.readyInMinutes <= maxTime) ||
+        (recipe.cookingMinutes && recipe.cookingMinutes <= maxTime) ||
+        (!recipe.readyInMinutes && !recipe.cookingMinutes)
+      );
+    }
+    
+    if (selectedAllergy !== 'all') {
+      filtered = filtered.filter(recipe => {
+        const summaryContains = recipe.summary && recipe.summary.toLowerCase().includes(selectedAllergy);
+        const instructionsContains = typeof recipe.instructions === 'string' && 
+          recipe.instructions.toLowerCase().includes(selectedAllergy);
+        return !summaryContains && !instructionsContains;
+      });
+    }
+    
     setFilteredRecipes(filtered);
   }, [recipes, searchQuery, selectedCategory, maxCookingTime, selectedDiet, selectedAllergy, mealType]);
 
@@ -133,13 +166,20 @@ export function QuickAddRecipeModal({
 
   // Helper: Add recipe
   const handleAddRecipe = (recipe: any) => {
-    onAddRecipe(recipe.id, recipe.title, recipe.servings);
+    console.log('Adding recipe to calendar:', recipe.title);
+    onAddRecipe(
+      recipe.id || recipe.title, 
+      recipe.title, 
+      recipe.servings || 4,
+      recipe.readyInMinutes || recipe.cookingMinutes || 30,
+      recipe.image
+    );
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={cn('max-w-2xl w-full', className)}>
+      <DialogContent className={cn('max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col', className)}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-xl">{mealTypeEmoji[mealType]}</span>
@@ -150,7 +190,7 @@ export function QuickAddRecipeModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col gap-4">
+        <div className="flex-1 overflow-hidden flex flex-col gap-4 min-h-0">
           {/* Search and Filters */}
           <div className="flex-shrink-0 space-y-4">
             {/* Search Bar */}
@@ -257,7 +297,7 @@ export function QuickAddRecipeModal({
           )}
 
           {/* Recipe Results */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
@@ -279,7 +319,7 @@ export function QuickAddRecipeModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredRecipes.map(recipe => (
                   <div
-                    key={recipe._id || recipe.title}
+                    key={recipe.id || recipe.title}
                     className="border border-gray-200 rounded-lg p-4 hover:border-primary/40 hover:shadow-md transition-all group bg-background-card"
                   >
                     {/* Recipe Image */}
@@ -312,14 +352,19 @@ export function QuickAddRecipeModal({
 
                     {/* Description */}
                     <p className="text-xs text-gray-600 mb-2 line-clamp-3">
-                      {recipe.description}
+                      {recipe.summary && recipe.summary.replace(/<[^>]*>/g, '')}
                     </p>
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {recipe.tags?.map((tag: string) => (
-                        <Badge key={tag} variant="secondary" className="text-xs px-2 py-0">
-                          {tag}
+                      {recipe.diets?.slice(0, 3).map((diet: string) => (
+                        <Badge key={diet} variant="secondary" className="text-xs px-2 py-0">
+                          {diet}
+                        </Badge>
+                      ))}
+                      {recipe.dishTypes?.slice(0, 2).map((type: string) => (
+                        <Badge key={type} variant="outline" className="text-xs px-2 py-0">
+                          {type}
                         </Badge>
                       ))}
                     </div>
@@ -329,13 +374,19 @@ export function QuickAddRecipeModal({
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center space-x-1">
                           <Clock className="h-3 w-3" />
-                          <span>{recipe.totalTime} min</span>
+                          <span>{recipe.readyInMinutes || recipe.cookingMinutes || 30} min</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <Users className="h-3 w-3" />
-                          <span>{recipe.servings}</span>
+                          <span>{recipe.servings || 4}</span>
                         </div>
                       </div>
+                      {recipe.spoonacularScore && (
+                        <div className="flex items-center space-x-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <span>{Math.round(recipe.spoonacularScore / 20)}/5</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

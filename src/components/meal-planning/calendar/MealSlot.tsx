@@ -9,6 +9,7 @@
 
 import React, { useState } from 'react';
 import { Clock, Users, X, Edit3, MoreVertical } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -119,18 +120,21 @@ export function MealSlotComponent({
     >
       {/* Recipe Image & Name */}
       <div className="flex items-start gap-3 mb-2">
-        {/* Recipe Image */}
-        <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
+        {/* Enhanced Recipe Image */}
+        <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden shadow-sm">
           {meal.image ? (
-            <img 
+            <Image 
               src={meal.image} 
-              alt={meal.recipeName}
-              className="w-full h-full object-cover"
+              alt={meal.recipeName || 'Recipe image'}
+              width={64}
+              height={64}
+              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+              unoptimized={meal.image.startsWith('http')}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
+            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gradient-to-br from-slate-50 to-slate-100">
               {/* Meal type emoji based on mealType */}
-              <span className="text-lg">
+              <span className="text-2xl">
                 {mealType === 'breakfast' && '🍳'}
                 {mealType === 'lunch' && '🥗'}
                 {mealType === 'dinner' && '🍽️'}
@@ -140,12 +144,20 @@ export function MealSlotComponent({
           )}
         </div>
 
-        {/* Recipe Name & Actions */}
+        {/* Enhanced Recipe Name & Actions */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between">
-            <h5 className="font-medium text-sm leading-tight pr-2 flex-1 truncate">
-              {meal.recipeName || 'Unnamed Recipe'}
-            </h5>
+            <div className="flex-1 pr-2">
+              <h5 className="font-semibold text-sm leading-tight text-gray-900 mb-1">
+                {meal.recipeName || 'Unnamed Recipe'}
+              </h5>
+              {/* Recipe source or category */}
+              {meal.recipeId && (
+                <p className="text-xs text-gray-500 truncate">
+                  {meal.recipeId.includes('spoon') ? 'Spoonacular Recipe' : 'Custom Recipe'}
+                </p>
+              )}
+            </div>
             
             {/* Action Menu */}
             {isHovered && (
@@ -182,34 +194,36 @@ export function MealSlotComponent({
         </div>
       </div>
 
-      {/* Recipe Details */}
+      {/* Enhanced Recipe Details */}
       <div className="flex items-center justify-between text-xs text-gray-500">
         <div className="flex items-center space-x-3">
           {/* Cooking Time */}
           {totalTime > 0 && (
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 bg-gray-50 px-2 py-1 rounded-md">
               <Clock className="h-3 w-3" />
-              <span>{totalTime}min</span>
+              <span className="font-medium">{totalTime}min</span>
             </div>
           )}
 
           {/* Servings */}
-          <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-1 bg-gray-50 px-2 py-1 rounded-md">
             <Users className="h-3 w-3" />
-            <span>{meal.servings || 1}</span>
+            <span className="font-medium">{meal.servings || 1}</span>
             {onUpdate && (
               <div className="ml-1 space-x-1">
                 <button
                   onClick={() => handleServingsChange((meal.servings || 1) - 1)}
                   disabled={(meal.servings || 1) <= 1}
-                  className="w-4 h-4 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 flex items-center justify-center text-xs"
+                  className="w-4 h-4 rounded-full bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-gray-200 transition-colors"
+                  title="Decrease servings"
                 >
                   −
                 </button>
                 <button
                   onClick={() => handleServingsChange((meal.servings || 1) + 1)}
                   disabled={(meal.servings || 1) >= 20}
-                  className="w-4 h-4 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50 flex items-center justify-center text-xs"
+                  className="w-4 h-4 rounded-full bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-gray-200 transition-colors"
+                  title="Increase servings"
                 >
                   +
                 </button>
@@ -218,10 +232,13 @@ export function MealSlotComponent({
           </div>
         </div>
 
-        {/* Recipe ID Badge (for development) */}
+        {/* Recipe Type Badge */}
         {meal.recipeId && (
-          <Badge variant="secondary" className="text-xs px-1 py-0">
-            {meal.recipeId.split('-')[0]}
+          <Badge 
+            variant={meal.recipeId.includes('spoon') ? 'default' : 'secondary'} 
+            className="text-xs px-2 py-0.5"
+          >
+            {meal.recipeId.includes('spoon') ? 'API' : 'Custom'}
           </Badge>
         )}
       </div>

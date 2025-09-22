@@ -519,12 +519,15 @@ export default function MealPlanningPage() {
     if (!selectedSlot || selectedSlot.dayOfWeek === undefined || !selectedSlot.mealType) return;
 
     try {
-      // Map Spoonacular API recipe data to MealSlot
+      console.log('handleQuickAddSubmit: Adding recipe from cache:', recipeData);
+      
+      // Map cached recipe data to MealSlot format
       const mealSlot = {
-        recipeId: recipeData.id,
-        recipeName: recipeData.title,
+        recipeId: recipeData.id || recipeData.name,
+        recipeName: recipeData.name || recipeData.title,
         servings: recipeData.servings || 2,
-        prepTime: recipeData.readyInMinutes || 30,
+        prepTime: recipeData.cookingTime || recipeData.readyInMinutes || 30,
+        cookingTime: recipeData.cookingTime || recipeData.readyInMinutes || 30,
         image: recipeData.image || '',
         ingredients: recipeData.extendedIngredients?.map((ing: any) => ing.original) || [],
         tags: recipeData.diets || [],
@@ -987,8 +990,8 @@ export default function MealPlanningPage() {
               setShowQuickAdd(false);
               setSelectedSlot(null);
             }}
-            onAddRecipe={(recipeId: string, recipeName: string, servings?: number) => {
-              handleQuickAddSubmit({ id: recipeId, name: recipeName, servings });
+            onAddRecipe={(recipeId: string, recipeName: string, servings?: number, cookingTime?: number, image?: string) => {
+              handleQuickAddSubmit({ id: recipeId, name: recipeName, servings, cookingTime, image });
             }}
             mealType={selectedSlot.mealType}
             dayName={selectedSlot.dayOfWeek !== undefined ? format(addDays(currentDate, selectedSlot.dayOfWeek), 'EEEE') : undefined}

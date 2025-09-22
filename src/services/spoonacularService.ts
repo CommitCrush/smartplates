@@ -8,17 +8,18 @@
 import { Recipe } from '@/types/recipe';
 
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
-console.log('DEBUG Spoonacular API Key:', SPOONACULAR_API_KEY);
 const BASE_URL = 'https://api.spoonacular.com/recipes';
 
 if (!SPOONACULAR_API_KEY) {
   console.warn('SPOONACULAR_API_KEY not found in environment variables');
+} else if (process.env.NODE_ENV === 'development') {
+  console.log('DEBUG Spoonacular API configured with key:', SPOONACULAR_API_KEY ? '***' + SPOONACULAR_API_KEY.slice(-4) : 'not found');
 }
 
 /**
  * Interface for Spoonacular API response
  */
-interface SpoonacularRecipe {
+export interface SpoonacularRecipe {
   id: number;
   title: string;
   summary: string;
@@ -155,6 +156,14 @@ export async function searchSpoonacularRecipes(
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        console.warn('Spoonacular API authentication failed (401). API key may be invalid or expired.');
+        throw new Error(`SPOONACULAR_AUTH_FAILED`);
+      }
+      if (response.status === 402) {
+        console.warn('Spoonacular API quota exceeded (402). Falling back to cached recipes.');
+        throw new Error(`SPOONACULAR_QUOTA_EXCEEDED`);
+      }
       throw new Error(`Spoonacular API error: ${response.status} ${response.statusText}`);
     }
 

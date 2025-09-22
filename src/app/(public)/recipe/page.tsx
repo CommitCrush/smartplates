@@ -285,9 +285,9 @@ export default function RecipePage() {
               {recipes
                 .filter((recipe) => {
                   if (!selectedDifficulty) return true;
-                  if (selectedDifficulty === 'easy') return recipe.totalTime <= 15;
-                  if (selectedDifficulty === 'medium') return recipe.totalTime > 15 && recipe.totalTime <= 30;
-                  if (selectedDifficulty === 'hard') return recipe.totalTime > 30;
+                  if (selectedDifficulty === 'easy') return (recipe.totalTime || 0) <= 15;
+                  if (selectedDifficulty === 'medium') return (recipe.totalTime || 0) > 15 && (recipe.totalTime || 0) <= 30;
+                  if (selectedDifficulty === 'hard') return (recipe.totalTime || 0) > 30;
                   return true;
                 })
                 .map((recipe) => (

@@ -20,13 +20,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-  
-     
-    <html lang="en" className={`dark ${inter.variable}`} data-scroll-behavior="smooth">
-      <body className="font-sans antialiased">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+    <html 
+      lang="en" 
+      className={`dark ${inter.variable}`} 
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning={true}
+    >
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body 
+        className="font-sans antialiased" 
+        suppressHydrationWarning={true}
+        // Add data attributes that browser extensions might add
+        data-hydration-safe="true"
+      >
+        <div id="__next-root" suppressHydrationWarning={true}>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </div>
       </body>
     </html>
   );

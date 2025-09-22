@@ -284,7 +284,7 @@ function categorizeRecipes(recipes: Recipe[]): { [key: string]: Recipe[] } {
   const categories: { [key: string]: Recipe[] } = {};
   
   recipes.forEach(recipe => {
-    const category = recipe.mealType || 'other';
+    const category = recipe.mealType || recipe.category || 'other';
     if (!categories[category]) {
       categories[category] = [];
     }
@@ -338,7 +338,7 @@ export function searchCachedRecipes(
     results = results.filter(recipe =>
       recipe.title.toLowerCase().includes(searchLower) ||
       recipe.description.toLowerCase().includes(searchLower) ||
-      recipe.tags.some(tag => tag.toLowerCase().includes(searchLower)) ||
+      (recipe.tags || []).some(tag => tag.toLowerCase().includes(searchLower)) ||
       (recipe.cuisine && recipe.cuisine.toLowerCase().includes(searchLower))
     );
   }

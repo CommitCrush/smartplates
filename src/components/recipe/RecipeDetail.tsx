@@ -28,12 +28,17 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Ingredients */}
         <div className="lg:col-span-1">
-          <RecipeIngredients ingredients={recipe.ingredients} servings={recipe.servings} />
+          <RecipeIngredients 
+            ingredients={Array.isArray(recipe.ingredients) ? recipe.ingredients : []} 
+            servings={recipe.servings} 
+          />
         </div>
 
         {/* Instructions */}
         <div className="lg:col-span-2">
-          <RecipeInstructions instructions={recipe.instructions} />
+          <RecipeInstructions 
+            instructions={Array.isArray(recipe.instructions) ? recipe.instructions : []} 
+          />
         </div>
       </div>
 

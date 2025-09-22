@@ -2,8 +2,16 @@
  * Monthly Calendar Component for Meal Planning
  * 
  * Features:
- * - Full month view with 28-31 days
- * - Compact meal display for each day
+ * - Full month view with 28-31 dayinterface DayCellProps {
+  dayData: DayData;
+  onAddRecipe?: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
+  onEditMeal?: (meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
+  onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
+  onDayClick?: (date: Date) => void;
+  selectedDate?: Date | null;
+}
+
+function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, selectedDate }: DayCellProps) {mpact meal display for each day
  * - Month navigation
  * - Click to expand day details
  * - Mobile responsive grid
@@ -12,10 +20,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Plus, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Plus, MoreHorizontal, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { IMealPlan, DayMeals, MealSlot } from '@/types/meal-planning';
 import { getWeekStartDate } from '@/types/meal-planning';
@@ -107,12 +116,14 @@ interface DayCellProps {
   onEditMeal?: (meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
   onDayClick?: (date: Date) => void;
+  selectedDate?: Date | null;
 }
 
-function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick }: DayCellProps) {
+function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, selectedDate }: DayCellProps) {
   const { date, meals, isToday, isCurrentMonth, hasEvents } = dayData;
   const mealCount = meals ? getMealCountForDay(meals) : 0;
   const mealTypes = meals ? getMealTypesForDay(meals) : [];
+  const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
   
   return (
     <div
@@ -121,7 +132,8 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick }:
         'transition-all duration-200 hover:bg-gray-50 hover:shadow-sm',
         !isCurrentMonth && 'bg-gray-50 text-gray-400',
         isToday && 'bg-primary/5 border-primary/20 hover:bg-primary/10',
-        hasEvents && 'bg-blue-50 hover:bg-blue-100'
+        hasEvents && 'bg-blue-50 hover:bg-blue-100',
+        isSelected && 'ring-2 ring-primary ring-opacity-50 bg-primary/10'
       )}
       onClick={() => onDayClick?.(date)}
     >
@@ -187,9 +199,9 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick }:
                     onEditMeal?.(meal, date, 'breakfast');
                   }}
                 >
-                  <div className="w-3 h-3 bg-orange-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-4 h-4 bg-orange-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {meal.image ? (
-                      <img src={meal.image} alt="" className="w-full h-full object-cover" />
+                      <img src={meal.image} alt={meal.recipeName} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-xs">🍳</span>
                     )}
@@ -219,9 +231,9 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick }:
                     onEditMeal?.(meal, date, 'lunch');
                   }}
                 >
-                  <div className="w-3 h-3 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-4 h-4 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {meal.image ? (
-                      <img src={meal.image} alt="" className="w-full h-full object-cover" />
+                      <img src={meal.image} alt={meal.recipeName} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-xs">🥗</span>
                     )}
@@ -250,9 +262,9 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick }:
                     onEditMeal?.(meal, date, 'dinner');
                   }}
                 >
-                  <div className="w-3 h-3 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-4 h-4 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {meal.image ? (
-                      <img src={meal.image} alt="" className="w-full h-full object-cover" />
+                      <img src={meal.image} alt={meal.recipeName} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-xs">🍽️</span>
                     )}
@@ -304,6 +316,7 @@ export function MonthlyCalendar({
   className
 }: MonthlyCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(currentDate || new Date());
+  const [dateSearchValue, setDateSearchValue] = useState<string>('');
 
   // Sync with parent currentDate prop
   useEffect(() => {
@@ -430,6 +443,54 @@ export function MonthlyCalendar({
     console.log('Day clicked:', date);
   };
 
+  // Date search functionality
+  const handleDateSearch = (value: string) => {
+    setDateSearchValue(value);
+    
+    if (!value) return;
+    
+    // Parse different date formats
+    let targetDate: Date | null = null;
+    
+    // Try YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      targetDate = new Date(value);
+    }
+    // Try DD/MM/YYYY format
+    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [day, month, year] = value.split('/');
+      targetDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+    // Try MM/DD/YYYY format
+    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [month, day, year] = value.split('/');
+      targetDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+    // Try DD.MM.YYYY format
+    else if (/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
+      const [day, month, year] = value.split('.');
+      targetDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+    // Try partial year-month: YYYY-MM
+    else if (/^\d{4}-\d{2}$/.test(value)) {
+      const [year, month] = value.split('-');
+      targetDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    }
+    
+    // Navigate to the month containing the target date
+    if (targetDate && !isNaN(targetDate.getTime())) {
+      setCurrentMonth(new Date(targetDate.getFullYear(), targetDate.getMonth(), 1));
+      setSelectedDate(targetDate);
+    }
+  };
+
+  // Handle Enter key press for date search
+  const handleDateSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleDateSearch(dateSearchValue);
+    }
+  };
+
   // Format month title
   const monthTitle = currentMonth.toLocaleDateString('en-US', {
     month: 'long',
@@ -441,35 +502,53 @@ export function MonthlyCalendar({
   return (
     <Card className={cn('w-full', className)}>
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            {monthTitle}
-          </CardTitle>
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              {monthTitle}
+            </CardTitle>
+            
+            {/* Navigation Controls */}
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToday}
+              >
+                Today
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousMonth}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextMonth}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
           
-          {/* Navigation Controls */}
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleToday}
-            >
-              Today
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousMonth}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextMonth}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          {/* Date Search */}
+          <div className="flex items-center justify-center">
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Jump to date (YYYY-MM-DD, DD/MM/YYYY...)"
+                value={dateSearchValue}
+                onChange={(e) => setDateSearchValue(e.target.value)}
+                onKeyPress={handleDateSearchKeyPress}
+                onBlur={() => handleDateSearch(dateSearchValue)}
+                className="pl-10"
+              />
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -496,6 +575,7 @@ export function MonthlyCalendar({
               onEditMeal={onEditMeal}
               onRemoveMeal={onRemoveMeal}
               onDayClick={handleDayClick}
+              selectedDate={selectedDate}
             />
           ))}
         </div>

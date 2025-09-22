@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SpoonacularService } from '@/services/spoonacularService';
+import { getSpoonacularRecipe } from '@/services/spoonacularService';
 import { saveRecipeToDb } from '@/services/recipeService';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-
-const service = new SpoonacularService();
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -18,7 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const recipeDetails = await service.getRecipeDetails(id);
+    const recipeDetails = await getSpoonacularRecipe(`spoonacular-${id}`);
     if (!recipeDetails) {
       return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }

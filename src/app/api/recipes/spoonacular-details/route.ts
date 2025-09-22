@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SpoonacularService } from '@/services/spoonacularService';
-
-const service = new SpoonacularService();
+import { getSpoonacularRecipe } from '@/services/spoonacularService';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -10,10 +8,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing recipe id' }, { status: 400 });
   }
   try {
-    const details = await service.getRecipeDetails(Number(id));
+    const details = await getSpoonacularRecipe(`spoonacular-${id}`);
     return NextResponse.json({
       title: details?.title || '',
-      summary: details?.summary || '',
+      summary: details?.summary || details?.description || '',
       image: details?.image || '',
     });
   } catch (error: any) {

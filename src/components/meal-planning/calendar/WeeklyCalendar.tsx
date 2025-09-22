@@ -12,9 +12,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getWeekStartDate, getWeekDates, formatWeekRange } from '@/types/meal-planning';
 import { DayColumn } from './DayColumn';
@@ -56,6 +57,7 @@ export function WeeklyCalendar({
   );
   const [weekDates, setWeekDates] = useState<Date[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [dateSearchValue, setDateSearchValue] = useState<string>('');
 
   // Sync with parent currentDate prop
   useEffect(() => {
@@ -85,6 +87,54 @@ export function WeeklyCalendar({
 
   const goToCurrentWeek = () => {
     setCurrentWeekStart(getWeekStartDate(new Date()));
+  };
+
+  // Date search functionality
+  const handleDateSearch = (value: string) => {
+    setDateSearchValue(value);
+    
+    if (!value) return;
+    
+    // Parse different date formats
+    let targetDate: Date | null = null;
+    
+    // Try YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      targetDate = new Date(value);
+    }
+    // Try DD/MM/YYYY format
+    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [day, month, year] = value.split('/');
+      targetDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+    // Try MM/DD/YYYY format
+    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [month, day, year] = value.split('/');
+      targetDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+    // Try DD.MM.YYYY format
+    else if (/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
+      const [day, month, year] = value.split('.');
+      targetDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    }
+    // Try partial year-month: YYYY-MM
+    else if (/^\d{4}-\d{2}$/.test(value)) {
+      const [year, month] = value.split('-');
+      targetDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    }
+    
+    // Navigate to the week containing the target date
+    if (targetDate && !isNaN(targetDate.getTime())) {
+      const weekStart = getWeekStartDate(targetDate);
+      setCurrentWeekStart(weekStart);
+    }
+  };
+
+  // Handle Enter key press for date search
+  const handleDateSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleDateSearch(dateSearchValue);
+    }
   };
 
   // Get meals for a specific day - look across all meal plans for cross-week synchronization
@@ -208,14 +258,68 @@ export function WeeklyCalendar({
   return (
     <DndProvider backend={HTML5Backend}>
       <div className={cn('w-full space-y-4', className)}>
-        {/* Simplified Header */}
+        {/* Header with Date Search */}
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg sm:text-xl">
-                Weekly Meal Plan
-              </CardTitle>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg sm:text-xl">
+                  Weekly Meal Plan
+                </CardTitle>
+              </div>
+              
+              {/* Date Search and Navigation */}
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                {/* Date Search Input */}
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search date (YYYY-MM-DD, DD/MM/YYYY...)"
+                    value={dateSearchValue}
+                    onChange={(e) => setDateSearchValue(e.target.value)}
+                    onKeyPress={handleDateSearchKeyPress}
+                    onBlur={() => handleDateSearch(dateSearchValue)}
+                    className="pl-10 w-full sm:w-64"
+                  />
+                </div>
+                
+                {/* Week Navigation */}
+                <div className="flex items-center space-x-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={goToPreviousWeek}
+                    className="h-9 px-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={goToCurrentWeek}
+                    className="h-9 px-3 hidden sm:inline-flex"
+                  >
+                    Today
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={goToNextWeek}
+                    className="h-9 px-2"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Week Range Display */}
+            <div className="text-sm text-muted-foreground mt-2">
+              {formatWeekRange(currentWeekStart)}
             </div>
           </CardHeader>
         </Card>

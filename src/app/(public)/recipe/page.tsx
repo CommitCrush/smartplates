@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Search, ChefHat, ChevronDown, Plus } from 'lucide-react';
 import { Recipe } from '@/types/recipe';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
-import { useRecipes } from '@/hooks/useRecipes';
+import { useAllRecipes } from '@/services/mockRecipeService';
 import Link from 'next/link';
 
 export default function RecipePage() {
@@ -64,13 +64,13 @@ export default function RecipePage() {
     { value: 'hard', label: 'Hard' },
   ];
 
-  // Use our enhanced recipe API with caching support
-  const { recipes, error, loading, source } = useRecipes({
-    search: searchQuery,
-    category: selectedCategory,
-    difficulty: selectedDifficulty,
+  // Use Spoonacular API for all recipes
+  const { recipes, error, loading } = useAllRecipes(searchQuery, {
+    type: selectedCategory,
     diet: selectedDiet,
-    limit: showMore ? 60 : 30,
+    intolerances: selectedAllergy,
+    number: showMore ? 60 : 30,
+    // Spoonacular API does not support difficulty, so we filter client-side
   });
 
   // Close dropdowns when clicking outside

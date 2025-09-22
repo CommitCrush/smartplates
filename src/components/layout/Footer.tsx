@@ -17,7 +17,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-footer-dark border-t border-border bg-primary-100">
+    <footer className="bg-background-secondary border-t border-border">
       <div className="max-w-7xl mx-auto px-12 sm:px-6 lg:px-8">
         {/* Main Footer Content - Mobile-First Responsive */}
         <div className="py-6 sm:py-10">
@@ -27,10 +27,10 @@ export default function Footer() {
             {/* Brand and Description - Mobile Optimized */}
             <div className="lg:col-span-1">
               <div className="flex items-center space-x-2 mb-3">
-                <ChefHat className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600" />
-                <span className="text-xl sm:text-2xl font-bold text-footer-light">SmartPlates</span>
+                <ChefHat className="h-6 w-6 sm:h-8 sm:w-8 text-primary-500" />
+                <span className="text-xl sm:text-2xl font-bold text-foreground">SmartPlates</span>
               </div>
-              <p className="text-sm sm:text-base text-footer-light-muted mb-4 leading-relaxed">
+              <p className="text-sm sm:text-base text-foreground-muted mb-4 leading-relaxed">
                 Smart meal planning and recipe management made easy. Discover new recipes, 
                 plan your meals, and get AI-powered cooking suggestions.
               </p>
@@ -39,7 +39,7 @@ export default function Footer() {
               <div className="hidden md:flex space-x-2 sm:space-x-4">
                 <Link 
                   href="#" 
-                  className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-800 p-3 sm:p-2 rounded-lg transition-colors"
+                  className="text-foreground-muted hover:text-primary-500 hover:bg-background p-3 sm:p-2 rounded-lg transition-colors"
                   aria-label="Facebook"
                 >
                   <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@ export default function Footer() {
                 </Link>
                 <Link 
                   href="#" 
-                  className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-800 p-3 sm:p-2 rounded-lg transition-colors"
+                  className="text-foreground-muted hover:text-primary-500 hover:bg-background p-3 sm:p-2 rounded-lg transition-colors"
                   aria-label="Twitter"
                 >
                   <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -57,7 +57,7 @@ export default function Footer() {
                 </Link>
                 <Link 
                   href="#" 
-                  className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-800 p-3 sm:p-2 rounded-lg transition-colors"
+                  className="text-foreground-muted hover:text-primary-500 hover:bg-background p-3 sm:p-2 rounded-lg transition-colors"
                   aria-label="Instagram"
                 >
                   <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -69,15 +69,15 @@ export default function Footer() {
 
             {/* Quick Links - Mobile Touch-Optimized */}
             <div className="md:col-span-1">
-              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-footer-light relative inline-block">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-foreground relative inline-block">
                 Quick Links
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-neutral-400/70 md:hidden"></span>
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-border md:hidden"></span>
               </h3>
               <ul className="space-y-0.5 sm:space-y-1">
                 <li>
                   <Link 
                     href="/recipe" 
-                    className="text-sm sm:text-base text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 flex items-center px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors min-h-[44px] sm:min-h-auto"
+                    className="text-sm sm:text-base text-foreground-muted hover:text-primary-500 hover:bg-background flex items-center px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors min-h-[44px] sm:min-h-auto"
                   >
                     Browse Recipes
                   </Link>
@@ -85,7 +85,7 @@ export default function Footer() {
                 <li>
                   <Link 
                     href="/cookware" 
-                    className="text-sm sm:text-base text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 flex items-center px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors min-h-[44px] sm:min-h-auto"
+                    className="text-sm sm:text-base text-foreground-muted hover:text-primary-500 hover:bg-background flex items-center px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors min-h-[44px] sm:min-h-auto"
                   >
                     Cookware
                   </Link>
@@ -93,7 +93,7 @@ export default function Footer() {
                 <li>
                   <Link 
                     href="/about" 
-                    className="text-sm sm:text-base text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 flex items-center px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors min-h-[44px] sm:min-h-auto"
+                    className="text-sm sm:text-base text-foreground-muted hover:text-primary-500 hover:bg-background flex items-center px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors min-h-[44px] sm:min-h-auto"
                   >
                     About Us
                   </Link>
@@ -101,7 +101,7 @@ export default function Footer() {
                 <li>
                   <Link 
                     href="/contact" 
-                    className="text-sm sm:text-base text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 flex items-center px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors min-h-[44px] sm:min-h-auto"
+                    className="text-sm sm:text-base text-foreground-muted hover:text-primary-500 hover:bg-background flex items-center px-3 py-2 sm:px-2 sm:py-1 rounded-md transition-colors min-h-[44px] sm:min-h-auto"
                   >
                     Contact
                   </Link>
@@ -111,44 +111,44 @@ export default function Footer() {
 
             {/* Features - Mobile Layout */}
             <div className="md:col-span-1">
-              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-footer-light relative inline-block">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-foreground relative inline-block">
                 Features
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-neutral-400/70 md:hidden"></span>
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-border md:hidden"></span>
               </h3>
               <ul className="space-y-0.5 sm:space-y-1">
-                <li className="text-sm sm:text-base text-footer-light-muted py-1">AI Recipe Suggestions</li>
-                <li className="text-sm sm:text-base text-footer-light-muted py-1">Meal Planning</li>
-                <li className="text-sm sm:text-base text-footer-light-muted py-1">Grocery Lists</li>
-                <li className="text-sm sm:text-base text-footer-light-muted py-1">Recipe Collections</li>
-                <li className="text-sm sm:text-base text-footer-light-muted py-1">Cookware Recommendations</li>
+                <li className="text-sm sm:text-base text-foreground-muted py-1">AI Recipe Suggestions</li>
+                <li className="text-sm sm:text-base text-foreground-muted py-1">Meal Planning</li>
+                <li className="text-sm sm:text-base text-foreground-muted py-1">Grocery Lists</li>
+                <li className="text-sm sm:text-base text-foreground-muted py-1">Recipe Collections</li>
+                <li className="text-sm sm:text-base text-foreground-muted py-1">Cookware Recommendations</li>
               </ul>
             </div>
 
             {/* Contact Information - Mobile Enhanced */}
             <div className="md:col-span-2 lg:col-span-1">
-              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-footer-light relative inline-block">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-foreground relative inline-block">
                 Get in Touch
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-neutral-400/70 md:hidden"></span>
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-border md:hidden"></span>
               </h3>
               <div className="space-y-1.5 sm:space-y-2">
                 <div className="flex items-center space-x-3 py-1">
-                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600 flex-shrink-0" />
-                  <span className="text-sm sm:text-base text-footer-light-muted">hello@smartplates.com</span>
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-primary-500 flex-shrink-0" />
+                  <span className="text-sm sm:text-base text-foreground-muted">hello@smartplates.com</span>
                 </div>
                 <div className="flex items-center space-x-3 py-1">
-                  <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600 flex-shrink-0" />
-                  <span className="text-sm sm:text-base text-footer-light-muted">+1 (555) 123-4567</span>
+                  <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-primary-500 flex-shrink-0" />
+                  <span className="text-sm sm:text-base text-foreground-muted">+1 (555) 123-4567</span>
                 </div>
                 <div className="flex items-center space-x-3 py-1">
-                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600 flex-shrink-0" />
-                  <span className="text-sm sm:text-base text-footer-light-muted">San Francisco, CA</span>
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary-500 flex-shrink-0" />
+                  <span className="text-sm sm:text-base text-foreground-muted">San Francisco, CA</span>
                 </div>
               </div>
 
               {/* Newsletter Signup - Mobile Optimized */}
               <div className="mt-4">
-                <h4 className="text-sm sm:text-base font-semibold mb-1.5 text-footer-light">Stay Updated</h4>
-                <p className="text-xs sm:text-sm text-footer-light-muted leading-relaxed">
+                <h4 className="text-sm sm:text-base font-semibold mb-1.5 text-foreground">Stay Updated</h4>
+                <p className="text-xs sm:text-sm text-foreground-muted leading-relaxed">
                   Get the latest recipes and cooking tips delivered to your inbox.
                 </p>
                 
@@ -156,7 +156,7 @@ export default function Footer() {
                 <div className="flex md:hidden justify-center space-x-2 mt-3">
                   <Link 
                     href="#" 
-                    className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-800 p-3 rounded-lg transition-colors"
+                    className="text-foreground-muted hover:text-primary-500 hover:bg-background p-3 rounded-lg transition-colors"
                     aria-label="Facebook"
                   >
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -165,7 +165,7 @@ export default function Footer() {
                   </Link>
                   <Link 
                     href="#" 
-                    className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-800 p-3 rounded-lg transition-colors"
+                    className="text-foreground-muted hover:text-primary-500 hover:bg-background p-3 rounded-lg transition-colors"
                     aria-label="Twitter"
                   >
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -174,7 +174,7 @@ export default function Footer() {
                   </Link>
                   <Link 
                     href="#" 
-                    className="text-foreground-secondary hover:text-primary-600 hover:bg-neutral-800 p-3 rounded-lg transition-colors"
+                    className="text-foreground-muted hover:text-primary-500 hover:bg-background p-3 rounded-lg transition-colors"
                     aria-label="Instagram"
                   >
                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -191,12 +191,12 @@ export default function Footer() {
         <div className="border-t border-border py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex flex-col items-center md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-2 order-2 md:order-1 mt-6 md:mt-0">
-              <span className="text-xs md:text-sm text-footer-light-muted text-center md:text-left">
+              <span className="text-xs md:text-sm text-foreground-muted text-center md:text-left">
                 © {currentYear} SmartPlates. Made with
               </span>
               <div className="flex items-center space-x-1">
-                <Heart className="h-3 w-3 md:h-4 md:w-4 text-coral-600" />
-                <span className="text-xs md:text-sm text-footer-light-muted">
+                <Heart className="h-3 w-3 md:h-4 md:w-4 text-coral-500" />
+                <span className="text-xs md:text-sm text-foreground-muted">
                   for food lovers everywhere.
                 </span>
               </div>
@@ -205,19 +205,19 @@ export default function Footer() {
             <div className="flex flex-row space-x-6 order-1 md:order-2 mb-4 md:mb-0">
               <Link 
                 href="/privacy" 
-                className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors text-sm"
+                className="text-foreground-muted hover:text-primary-500 hover:bg-background dark:hover:bg-background px-2 py-1 rounded-md transition-colors text-sm"
               >
                 Privacy Policy
               </Link>
               <Link 
                 href="/terms" 
-                className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors text-sm"
+                className="text-foreground-muted hover:text-primary-500 hover:bg-background dark:hover:bg-background px-2 py-1 rounded-md transition-colors text-sm"
               >
                 Terms of Service
               </Link>
               <Link 
                 href="/cookies" 
-                className="text-footer-light-muted hover:text-primary-600 hover:bg-neutral-800 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors text-sm"
+                className="text-foreground-muted hover:text-primary-500 hover:bg-background dark:hover:bg-background px-2 py-1 rounded-md transition-colors text-sm"
               >
                 Cookie Policy
               </Link>

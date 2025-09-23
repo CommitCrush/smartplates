@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import type { Recipe } from '@/types/recipe';
-import { getSpoonacularRecipe } from './spoonacularService';
 
 // Holt alle Rezepte (optional mit Filter)
 export function useAllRecipes(query = '', options: Record<string, string> = {}) {
@@ -28,7 +27,7 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
       }
     };
     fetchRecipes();
-  }, []);
+  }, [query, JSON.stringify(options)]);
 
   return { recipes, error, loading };
 }
@@ -41,33 +40,14 @@ export function useRecipeById(recipeId: string) {
 
   useEffect(() => {
     setLoading(true);
-    
-    // Try Spoonacular API first
-    getSpoonacularRecipe(recipeId)
-      .then((data) => {
-        setRecipe(data);
-        setError(!data ? 'Kein Rezept gefunden' : '');
+        fetch(`/api/recipes/${recipeId}`)
+      .then(res => res.json())
+      .then(data => {
+        setRecipe(data.recipe);
         setLoading(false);
       })
-      .catch((spoonacularError) => {
-        if (process.env.NODE_ENV === 'development') {
-          if (spoonacularError.message === 'SPOONACULAR_QUOTA_EXCEEDED') {
-            console.log('ℹ️ Using cached recipe data');
-          } else if (spoonacularError.message === 'SPOONACULAR_AUTH_FAILED') {
-            console.warn('🔑 Spoonacular API authentication failed - check API key');
-          } else {
-            console.warn('⚠️ Spoonacular API unavailable - using cached recipe');
-          }
-        }
-        
-        // Fallback to preloaded recipes
-        const preloadedRecipe = PRELOADED_RECIPES.find(r => r.id.toString() === recipeId);
-        if (preloadedRecipe) {
-          setRecipe(preloadedRecipe as unknown as Recipe);
-          setError('');
-        } else {
-          setError('Kein Rezept gefunden');
-        }
+      .catch(() => {
+        setError('Fehler beim Laden des Rezepts');
         setLoading(false);
       });
   }, [recipeId]);

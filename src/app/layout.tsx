@@ -3,6 +3,11 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/authContext";
 
+// Import debug tools in development
+if (process.env.NODE_ENV === 'development') {
+  import('@/utils/spoonacularDebug');
+}
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",

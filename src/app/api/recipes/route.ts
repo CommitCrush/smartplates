@@ -286,6 +286,7 @@ export async function GET(request: NextRequest) {
       dietaryRestrictions: searchParams.getAll('dietaryRestrictions').filter(Boolean),
       tags: searchParams.getAll('tags').filter(Boolean),
       maxTime: searchParams.get('maxTime') ? parseInt(searchParams.get('maxTime')!) : undefined,
+      allergy: searchParams.get('allergy') || undefined,
     };
     console.log('API Query Params:', filters);
 
@@ -339,6 +340,7 @@ export async function GET(request: NextRequest) {
         if (filters.dietaryRestrictions.length > 0) spoonacularOptions.diet = filters.dietaryRestrictions.join(',');
         if (filters.tags.length > 0) spoonacularOptions.tags = filters.tags.join(',');
         if (filters.maxTime) spoonacularOptions.maxReadyTime = filters.maxTime;
+        if (filters.allergy) spoonacularOptions.intolerances = filters.allergy;
 
         const result = await searchSpoonacularRecipes(filters.search || '', spoonacularOptions);
         recipes = result.recipes || [];
@@ -346,12 +348,18 @@ export async function GET(request: NextRequest) {
         source = 'spoonacular';
       } catch (spError) {
         console.warn('⚠️ Spoonacular API fallback failed:', spError);
+        // Explicitly set recipes to empty array to trigger fallback
+        recipes = [];
+        total = 0;
+        source = 'fallback-needed';
       }
     }
 
-    // 3. Fallback: Mock Data falls alles fehlschlägt
+    // 3. Fallback: Mock Data (preloaded recipes) falls alles fehlschlägt
     if (!recipes || recipes.length === 0) {
-      let filteredRecipes = mockRecipes;
+      console.log('📦 Using preloaded recipes as fallback');
+      const { PRELOADED_RECIPES } = await import('@/services/preloadedRecipes');
+      let filteredRecipes = PRELOADED_RECIPES as any[];
       if (filters.category) filteredRecipes = filteredRecipes.filter(recipe => recipe.category === filters.category);
       if (filters.difficulty) filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === filters.difficulty);
       if (filters.search) {
@@ -359,7 +367,7 @@ export async function GET(request: NextRequest) {
         filteredRecipes = filteredRecipes.filter(recipe =>
           recipe.title.toLowerCase().includes(searchLower) ||
           recipe.description.toLowerCase().includes(searchLower) ||
-          (recipe.tags || []).some(tag => tag.toLowerCase().includes(searchLower))
+          (recipe.tags || []).some((tag: string) => tag.toLowerCase().includes(searchLower))
         );
       }
       recipes = filteredRecipes.slice((page - 1) * limit, page * limit);

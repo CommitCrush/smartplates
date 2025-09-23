@@ -68,11 +68,24 @@ export function QuickAddRecipeModal({
 }: QuickAddRecipeModalProps) {
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [maxCookingTime, setMaxCookingTime] = useState<string>('all');
   const [selectedDiet, setSelectedDiet] = useState<string>('all');
   const [selectedAllergy, setSelectedAllergy] = useState<string>('all');
-  const categories = ['all', 'breakfast', 'lunch', 'dinner', 'snacks'];
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [tagsFilter, setTagsFilter] = useState<string>('');
+  const [quickAndEasy, setQuickAndEasy] = useState<boolean>(false);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+  const categories = ['all', 'main course', 'side dish', 'dessert', 'appetizer', 'salad', 'bread', 'breakfast', 'soup', 'beverage', 'sauce', 'marinade', 'fingerfood', 'snack', 'drink'];
   const mealTypeEmoji: Record<string, string> = {
     breakfast: '🍳',
     lunch: '🥪',
@@ -80,10 +93,17 @@ export function QuickAddRecipeModal({
     snacks: '🍪',
   };
 
-  // Use mockRecipeService to get recipes
-  const { recipes, loading, error } = useAllRecipes();
+  // Use mockRecipeService to get recipes with search
+  const searchOptions = {
+    category: selectedCategory !== 'all' ? selectedCategory : '',
+    diet: selectedDiet !== 'all' ? selectedDiet : '',
+    difficulty: selectedDifficulty !== 'all' ? selectedDifficulty : '',
+    maxTime: maxCookingTime !== 'all' ? maxCookingTime : '',
+    allergy: selectedAllergy !== 'all' ? selectedAllergy : ''
+  };
+  const { recipes, loading, error } = useAllRecipes(debouncedSearchQuery, searchOptions);
 
-  // Filter recipes when search/filters change
+  // Apply client-side filters that aren't handled by server
   useEffect(() => {
     if (!recipes || recipes.length === 0) {
       setFilteredRecipes([]);
@@ -91,19 +111,8 @@ export function QuickAddRecipeModal({
     }
     
     let filtered = [...recipes];
-    const query = searchQuery.trim().toLowerCase();
     
-    if (query) {
-      filtered = filtered.filter(recipe =>
-        recipe.title?.toLowerCase().includes(query) ||
-        recipe.summary?.toLowerCase().includes(query) ||
-        (typeof recipe.instructions === 'string' && recipe.instructions.toLowerCase().includes(query)) ||
-        (recipe.dishTypes && recipe.dishTypes.some((type: string) => type.toLowerCase().includes(query))) ||
-        (recipe.diets && recipe.diets.some((diet: string) => diet.toLowerCase().includes(query)))
-      );
-    }
-    
-    // Filter by meal type using dishTypes from Spoonacular
+    // Filter by meal type using dishTypes from Spoonacular (client-side as fallback)
     if (mealType && mealType !== 'snacks') {
       filtered = filtered.filter(recipe => 
         recipe.dishTypes?.some((type: string) => 
@@ -114,49 +123,52 @@ export function QuickAddRecipeModal({
         ) || !recipe.dishTypes || recipe.dishTypes.length === 0
       );
     }
-    
-    if (selectedCategory !== 'all') {
+
+
+    // Filter by difficulty (client-side)
+    if (selectedDifficulty !== 'all') {
       filtered = filtered.filter(recipe => 
-        recipe.dishTypes?.some((type: string) => type.toLowerCase().includes(selectedCategory)) ||
-        (!recipe.dishTypes || recipe.dishTypes.length === 0)
+        recipe.difficulty?.toLowerCase() === selectedDifficulty.toLowerCase() ||
+        (!recipe.difficulty && selectedDifficulty === 'easy') // Default to easy if no difficulty specified
       );
     }
     
-    if (selectedDiet !== 'all') {
+    // Filter by tags (client-side)
+    if (tagsFilter.trim()) {
+      const tags = tagsFilter.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean);
       filtered = filtered.filter(recipe => 
-        recipe.diets?.some((diet: string) => diet.toLowerCase().includes(selectedDiet.toLowerCase())) ||
-        recipe.summary?.toLowerCase().includes(selectedDiet.toLowerCase())
+        tags.some(tag => 
+          recipe.title?.toLowerCase().includes(tag) ||
+          recipe.summary?.toLowerCase().includes(tag) ||
+          recipe.dishTypes?.some((type: string) => type.toLowerCase().includes(tag)) ||
+          recipe.diets?.some((diet: string) => diet.toLowerCase().includes(tag))
+        )
       );
     }
     
-    if (maxCookingTime !== 'all') {
-      const maxTime = Number(maxCookingTime);
+    // Filter for quick & easy (client-side as fallback)
+    if (quickAndEasy) {
       filtered = filtered.filter(recipe => 
-        (recipe.readyInMinutes && recipe.readyInMinutes <= maxTime) ||
-        (recipe.cookingMinutes && recipe.cookingMinutes <= maxTime) ||
+        (recipe.readyInMinutes && recipe.readyInMinutes <= 30) ||
+        (recipe.cookingMinutes && recipe.cookingMinutes <= 30) ||
         (!recipe.readyInMinutes && !recipe.cookingMinutes)
       );
     }
     
-    if (selectedAllergy !== 'all') {
-      filtered = filtered.filter(recipe => {
-        const summaryContains = recipe.summary && recipe.summary.toLowerCase().includes(selectedAllergy);
-        const instructionsContains = typeof recipe.instructions === 'string' && 
-          recipe.instructions.toLowerCase().includes(selectedAllergy);
-        return !summaryContains && !instructionsContains;
-      });
-    }
-    
     setFilteredRecipes(filtered);
-  }, [recipes, searchQuery, selectedCategory, maxCookingTime, selectedDiet, selectedAllergy, mealType]);
+  }, [recipes, selectedAllergy, selectedDifficulty, tagsFilter, quickAndEasy, mealType]);
 
   // Helper: Clear all filters
   const clearFilters = () => {
     setSearchQuery('');
+    setDebouncedSearchQuery('');
     setSelectedCategory('all');
     setMaxCookingTime('all');
     setSelectedDiet('all');
     setSelectedAllergy('all');
+    setSelectedDifficulty('all');
+    setTagsFilter('');
+    setQuickAndEasy(false);
   };
 
   // Helper: Suggest top 5 recipes
@@ -208,19 +220,27 @@ export function QuickAddRecipeModal({
             <div className="flex flex-wrap gap-3">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-40 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
                   <SelectItem value="all" className="hover:bg-gray-50">All Categories</SelectItem>
-                  {categories.map(category => (
-                    <SelectItem 
-                      key={category} 
-                      value={category.toLowerCase()}
-                      className="hover:bg-gray-50"
-                    >
-                      {category}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="breakfast" className="hover:bg-gray-50">Breakfast</SelectItem>
+                  <SelectItem value="lunch" className="hover:bg-gray-50">Lunch</SelectItem>
+                  <SelectItem value="dinner" className="hover:bg-gray-50">Dinner</SelectItem>
+                  <SelectItem value="dessert" className="hover:bg-gray-50">Dessert</SelectItem>
+                  <SelectItem value="snack" className="hover:bg-gray-50">Snack</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+                <SelectTrigger className="w-40 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
+                  <SelectValue placeholder="All Difficulties" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-gray-200">
+                  <SelectItem value="all" className="hover:bg-gray-50">All Difficulties</SelectItem>
+                  <SelectItem value="easy" className="hover:bg-gray-50">Easy</SelectItem>
+                  <SelectItem value="medium" className="hover:bg-gray-50">Medium</SelectItem>
+                  <SelectItem value="hard" className="hover:bg-gray-50">Hard</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -239,30 +259,36 @@ export function QuickAddRecipeModal({
 
               <Select value={selectedDiet} onValueChange={setSelectedDiet}>
                 <SelectTrigger className="w-36 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="Diet" />
+                  <SelectValue placeholder="All Diets" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="all" className="hover:bg-gray-50">Any Diet</SelectItem>
-                  <SelectItem value="vegetarian" className="hover:bg-gray-50">🌱 Vegetarian</SelectItem>
-                  <SelectItem value="vegan" className="hover:bg-gray-50">🌿 Vegan</SelectItem>
-                  <SelectItem value="gluten free" className="hover:bg-gray-50">🌾 Gluten-Free</SelectItem>
-                  <SelectItem value="keto" className="hover:bg-gray-50">🥑 Keto</SelectItem>
-                  <SelectItem value="paleo" className="hover:bg-gray-50">🍖 Paleo</SelectItem>
+                  <SelectItem value="all" className="hover:bg-gray-50">All Diets</SelectItem>
+                  <SelectItem value="vegetarian" className="hover:bg-gray-50">Vegetarian</SelectItem>
+                  <SelectItem value="vegan" className="hover:bg-gray-50">Vegan</SelectItem>
+                  <SelectItem value="gluten free" className="hover:bg-gray-50">Gluten-Free</SelectItem>
+                  <SelectItem value="ketogenic" className="hover:bg-gray-50">Ketogenic</SelectItem>
+                  <SelectItem value="paleo" className="hover:bg-gray-50">Paleo</SelectItem>
+                  <SelectItem value="primal" className="hover:bg-gray-50">Primal</SelectItem>
+                  <SelectItem value="whole30" className="hover:bg-gray-50">Whole30</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={selectedAllergy} onValueChange={setSelectedAllergy}>
-                <SelectTrigger className="w-36 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="Avoid" />
+                <SelectTrigger className="w-40 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
+                  <SelectValue placeholder="Allergies (None)" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="all" className="hover:bg-gray-50">No Restrictions</SelectItem>
-                  <SelectItem value="nuts" className="hover:bg-gray-50">🥜 Nuts</SelectItem>
-                  <SelectItem value="dairy" className="hover:bg-gray-50">🥛 Dairy</SelectItem>
-                  <SelectItem value="eggs" className="hover:bg-gray-50">🥚 Eggs</SelectItem>
-                  <SelectItem value="soy" className="hover:bg-gray-50">🌱 Soy</SelectItem>
-                  <SelectItem value="shellfish" className="hover:bg-gray-50">🦐 Shellfish</SelectItem>
-                  <SelectItem value="fish" className="hover:bg-gray-50">🐟 Fish</SelectItem>
+                  <SelectItem value="all" className="hover:bg-gray-50">Allergies (None)</SelectItem>
+                  <SelectItem value="dairy" className="hover:bg-gray-50">Dairy</SelectItem>
+                  <SelectItem value="egg" className="hover:bg-gray-50">Egg</SelectItem>
+                  <SelectItem value="gluten" className="hover:bg-gray-50">Gluten</SelectItem>
+                  <SelectItem value="peanut" className="hover:bg-gray-50">Peanut</SelectItem>
+                  <SelectItem value="seafood" className="hover:bg-gray-50">Seafood</SelectItem>
+                  <SelectItem value="sesame" className="hover:bg-gray-50">Sesame</SelectItem>
+                  <SelectItem value="soy" className="hover:bg-gray-50">Soy</SelectItem>
+                  <SelectItem value="sulfite" className="hover:bg-gray-50">Sulfite</SelectItem>
+                  <SelectItem value="tree nut" className="hover:bg-gray-50">Tree Nut</SelectItem>
+                  <SelectItem value="wheat" className="hover:bg-gray-50">Wheat</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -271,10 +297,30 @@ export function QuickAddRecipeModal({
                 Clear
               </Button>
             </div>
+
+            {/* Additional Filters Row */}
+            <div className="flex flex-wrap gap-3 items-center">
+              <Input
+                placeholder="Tags (comma separated)"
+                value={tagsFilter}
+                onChange={(e) => setTagsFilter(e.target.value)}
+                className="w-48 bg-white border-gray-300 hover:border-gray-400 focus:border-primary"
+              />
+              
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={quickAndEasy}
+                  onChange={(e) => setQuickAndEasy(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Quick & Easy
+              </label>
+            </div>
           </div>
 
           {/* Quick Suggestions */}
-          {suggestedRecipes.length > 0 && !searchQuery && selectedCategory === 'all' && (
+          {suggestedRecipes.length > 0 && !searchQuery && selectedCategory === 'all' && selectedDiet === 'all' && !tagsFilter.trim() && !quickAndEasy && (
             <div className="flex-shrink-0">
               <h3 className="text-sm font-medium text-gray-700 mb-2">
                 Popular {mealType} recipes

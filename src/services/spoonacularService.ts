@@ -7,7 +7,8 @@
 
 import { Recipe } from '@/types/recipe';
 
-const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY;
+// Support both server-side and client-side API access
+const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY || process.env.NEXT_PUBLIC_SPOONACULAR_API_KEY;
 const BASE_URL = 'https://api.spoonacular.com/recipes';
 
 if (!SPOONACULAR_API_KEY) {
@@ -116,184 +117,59 @@ function convertSpoonacularRecipe(spoonacularRecipe: SpoonacularRecipe): Recipe 
 }
 
 /**
- * Search recipes from Spoonacular API
+ * Search recipes from Spoonacular API (with intelligent caching)
  */
 export async function searchSpoonacularRecipes(
-  query: string,
-  options: {
-    cuisine?: string;
-    diet?: string;
-    type?: string;
-    maxReadyTime?: number;
-    number?: number;
-    offset?: number;
-  } = {}
-): Promise<{ recipes: Recipe[]; totalResults: number }> {
-  if (!SPOONACULAR_API_KEY) {
-    throw new Error('Spoonacular API key not configured');
-  }
-
+  searchTerm: string = '',
+  filters: RecipeFilters = {}
+): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
-    const params = new URLSearchParams({
-      apiKey: SPOONACULAR_API_KEY,
-      query,
-      number: (options.number || 12).toString(),
-      offset: (options.offset || 0).toString(),
-      addRecipeInformation: 'true',
-      fillIngredients: 'true',
-      addRecipeInstructions: 'true'
-    });
-
-    if (options.cuisine) params.append('cuisine', options.cuisine);
-    if (options.diet) params.append('diet', options.diet);
-    if (options.type) params.append('type', options.type);
-    if (options.maxReadyTime) params.append('maxReadyTime', options.maxReadyTime.toString());
-
-    const response = await fetch(`${BASE_URL}/complexSearch?${params}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        console.warn('Spoonacular API authentication failed (401). API key may be invalid or expired.');
-        throw new Error(`SPOONACULAR_AUTH_FAILED`);
-      }
-      if (response.status === 402) {
-        console.warn('Spoonacular API quota exceeded (402). Falling back to cached recipes.');
-        throw new Error(`SPOONACULAR_QUOTA_EXCEEDED`);
-      }
-      throw new Error(`Spoonacular API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data: SpoonacularSearchResponse = await response.json();
-    
-    const recipes = data.results.map(convertSpoonacularRecipe);
-
-    return {
-      recipes,
-      totalResults: data.totalResults
-    };
+    const cacheService = await import('./spoonacularCacheService.server');
+    return await cacheService.searchRecipesInternal(searchTerm, filters);
   } catch (error) {
-    console.error('Error searching Spoonacular recipes:', error);
-    throw error;
+    console.error('Spoonacular search error:', error);
+    return { recipes: [], totalResults: 0, fromCache: false };
   }
 }
 
 /**
- * Get recipe details from Spoonacular API
+ * Get recipe details from Spoonacular API (with intelligent caching)
  */
-export async function getSpoonacularRecipe(recipeId: string): Promise<Recipe | null> {
-  if (!SPOONACULAR_API_KEY) {
-    throw new Error('Spoonacular API key not configured');
-  }
-
-  // Extract numeric ID from our format
-  const numericId = recipeId.replace('spoonacular-', '');
-
+export async function getSpoonacularRecipe(id: string): Promise<Recipe | null> {
   try {
-    const params = new URLSearchParams({
-      apiKey: SPOONACULAR_API_KEY,
-      includeNutrition: 'true'
-    });
-
-    const response = await fetch(`${BASE_URL}/${numericId}/information?${params}`);
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null;
-      }
-      throw new Error(`Spoonacular API error: ${response.status} ${response.statusText}`);
-    }
-
-    const spoonacularRecipe: SpoonacularRecipe = await response.json();
-    return convertSpoonacularRecipe(spoonacularRecipe);
+    const cacheService = await import('./spoonacularCacheService.server');
+    return await cacheService.getRecipeInternal(id);
   } catch (error) {
-    console.error('Error fetching Spoonacular recipe:', error);
+    console.error('Spoonacular recipe fetch error:', error);
     return null;
   }
 }
 
 /**
- * Search recipes by ingredients from Spoonacular API
+ * Search recipes by ingredients from Spoonacular API (with intelligent caching)
  */
 export async function searchRecipesByIngredients(
-  ingredients: string[],
-  options: {
-    number?: number;
-    ranking?: number;
-    ignorePantry?: boolean;
-  } = {}
-): Promise<Recipe[]> {
-  if (!SPOONACULAR_API_KEY) {
-    throw new Error('Spoonacular API key not configured');
-  }
-
+  ingredients: string[]
+): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
-    const params = new URLSearchParams({
-      apiKey: SPOONACULAR_API_KEY,
-      ingredients: ingredients.join(','),
-      number: (options.number || 12).toString(),
-      ranking: (options.ranking || 1).toString(),
-      ignorePantry: (options.ignorePantry || true).toString()
-    });
-
-    const response = await fetch(`${BASE_URL}/findByIngredients?${params}`);
-
-    if (!response.ok) {
-      throw new Error(`Spoonacular API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    // For ingredient-based search, we need to fetch full recipe details
-    const detailedRecipes = await Promise.all(
-      data.slice(0, 6).map((recipe: { id: number }) => getSpoonacularRecipe(`spoonacular-${recipe.id}`))
-    );
-
-    return detailedRecipes.filter((recipe): recipe is Recipe => recipe !== null);
+    const cacheService = await import('./spoonacularCacheService.server');
+    return await cacheService.searchRecipesByIngredientsInternal(ingredients);
   } catch (error) {
-    console.error('Error searching recipes by ingredients:', error);
-    return [];
+    console.error('Ingredient search error:', error);
+    return { recipes: [], totalResults: 0, fromCache: false };
   }
 }
 
 /**
- * Get popular/random recipes from Spoonacular
+ * Get popular/random recipes from Spoonacular (with intelligent caching)
  */
-export async function getPopularSpoonacularRecipes(
-  options: {
-    number?: number;
-    tags?: string[];
-  } = {}
-): Promise<Recipe[]> {
-  if (!SPOONACULAR_API_KEY) {
-    throw new Error('Spoonacular API key not configured');
-  }
-
+export async function getPopularSpoonacularRecipes(): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
-    const params = new URLSearchParams({
-      apiKey: SPOONACULAR_API_KEY,
-      number: (options.number || 10).toString()
-    });
-
-    if (options.tags && options.tags.length > 0) {
-      params.append('tags', options.tags.join(','));
-    }
-
-    const response = await fetch(`${BASE_URL}/random?${params}`);
-
-    if (!response.ok) {
-      throw new Error(`Spoonacular API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    return data.recipes.map(convertSpoonacularRecipe);
+    const cacheService = await import('./spoonacularCacheService.server');
+    return await cacheService.getPopularRecipesInternal();
   } catch (error) {
-    console.error('Error fetching popular Spoonacular recipes:', error);
-    return [];
+    console.error('Popular recipes error:', error);
+    return { recipes: [], totalResults: 0, fromCache: false };
   }
 }
 
@@ -320,3 +196,8 @@ export function rateLimitedRequest<T>(requestFn: () => Promise<T>): Promise<T> {
     }, delay);
   });
 }
+// Export internal functions for service integration
+export const searchRecipesInternal = searchRecipes;
+export const getRecipeInternal = getRecipe;
+export const searchRecipesByIngredientsInternal = searchRecipesByIngredients;
+export const getPopularRecipesInternal = getPopularRecipes;

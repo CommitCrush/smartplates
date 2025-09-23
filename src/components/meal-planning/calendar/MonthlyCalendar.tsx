@@ -20,7 +20,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, s
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Plus, MoreHorizontal, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Plus, MoreHorizontal, Search, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +41,10 @@ interface MonthlyCalendarProps {
   onAddRecipe?: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
   onEditMeal?: (meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
+  onShowRecipe?: (meal: MealSlot) => void;
+  onCopyRecipe?: (meal: MealSlot) => void;
+  copiedRecipe?: MealSlot | null;
+  onClearCopiedRecipe?: () => void;
   className?: string;
 }
 
@@ -115,11 +119,13 @@ interface DayCellProps {
   onAddRecipe?: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onEditMeal?: (meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
+  onShowRecipe?: (meal: MealSlot) => void;
+  onCopyRecipe?: (meal: MealSlot) => void;
   onDayClick?: (date: Date) => void;
   selectedDate?: Date | null;
 }
 
-function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, selectedDate }: DayCellProps) {
+function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe, onCopyRecipe, onDayClick, selectedDate }: DayCellProps) {
   const { date, meals, isToday, isCurrentMonth, hasEvents } = dayData;
   const mealCount = meals ? getMealCountForDay(meals) : 0;
   const mealTypes = meals ? getMealTypesForDay(meals) : [];
@@ -196,7 +202,11 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, s
                   className="group flex items-center gap-1 text-xs text-gray-600 bg-orange-100 px-1 py-0.5 rounded cursor-pointer hover:bg-orange-200 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onEditMeal?.(meal, date, 'breakfast');
+                    if (onShowRecipe) {
+                      onShowRecipe(meal);
+                    } else {
+                      onEditMeal?.(meal, date, 'breakfast');
+                    }
                   }}
                 >
                   <div className="w-4 h-4 bg-orange-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -207,6 +217,18 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, s
                     )}
                   </div>
                   <span className="truncate flex-1">{meal.recipeName}</span>
+                  {onCopyRecipe && (
+                    <button
+                      className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-green-500 hover:text-green-700 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCopyRecipe(meal);
+                      }}
+                      title="Copy recipe"
+                    >
+                      <Copy className="w-2 h-2" />
+                    </button>
+                  )}
                   <button
                     className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-700 transition-all"
                     onClick={(e) => {
@@ -228,7 +250,11 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, s
                   className="group flex items-center gap-1 text-xs text-gray-600 bg-yellow-100 px-1 py-0.5 rounded cursor-pointer hover:bg-yellow-200 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onEditMeal?.(meal, date, 'lunch');
+                    if (onShowRecipe) {
+                      onShowRecipe(meal);
+                    } else {
+                      onEditMeal?.(meal, date, 'lunch');
+                    }
                   }}
                 >
                   <div className="w-4 h-4 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -239,6 +265,18 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, s
                     )}
                   </div>
                   <span className="truncate flex-1">{meal.recipeName}</span>
+                  {onCopyRecipe && (
+                    <button
+                      className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-green-500 hover:text-green-700 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCopyRecipe(meal);
+                      }}
+                      title="Copy recipe"
+                    >
+                      <Copy className="w-2 h-2" />
+                    </button>
+                  )}
                   <button
                     className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-700 transition-all"
                     onClick={(e) => {
@@ -259,7 +297,11 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, s
                   className="group flex items-center gap-1 text-xs text-gray-600 bg-blue-100 px-1 py-0.5 rounded cursor-pointer hover:bg-blue-200 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onEditMeal?.(meal, date, 'dinner');
+                    if (onShowRecipe) {
+                      onShowRecipe(meal);
+                    } else {
+                      onEditMeal?.(meal, date, 'dinner');
+                    }
                   }}
                 >
                   <div className="w-4 h-4 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -270,6 +312,18 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onDayClick, s
                     )}
                   </div>
                   <span className="truncate flex-1">{meal.recipeName}</span>
+                  {onCopyRecipe && (
+                    <button
+                      className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-green-500 hover:text-green-700 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCopyRecipe(meal);
+                      }}
+                      title="Copy recipe"
+                    >
+                      <Copy className="w-2 h-2" />
+                    </button>
+                  )}
                   <button
                     className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-700 transition-all"
                     onClick={(e) => {
@@ -313,6 +367,10 @@ export function MonthlyCalendar({
   onAddRecipe,
   onRemoveMeal,
   onEditMeal,
+  onShowRecipe,
+  onCopyRecipe,
+  copiedRecipe,
+  onClearCopiedRecipe,
   className
 }: MonthlyCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(currentDate || new Date());
@@ -325,6 +383,13 @@ export function MonthlyCalendar({
     }
   }, [currentDate]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Handle copying recipe
+  const handleCopyRecipe = (meal: MealSlot) => {
+    if (onCopyRecipe) {
+      onCopyRecipe(meal);
+    }
+  };
   
   // Generate month data
   const monthData = getMonthData(
@@ -574,6 +639,8 @@ export function MonthlyCalendar({
               onAddRecipe={onAddRecipe}
               onEditMeal={onEditMeal}
               onRemoveMeal={onRemoveMeal}
+              onShowRecipe={onShowRecipe}
+              onCopyRecipe={handleCopyRecipe}
               onDayClick={handleDayClick}
               selectedDate={selectedDate}
             />

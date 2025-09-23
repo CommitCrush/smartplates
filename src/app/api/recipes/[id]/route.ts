@@ -1,112 +1,75 @@
-/**
- * Individual Recipe API Routes
- * 
- * Handles CRUD operations for individual recipes
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { getRecipe, updateRecipe, deleteRecipe } from '@/models/Recipe';
-import { UpdateRecipeInput } from '@/types/recipe';
+import { connectToDatabase, COLLECTIONS } from '@/lib/db';
+import { ObjectId } from 'mongodb';
 
-interface RouteParams {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-/**
- * GET /api/recipes/[id] - Get single recipe
- */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = await params;
+    const { id } = params;
     
-    const recipe = await getRecipe(id);
-    
+    if (!id) {
+      return NextResponse.json({ error: 'Recipe ID is required' }, { status: 400 });
+    }
+
+    const db = await connectToDatabase();
+    const recipesCollection = db.collection(COLLECTIONS.RECIPES);
+
+    let recipe = null;
+
+    // Check if it's a Spoonacular recipe ID
+    if (id.startsWith('spoonacular-')) {
+      const spoonacularId = id.replace('spoonacular-', '');
+      
+     // Try to get from cache service
+try {
+  const { getRecipeInternal } = await import('@/services/spoonacularCacheService.server');
+  const cachedRecipe = await getRecipeInternal(spoonacularId);
+  
+  if (cachedRecipe) {
+    return NextResponse.json(cachedRecipe);
+  }
+} catch (cacheError) {
+  console.error('Cache service error:', cacheError);
+}
+      
+      // Fallback: search in MongoDB cache
+      try {
+        const cachedResult = await db.collection('spoonacularcaches').findOne({
+          recipeId: spoonacularId
+        });
+        
+        if (cachedResult) {
+          return NextResponse.json(cachedResult.data);
+        }
+      } catch (dbError) {
+        console.error('Database cache error:', dbError);
+      }
+      
+      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
+    }
+
+    // Handle regular MongoDB recipe IDs
+    try {
+      // Try as ObjectId first
+      recipe = await recipesCollection.findOne({ _id: new ObjectId(id) });
+    } catch (objectIdError) {
+      // If ObjectId fails, try as string ID
+      recipe = await recipesCollection.findOne({ id: id });
+    }
+
     if (!recipe) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
 
     return NextResponse.json(recipe);
+
   } catch (error) {
-    console.error('Error fetching recipe:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PUT /api/recipes/[id] - Update recipe
- */
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  try {
-    const { id } = await params;
-    const updateData: UpdateRecipeInput = await request.json();
-
-    // Basic validation
-    if (!updateData.title?.trim()) {
-      return NextResponse.json(
-        { error: 'Title is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!updateData.description?.trim()) {
-      return NextResponse.json(
-        { error: 'Description is required' },
-        { status: 400 }
-      );
-    }
-
-    const updatedRecipe = await updateRecipe(id, updateData);
-    
-    if (!updatedRecipe) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(updatedRecipe);
-  } catch (error) {
-    console.error('Error updating recipe:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * DELETE /api/recipes/[id] - Delete recipe
- */
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  try {
-    const { id } = await params;
-    
-    const deleted = await deleteRecipe(id);
-    
-    if (!deleted) {
-      return NextResponse.json(
-        { error: 'Recipe not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(
-      { message: 'Recipe deleted successfully' },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Error deleting recipe:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Recipe fetch error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

@@ -32,8 +32,10 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import Layout from '@/components/layout/Layout';
 import { WeeklyCalendar } from '@/components/meal-planning/calendar/WeeklyCalendar';
 import { MonthlyCalendar } from '@/components/meal-planning/calendar/MonthlyCalendar';
+import { MealSlotComponent } from '@/components/meal-planning/calendar/MealSlot';
 import { QuickAddRecipeModal } from '@/components/meal-planning/modals/QuickAddRecipeModal';
 import { SavePlanModal, type SaveOptions } from '@/components/meal-planning/modals/SavePlanModal';
+import { RecipeDetailModal } from '@/components/meal-planning/modals/RecipeDetailModal';
 import { getWeekStartDate, createEmptyMealPlan } from '@/types/meal-planning';
 import type { IMealPlan, MealSlot, MealPlanningSlot } from '@/types/meal-planning';
 // ...existing code...
@@ -55,9 +57,10 @@ interface TodayViewProps {
   onAddMeal: (slot: MealPlanningSlot) => void;
   onEditMeal: (slot: MealPlanningSlot) => void;
   onRemoveMeal: (planId: string, day: number, mealType: string, index: number) => void;
+  onShowRecipe?: (meal: MealSlot) => void;
 }
 
-const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal, onEditMeal, onRemoveMeal }) => {
+const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal, onEditMeal, onRemoveMeal, onShowRecipe }) => {
   // Find today's meals across all meal plans
   const todayMeals = mealPlans.flatMap(plan => 
     plan.days
@@ -120,7 +123,25 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
   };
 
   const renderMealCard = (meal: any, index: number, mealType: string, config: any) => (
-    <div key={index} className={`${config.cardBg} border ${config.borderColor} rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200`}>
+    <div 
+      key={index} 
+      className={`${config.cardBg} border ${config.borderColor} rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer`}
+      onClick={() => {
+        if (onShowRecipe) {
+          // Convert the meal data to MealSlot format
+          const mealSlot: MealSlot = {
+            recipeId: meal.recipeId || '',
+            recipeName: meal.recipeName || 'Unknown Recipe',
+            servings: meal.servings || 2,
+            prepTime: meal.prepTime || 30,
+            cookingTime: meal.cookingTime || 0,
+            notes: meal.notes || '',
+            image: meal.image || ''
+          };
+          onShowRecipe(mealSlot);
+        }
+      }}
+    >
       {/* Meal Image Placeholder */}
       <div className="w-full h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
         {meal.image ? (
@@ -143,14 +164,8 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
       
       {/* Meal Details */}
       <div className="text-sm text-gray-600 mb-3 space-y-1">
-        <div className="flex items-center gap-2">
-          <span>👥</span>
-          <span>{meal.servings} servings</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>⏱️</span>
-          <span>{meal.prepTime} min</span>
-        </div>
+
+
         {meal.notes && (
           <div className="flex items-start gap-2">
             <span>📝</span>
@@ -164,7 +179,8 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering the recipe modal
             // Convert JavaScript day (0=Sunday) to meal planning day (0=Monday)
             const jsDay = currentDate.getDay();
             const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1; // Convert Sunday(0) to 6, Mon(1) to 0, etc.
@@ -187,7 +203,8 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
         <Button
           variant="outline"
           size="sm"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering the recipe modal
             // Convert JavaScript day (0=Sunday) to meal planning day (0=Monday)
             const jsDay = currentDate.getDay();
             const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1; // Convert Sunday(0) to 6, Mon(1) to 0, etc.
@@ -325,6 +342,20 @@ export default function MealPlanningPage() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<MealPlanningSlot | null>(null);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
+  const [copiedRecipe, setCopiedRecipe] = useState<MealSlot | null>(null);
+
+  // Handle copying recipe
+  const handleCopyRecipe = (meal: MealSlot) => {
+    setCopiedRecipe(meal);
+    console.log('Recipe copied:', meal.recipeName);
+  };
+
+  // Handle clearing copied recipe
+  const handleClearCopiedRecipe = () => {
+    setCopiedRecipe(null);
+  };
+  const [selectedRecipe, setSelectedRecipe] = useState<MealSlot | null>(null);
 
   // Central meal plan storage - persists across navigation
   const [globalMealPlans, setGlobalMealPlans] = useState<Map<string, IMealPlan>>(new Map());
@@ -455,6 +486,17 @@ export default function MealPlanningPage() {
     setShowQuickAdd(true);
   };
 
+  // Recipe modal handlers
+  const handleShowRecipe = (meal: MealSlot) => {
+    setSelectedRecipe(meal);
+    setShowRecipeModal(true);
+  };
+
+  const handleCloseRecipeModal = () => {
+    setShowRecipeModal(false);
+    setSelectedRecipe(null);
+  };
+
   // Handle adding meal from MonthlyCalendar (date-based)
   const handleAddMealFromDate = (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
     // Normalize the date to avoid timezone issues
@@ -492,7 +534,7 @@ export default function MealPlanningPage() {
 
   const handleRemoveMeal = (planId: string, day: number, mealType: string, index: number) => {
     // Find the correct meal plan (could be from any week if called from monthly view)
-    let targetPlan = mealPlan;
+    const targetPlan = mealPlan;
     
     // If no current meal plan or if removing from a different week, find the correct one
     if (!targetPlan) {
@@ -572,15 +614,25 @@ export default function MealPlanningPage() {
   // Export handlers
   const handleExportMealPlan = async () => {
     try {
+      let result;
       if (viewMode === 'today') {
-        await captureTodayViewScreenshot();
+        result = await captureTodayViewScreenshot();
       } else if (viewMode === 'weekly') {
-        await captureWeeklyCalendarScreenshot();
+        result = await captureWeeklyCalendarScreenshot();
       } else if (viewMode === 'monthly') {
-        await captureMonthlyCalendarScreenshot();
+        result = await captureMonthlyCalendarScreenshot();
+      }
+      
+      if (result?.success) {
+        // Show success feedback (you could add a toast notification here)
+        console.log('📸 Screenshot captured successfully:', result.filename);
+      } else {
+        console.error('Screenshot failed:', result?.error);
+        alert('Screenshot failed: ' + (result?.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Screenshot failed:', error);
+      alert('Screenshot failed. Please try again.');
     }
   };
 
@@ -922,7 +974,7 @@ export default function MealPlanningPage() {
         {/* Calendar Views */}
         <div className="bg-white rounded-lg border shadow-sm">
           {viewMode === 'today' && (
-            <div className="p-6">
+            <div className="p-6 today-view-container">
               <TodayView
                 currentDate={currentDate}
                 mealPlans={Array.from(globalMealPlans.values())}
@@ -932,12 +984,14 @@ export default function MealPlanningPage() {
                   setShowQuickAdd(true);
                 }}
                 onRemoveMeal={handleRemoveMeal}
+                onShowRecipe={handleShowRecipe}
               />
             </div>
           )}
           
           {viewMode === 'weekly' && mealPlan && (
-            <WeeklyCalendar
+            <div className="weekly-calendar-container">
+              <WeeklyCalendar
               mealPlan={mealPlan}
               mealPlans={Array.from(globalMealPlans.values())}
               currentDate={currentDate}
@@ -947,15 +1001,25 @@ export default function MealPlanningPage() {
               }}
               onAddMeal={handleAddMeal}
               onRemoveMeal={handleRemoveMeal}
+              onShowRecipe={handleShowRecipe}
+              onCopyRecipe={handleCopyRecipe}
+              copiedRecipe={copiedRecipe}
+              onClearCopiedRecipe={handleClearCopiedRecipe}
             />
+            </div>
           )}
           
           {viewMode === 'monthly' && (
-            <MonthlyCalendar
+            <div className="monthly-calendar-container">
+              <MonthlyCalendar
               currentDate={currentDate}
               mealPlans={Array.from(globalMealPlans.values())}
               onAddRecipe={handleAddMealFromDate}
               onRemoveMeal={handleRemoveMeal}
+              onShowRecipe={handleShowRecipe}
+              onCopyRecipe={handleCopyRecipe}
+              copiedRecipe={copiedRecipe}
+              onClearCopiedRecipe={handleClearCopiedRecipe}
               onEditMeal={(meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
                 // Normalize the date to avoid timezone issues
                 const normalizedDate = new Date(date);
@@ -979,6 +1043,7 @@ export default function MealPlanningPage() {
                 setShowQuickAdd(true);
               }}
             />
+            </div>
           )}
         </div>
 
@@ -1003,6 +1068,15 @@ export default function MealPlanningPage() {
             isOpen={showSaveModal}
             onClose={() => setShowSaveModal(false)}
             onSave={handleSavePlan}
+          />
+        )}
+
+        {/* Recipe Detail Modal */}
+        {showRecipeModal && selectedRecipe && (
+          <RecipeDetailModal
+            isOpen={showRecipeModal}
+            onClose={handleCloseRecipeModal}
+            meal={selectedRecipe}
           />
         )}
         </div>

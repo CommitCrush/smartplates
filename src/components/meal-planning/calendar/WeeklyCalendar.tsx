@@ -21,7 +21,8 @@ import { getWeekStartDate, getWeekDates, formatWeekRange } from '@/types/meal-pl
 import { DayColumn } from './DayColumn';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import type { IMealPlan, DayMeals } from '@/types/meal-planning';
+import { RecipeDetailModal } from '../modals/RecipeDetailModal';
+import type { IMealPlan, DayMeals, MealSlot } from '@/types/meal-planning';
 
 // ========================================
 // Types
@@ -35,6 +36,10 @@ interface WeeklyCalendarProps {
   onAddRecipe?: (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onAddMeal?: (slot: any) => void;
   onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
+  onShowRecipe?: (meal: MealSlot) => void;
+  onCopyRecipe?: (meal: MealSlot) => void;
+  copiedRecipe?: MealSlot | null;
+  onClearCopiedRecipe?: () => void;
   className?: string;
 }
 
@@ -50,6 +55,10 @@ export function WeeklyCalendar({
   onAddRecipe,
   onAddMeal,
   onRemoveMeal,
+  onShowRecipe,
+  onCopyRecipe,
+  copiedRecipe,
+  onClearCopiedRecipe,
   className 
 }: WeeklyCalendarProps) {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => 
@@ -58,6 +67,26 @@ export function WeeklyCalendar({
   const [weekDates, setWeekDates] = useState<Date[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dateSearchValue, setDateSearchValue] = useState<string>('');
+  const [selectedMeal, setSelectedMeal] = useState<MealSlot | null>(null);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
+
+  // Handle showing recipe details
+  const handleShowRecipe = (meal: MealSlot) => {
+    setSelectedMeal(meal);
+    setShowRecipeModal(true);
+  };
+
+  // Handle copying recipe - delegate to parent
+  const handleCopyRecipe = (meal: MealSlot) => {
+    if (onCopyRecipe) {
+      onCopyRecipe(meal);
+    }
+  };
+
+  const handleCloseRecipeModal = () => {
+    setShowRecipeModal(false);
+    setSelectedMeal(null);
+  };
 
   // Sync with parent currentDate prop
   useEffect(() => {
@@ -197,6 +226,12 @@ export function WeeklyCalendar({
 
   // Handle adding a new meal
   const handleAddRecipe = (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
+    // If there's a copied recipe, paste it instead of opening add dialog
+    if (copiedRecipe) {
+      handlePasteRecipe(dayIndex, mealType);
+      return;
+    }
+
     if (onAddMeal) {
       const mealSlot = {
         dayOfWeek: dayIndex,
@@ -210,6 +245,40 @@ export function WeeklyCalendar({
     } else if (onAddRecipe) {
       onAddRecipe(dayIndex, mealType);
     }
+  };
+
+  // Handle pasting copied recipe
+  const handlePasteRecipe = (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
+    if (!copiedRecipe || !mealPlan) return;
+
+    // Create a new meal based on the copied recipe
+    const newMeal: MealSlot = {
+      ...copiedRecipe,
+    };
+
+    // Update the meal plan
+    const updatedMealPlan = { ...mealPlan };
+    if (!updatedMealPlan.days[dayIndex]) {
+      updatedMealPlan.days[dayIndex] = {
+        date: weekDates[dayIndex],
+        breakfast: [],
+        lunch: [],
+        dinner: [],
+        snacks: []
+      };
+    }
+
+    updatedMealPlan.days[dayIndex][mealType].push(newMeal);
+
+    if (onMealPlanChange) {
+      onMealPlanChange(updatedMealPlan);
+    }
+
+    // Clear copied recipe after pasting
+    if (onClearCopiedRecipe) {
+      onClearCopiedRecipe();
+    }
+    console.log('Recipe pasted:', newMeal.recipeName);
   };
 
   // Handle cross-day meal movement
@@ -371,6 +440,9 @@ export function WeeklyCalendar({
                     onMealsChange={(meals: DayMeals) => handleMealChange(dayIndex, meals)}
                     onAddRecipe={handleAddRecipe}
                     onCrossDayMealMove={handleCrossDayMealMove}
+                    onShowRecipe={handleShowRecipe}
+                    onCopyRecipe={handleCopyRecipe}
+                    copiedRecipe={copiedRecipe}
                     isToday={isToday}
                   />
                 </CardContent>
@@ -432,6 +504,13 @@ export function WeeklyCalendar({
             </Card>
           )}
         </div>
+
+        {/* Recipe Detail Modal */}
+        <RecipeDetailModal
+          meal={selectedMeal}
+          isOpen={showRecipeModal}
+          onClose={handleCloseRecipeModal}
+        />
       </div>
     </DndProvider>
   );

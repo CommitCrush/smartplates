@@ -69,7 +69,7 @@ export default function RecipePage() {
     type: selectedCategory,
     diet: selectedDiet,
     intolerances: selectedAllergy,
-    number: showMore ? 60 : 30,
+    number: showMore ? '60' : '30',
     // Spoonacular API does not support difficulty, so we filter client-side
   });
 

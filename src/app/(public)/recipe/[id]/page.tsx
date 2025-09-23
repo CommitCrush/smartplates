@@ -19,13 +19,14 @@ interface RecipePageProps {
 // Fetch recipe data - this would connect to your API
 async function getRecipe(id: string): Promise<Recipe | null> {
   try {
-    // In production, this would fetch from your API
-    // For now, return mock data for development
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/recipes/${id}`, {
+    // Use proper base URL construction
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/recipes/${id}`, {
       cache: 'no-store' // For fresh data
     });
     
     if (!response.ok) {
+      console.error(`Failed to fetch recipe ${id}: ${response.status} ${response.statusText}`);
       return null;
     }
     
@@ -38,7 +39,8 @@ async function getRecipe(id: string): Promise<Recipe | null> {
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: RecipePageProps): Promise<Metadata> {
-  const recipe = await getRecipe(params.id);
+  const { id } = await params;
+  const recipe = await getRecipe(id);
 
   if (!recipe) {
     return {
@@ -65,7 +67,8 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
 }
 
 export default async function RecipePage({ params }: RecipePageProps) {
-  const recipe = await getRecipe(params.id);
+  const { id } = await params;
+  const recipe = await getRecipe(id);
 
   if (!recipe) {
     notFound();

@@ -244,3 +244,14 @@ if (typeof process !== 'undefined') {
 
 // Export MongoDB types for convenience
 export { ObjectId, type Db, type Collection, type Document };
+
+export async function getDb() {
+  console.log('MONGODB_URI:', process.env.MONGODB_URI);
+  console.log('MONGODB_DB:', process.env.MONGODB_DB);
+
+  if (!client) {
+    client = new MongoClient(process.env.MONGODB_URI!);
+    await client.connect();
+  }
+  return client.db(process.env.MONGODB_DB);
+}

@@ -10,19 +10,15 @@ export function useRecipeSearch() {
     setError(null);
     try {
       const queryParams = new URLSearchParams();
-      if (params.q) queryParams.append('search', params.q);
+      if (params.search) queryParams.append('search', params.search);
       if (params.category) queryParams.append('category', params.category);
-      if (params.difficulty) queryParams.append('difficulty', params.difficulty);
-      if (params.tags) queryParams.append('tags', params.tags);
-      if (params.quick) queryParams.append('maxTime', '20');
-      // dietaryRestrictions als Array übergeben, falls beide Werte vorhanden sind
-      const dietaryRestrictions: string[] = [];
-      if (params.diet) dietaryRestrictions.push(params.diet);
-      // Tags als Array übergeben
+      if (params.dietaryRestrictions && Array.isArray(params.dietaryRestrictions)) {
+        params.dietaryRestrictions.forEach((val: string) => queryParams.append('dietaryRestrictions', val));
+      }
       if (params.tags && Array.isArray(params.tags)) {
         params.tags.forEach((tag: string) => queryParams.append('tags', tag));
       }
-      dietaryRestrictions.forEach(val => queryParams.append('dietaryRestrictions', val));
+      if (params.maxTime) queryParams.append('maxTime', params.maxTime.toString());
       const res = await fetch(`/api/recipes?${queryParams.toString()}`);
       const data = await res.json();
       if (data.source) {

@@ -1,6 +1,8 @@
+"use client";
+
 import Image from 'next/image';
 import type { Recipe } from '@/types/recipe';
-"use client";
+
 // ...existing code...
 import { useState, useEffect } from 'react';
 import { useRecipeSearch } from '@/hooks/useRecipeSearch';

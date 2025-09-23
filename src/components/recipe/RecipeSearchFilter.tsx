@@ -46,18 +46,27 @@ export default function RecipeSearchFilter({ className }: { className?: string }
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, [results]);
 
-			function handleSearch(e: React.FormEvent) {
-				e.preventDefault();
-				// Diät-Wert ggf. umwandeln (z.B. 'gluten free' → 'gluten-free')
-				const normalizedDiet = diet.replace(' ', '-');
-				searchRecipes({
-					q: query,
-					category,
-					diet: normalizedDiet,
-					tags,
-					quick
-				});
-			}
+				function handleSearch(e: React.FormEvent) {
+					e.preventDefault();
+					console.log('handleSearch called');
+					// Filterwerte als Arrays und Strings wie vom Backend erwartet
+					const params: {
+						search?: string;
+						category?: string;
+						dietaryRestrictions?: string[];
+						tags?: string[];
+						maxTime?: number;
+					} = {};
+					if (query.trim()) params.search = query.trim();
+					if (category) params.category = category;
+					if (diet) params.dietaryRestrictions = diet ? [diet] : [];
+					if (tags.length > 0) params.tags = tags.filter(Boolean);
+					if (quick) params.maxTime = 20;
+					console.log('Frontend Filter Params:', params);
+					searchRecipes(params);
+				}
+
+	console.log("Frontend Filter Params:", { query, category, diet, tags });
 
 	return (
 		<section className={cn('bg-white dark:bg-neutral-900 rounded-lg p-6 shadow', className)}>
@@ -71,7 +80,10 @@ export default function RecipeSearchFilter({ className }: { className?: string }
 						/>
 						<select
 							value={category}
-							onChange={e => setCategory(e.target.value)}
+							onChange={e => {
+								setCategory(e.target.value);
+								console.log('Kategorie geändert:', e.target.value);
+							}}
 							className="border rounded px-3 py-2 dark:bg-neutral-800"
 						>
 							<option value="">Kategorie wählen</option>
@@ -81,7 +93,10 @@ export default function RecipeSearchFilter({ className }: { className?: string }
 						</select>
 									<select
 										value={diet}
-										onChange={e => setDiet(e.target.value)}
+										onChange={e => {
+											setDiet(e.target.value);
+											console.log('Diät geändert:', e.target.value);
+										}}
 										className="border rounded px-3 py-2 dark:bg-neutral-800"
 									>
 										<option value="">Diät wählen</option>

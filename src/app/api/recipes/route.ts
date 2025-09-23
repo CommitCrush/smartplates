@@ -1,14 +1,16 @@
 /**
- * Recipes API Route - Mock Data Implementation
+ * Recipes API Route - CRUD Operations
  * 
- * Provides mock recipe data for the recipe listing page.
- * In a real implementation, this would query the MongoDB recipes collection.
+ * Handles recipe listing, filtering, and creation operations
+ * Integrated with Spoonacular API for external recipe data
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { Recipe } from '@/types/recipe';
+import { Recipe, CreateRecipeInput } from '@/types/recipe';
+import { createRecipe } from '@/models/Recipe';
+import { getCachedOrFreshRecipes, searchCachedRecipes } from '@/services/recipeCacheService';
 
-// Mock recipe data
+// Mock recipe data for Phase 1
 const mockRecipes: Recipe[] = [
   {
     id: '1',
@@ -100,13 +102,13 @@ const mockRecipes: Recipe[] = [
     category: 'dessert',
     difficulty: 'easy',
     prepTime: 15,
-    cookTime: 10,
-    totalTime: 25,
+    cookTime: 12,
+    totalTime: 27,
     servings: 24,
     rating: 4.9,
-    ratingsCount: 201,
+    ratingsCount: 203,
     likesCount: 156,
-    authorName: 'Baker Beth',
+    authorName: 'Sweet Baker',
     authorId: 'user_3',
     ingredients: [
       { id: '1', name: 'All-purpose flour', amount: 2.25, unit: 'cups' },
@@ -118,10 +120,138 @@ const mockRecipes: Recipe[] = [
     ],
     instructions: [
       { id: '1', stepNumber: 1, instruction: 'Preheat oven to 375°F (190°C)' },
-      { id: '2', stepNumber: 2, instruction: 'Cream butter and sugars together' },
-      { id: '3', stepNumber: 3, instruction: 'Add eggs and vanilla, mix well' },
-      { id: '4', stepNumber: 4, instruction: 'Gradually add flour and chocolate chips' },
-      { id: '5', stepNumber: 5, instruction: 'Drop spoonfuls on baking sheet and bake for 9-11 minutes' }
+      { id: '2', stepNumber: 2, instruction: 'Cream butter and sugars until light and fluffy' },
+      { id: '3', stepNumber: 3, instruction: 'Beat in eggs one at a time, then vanilla' },
+      { id: '4', stepNumber: 4, instruction: 'Gradually blend in flour' },
+      { id: '5', stepNumber: 5, instruction: 'Stir in chocolate chips' },
+      { id: '6', stepNumber: 6, instruction: 'Drop onto ungreased cookie sheets and bake 9-11 minutes' }
+    ],
+    dietaryRestrictions: ['vegetarian'],
+    cuisine: 'American',
+    tags: ['cookies', 'dessert', 'baking', 'chocolate'],
+    nutrition: {
+      calories: 140,
+      protein: 2,
+      carbohydrates: 20,
+      fat: 6,
+      fiber: 1
+    },
+    isPublished: true,
+    createdAt: '2025-09-03T09:15:00Z',
+    updatedAt: '2025-09-03T09:15:00Z'
+  },
+  {
+    id: '4',
+    title: 'Summer Salad',
+    description: 'Fresh and light summer salad with seasonal vegetables',
+    category: 'lunch',
+    difficulty: 'easy',
+    prepTime: 15,
+    cookTime: 0,
+    totalTime: 15,
+    servings: 2,
+    rating: 4.4,
+    ratingsCount: 67,
+    likesCount: 45,
+    authorName: 'Garden Fresh',
+    authorId: 'user_4',
+    ingredients: [
+      { id: '1', name: 'Mixed greens', amount: 4, unit: 'cups' },
+      { id: '2', name: 'Cherry tomatoes', amount: 200, unit: 'g' },
+      { id: '3', name: 'Cucumber', amount: 1, unit: 'large' },
+      { id: '4', name: 'Red onion', amount: 0.5, unit: 'small' },
+      { id: '5', name: 'Olive oil', amount: 2, unit: 'tbsp' }
+    ],
+    instructions: [
+      { id: '1', stepNumber: 1, instruction: 'Wash and dry all vegetables' },
+      { id: '2', stepNumber: 2, instruction: 'Cut tomatoes in half and slice cucumber' },
+      { id: '3', stepNumber: 3, instruction: 'Thinly slice red onion' },
+      { id: '4', stepNumber: 4, instruction: 'Combine all ingredients and dress with olive oil' }
+    ],
+    dietaryRestrictions: ['vegetarian', 'vegan', 'gluten-free'],
+    cuisine: 'Mediterranean',
+    tags: ['salad', 'fresh', 'healthy', 'no-cook'],
+    nutrition: {
+      calories: 95,
+      protein: 3,
+      carbohydrates: 8,
+      fat: 7,
+      fiber: 3
+    },
+    isPublished: true,
+    createdAt: '2025-09-03T12:20:00Z',
+    updatedAt: '2025-09-03T12:20:00Z'
+  },
+  {
+    id: '5',
+    title: 'Pancakes',
+    description: 'Fluffy buttermilk pancakes perfect for weekend breakfast',
+    category: 'breakfast',
+    difficulty: 'easy',
+    prepTime: 10,
+    cookTime: 15,
+    totalTime: 25,
+    servings: 4,
+    rating: 4.8,
+    ratingsCount: 142,
+    likesCount: 87,
+    authorName: 'Breakfast Chef',
+    authorId: 'user_5',
+    ingredients: [
+      { id: '1', name: 'All-purpose flour', amount: 2, unit: 'cups' },
+      { id: '2', name: 'Buttermilk', amount: 1.75, unit: 'cups' },
+      { id: '3', name: 'Eggs', amount: 2, unit: 'large' },
+      { id: '4', name: 'Sugar', amount: 2, unit: 'tbsp' },
+      { id: '5', name: 'Baking powder', amount: 2, unit: 'tsp' }
+    ],
+    instructions: [
+      { id: '1', stepNumber: 1, instruction: 'Mix dry ingredients in a large bowl' },
+      { id: '2', stepNumber: 2, instruction: 'Whisk wet ingredients in separate bowl' },
+      { id: '3', stepNumber: 3, instruction: 'Combine wet and dry ingredients until just mixed' },
+      { id: '4', stepNumber: 4, instruction: 'Cook on griddle until bubbles form, then flip' }
+    ],
+    dietaryRestrictions: ['vegetarian'],
+    cuisine: 'American',
+    tags: ['pancakes', 'breakfast', 'fluffy'],
+    nutrition: {
+      calories: 220,
+      protein: 8,
+      carbohydrates: 42,
+      fat: 3,
+      fiber: 2
+    },
+    isPublished: true,
+    createdAt: '2025-09-03T08:15:00Z',
+    updatedAt: '2025-09-03T08:15:00Z'
+  },
+  {
+    id: '6',
+    title: 'Chocolate Muffins',
+    description: 'Rich and moist chocolate muffins with chocolate chips',
+    category: 'dessert',
+    difficulty: 'easy',
+    prepTime: 15,
+    cookTime: 20,
+    totalTime: 35,
+    servings: 12,
+    rating: 4.6,
+    ratingsCount: 94,
+    likesCount: 73,
+    authorName: 'Bakery Master',
+    authorId: 'user_6',
+    ingredients: [
+      { id: '1', name: 'All-purpose flour', amount: 2, unit: 'cups' },
+      { id: '2', name: 'Cocoa powder', amount: 0.5, unit: 'cup' },
+      { id: '3', name: 'Sugar', amount: 1, unit: 'cup' },
+      { id: '4', name: 'Eggs', amount: 2, unit: 'large' },
+      { id: '5', name: 'Chocolate chips', amount: 1, unit: 'cup' }
+    ],
+    instructions: [
+      { id: '1', stepNumber: 1, instruction: 'Preheat oven to 375°F and line muffin tin' },
+      { id: '2', stepNumber: 2, instruction: 'Mix dry ingredients in large bowl' },
+      { id: '3', stepNumber: 3, instruction: 'Whisk wet ingredients separately' },
+      { id: '4', stepNumber: 4, instruction: 'Combine ingredients and fold in chocolate chips' },
+      { id: '5', stepNumber: 5, instruction: 'Bake for 18-20 minutes until toothpick comes out clean' }
     ],
     dietaryRestrictions: ['vegetarian'],
     cuisine: 'American',
@@ -139,48 +269,171 @@ const mockRecipes: Recipe[] = [
   }
 ];
 
+/**
+ * GET /api/recipes - Get recipes with filtering and pagination
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('query');
-    const category = searchParams.get('category');
-    const difficulty = searchParams.get('difficulty');
+    
+    // Extract filter parameters
+    const filters = {
+      category: searchParams.get('category') || undefined,
+      difficulty: searchParams.get('difficulty') || undefined,
+      cuisine: searchParams.get('cuisine') || undefined,
+      search: searchParams.get('search') || undefined,
+      dietaryRestrictions: searchParams.get('dietaryRestrictions')?.split(',') || [],
+      tags: searchParams.get('tags')?.split(',') || [],
+      maxTime: searchParams.get('maxTime') ? parseInt(searchParams.get('maxTime')!) : undefined,
+    };
 
-    let filteredRecipes = [...mockRecipes];
+    // Extract pagination parameters
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '12');
 
-    // Filter by search query
-    if (query) {
-      const searchLower = query.toLowerCase();
-      filteredRecipes = filteredRecipes.filter(recipe =>
-        recipe.title.toLowerCase().includes(searchLower) ||
-        recipe.description.toLowerCase().includes(searchLower) ||
-        recipe.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
+    let recipes: Recipe[] = [];
+    let total = 0;
+    let source = 'local';
+
+    // Try to get cached Spoonacular data first
+    try {
+      const cachedData = await getCachedOrFreshRecipes();
+      
+      if (cachedData.recipes.length > 0) {
+        console.log(`📦 Using cached recipes: ${cachedData.totalCount} total`);
+        
+        // Search within cached recipes
+        const searchResults = searchCachedRecipes(
+          cachedData,
+          filters.search || '',
+          filters.category,
+          filters.difficulty
+        );
+
+        // Apply pagination
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        recipes = searchResults.slice(startIndex, endIndex);
+        total = searchResults.length;
+        source = 'spoonacular-cached';
+        
+        console.log(`🔍 Found ${searchResults.length} recipes matching filters, showing ${recipes.length}`);
+      }
+    } catch (cacheError) {
+      console.warn('⚠️ Cache system failed, falling back to mock data:', cacheError);
     }
 
-    // Filter by category
-    if (category) {
-      filteredRecipes = filteredRecipes.filter(recipe => recipe.category === category);
+    // Fallback to mock data if cache is empty or failed
+    if (recipes.length === 0) {
+      console.log('📋 Using mock data as fallback');
+      
+      let filteredRecipes = mockRecipes;
+      
+      if (filters.category) {
+        filteredRecipes = filteredRecipes.filter(recipe => recipe.category === filters.category);
+      }
+      
+      if (filters.difficulty) {
+        filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === filters.difficulty);
+      }
+      
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        filteredRecipes = filteredRecipes.filter(recipe => 
+          recipe.title.toLowerCase().includes(searchLower) ||
+          recipe.description.toLowerCase().includes(searchLower) ||
+          recipe.tags.some(tag => tag.toLowerCase().includes(searchLower))
+        );
+      }
+
+      // Apply pagination
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      recipes = filteredRecipes.slice(startIndex, endIndex);
+      total = filteredRecipes.length;
+      source = 'local';
     }
 
-    // Filter by difficulty
-    if (difficulty) {
-      filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === difficulty);
-    }
-
+    // Return paginated response
     return NextResponse.json({
-      success: true,
-      data: filteredRecipes,
-      total: filteredRecipes.length,
-      timestamp: new Date().toISOString(),
+      recipes,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      hasNext: (page * limit) < total,
+      hasPrev: page > 1,
+      source, // 'spoonacular-cached', 'local', etc.
+      message: total > 0 ? `Found ${recipes.length} recipes (${source})` : 'No recipes found'
     });
+
   } catch (error) {
     console.error('Error fetching recipes:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch recipes' 
-      },
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/recipes - Create new recipe
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const recipeData: CreateRecipeInput = await request.json();
+
+    // Basic validation
+    if (!recipeData.title?.trim()) {
+      return NextResponse.json(
+        { error: 'Title is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!recipeData.description?.trim()) {
+      return NextResponse.json(
+        { error: 'Description is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!recipeData.category) {
+      return NextResponse.json(
+        { error: 'Category is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!recipeData.difficulty) {
+      return NextResponse.json(
+        { error: 'Difficulty is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!recipeData.ingredients || recipeData.ingredients.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one ingredient is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!recipeData.instructions || recipeData.instructions.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one instruction is required' },
+        { status: 400 }
+      );
+    }
+
+    // Create recipe in database
+    const newRecipe = await createRecipe(recipeData);
+
+    return NextResponse.json(newRecipe, { status: 201 });
+
+  } catch (error) {
+    console.error('Error creating recipe:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

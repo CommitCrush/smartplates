@@ -1,42 +1,103 @@
+/**
+ * Spoonacular Recipe Search API Route
+ * 
+ * Provides external recipe search functionality using Spoonacular API
+ */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { SpoonacularService } from '@/services/spoonacularService';
-import { getCachedResults, setCachedResults } from '@/lib/cache/spoonacularCache';
-import { checkRateLimit, getRateLimitInfo } from '@/middleware/rateLimiter';
+import { searchSpoonacularRecipes, searchRecipesByIngredients } from '@/services/spoonacularService';
 
-const service = new SpoonacularService();
-
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const query = searchParams.get('query') || '';
-  const cuisine = searchParams.get('cuisine') || undefined;
-  const diet = searchParams.get('diet') || undefined;
-  const intolerances = searchParams.get('intolerances') || undefined;
-
-  const filters: any = {};
-  if (cuisine) filters.cuisine = cuisine;
-  if (diet) filters.diet = diet;
-  if (intolerances) filters.intolerances = intolerances;
-
-  // IP für Rate Limiting ermitteln
-  const ip = req.headers.get('x-forwarded-for') || 'unknown';
-  if (!checkRateLimit(ip)) {
-    const info = getRateLimitInfo(ip);
-    return NextResponse.json({ error: 'Rate limit exceeded', remaining: info.remaining, reset: info.reset }, { status: 429 });
-  }
-
-  // Cache-Key generieren
-  const cacheKey = JSON.stringify({ query, ...filters });
-  const cached = getCachedResults(cacheKey);
-  if (cached) {
-    return NextResponse.json({ results: cached, cached: true });
-  }
-
+export async function GET(request: NextRequest) {
   try {
-    const results = await service.searchRecipes(query, filters);
-    setCachedResults(cacheKey, results);
-    return NextResponse.json({ results, cached: false });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Spoonacular API error', details: error?.message }, { status: 500 });
+    const { searchParams } = new URL(request.url);
+    
+    const query = searchParams.get('q') || '';
+    const ingredients = searchParams.get('ingredients');
+    const category = searchParams.get('category');
+    const cuisine = searchParams.get('cuisine');
+    const diet = searchParams.get('diet');
+    const limit = parseInt(searchParams.get('limit') || '12');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    let result;
+
+    // If ingredients are provided, search by ingredients
+    if (ingredients) {
+      const ingredientList = ingredients.split(',').map(i => i.trim());
+      const recipes = await searchRecipesByIngredients(ingredientList, { number: limit });
+      result = { recipes, totalResults: recipes.length };
+    } else {
+      // Otherwise, search by query
+      result = await searchSpoonacularRecipes(query, {
+        cuisine: cuisine || undefined,
+        diet: diet || undefined,
+        type: category || undefined,
+        number: limit,
+        offset
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+      message: `Found ${result.recipes.length} recipes`
+    });
+
+  } catch (error) {
+    console.error('Spoonacular search error:', error);
+    
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to search recipes',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+// POST method for complex searches with body parameters
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { 
+      query = '', 
+      ingredients = [], 
+      filters = {},
+      pagination = { limit: 12, offset: 0 }
+    } = body;
+
+    let result;
+
+    if (ingredients && ingredients.length > 0) {
+      const recipes = await searchRecipesByIngredients(ingredients, { 
+        number: pagination.limit 
+      });
+      result = { recipes, totalResults: recipes.length };
+    } else {
+      result = await searchSpoonacularRecipes(query, {
+        ...filters,
+        number: pagination.limit,
+        offset: pagination.offset
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+      pagination: {
+        total: result.totalResults,
+        limit: pagination.limit,
+        offset: pagination.offset,
+        hasMore: (pagination.offset + pagination.limit) < result.totalResults
+      }
+    });
+
+  } catch (error) {
+    console.error('Spoonacular search error:', error);
+    
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to search recipes',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

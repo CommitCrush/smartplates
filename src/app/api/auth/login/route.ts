@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { findUserByEmail } from '@/models/User';
 import { verifyPassword } from '@/utils/password';
 import { generateToken } from '@/utils/generateToken';
+import { shouldBeAdmin } from '@/config/team';
 
 interface LoginRequest {
   email: string;
@@ -78,12 +79,15 @@ export async function POST(request: NextRequest) {
     // Generate session token
     const token = generateToken(user._id!.toString());
 
+    // Update user role based on team.ts configuration (in case it has changed)
+    const currentRole = shouldBeAdmin(user.email) ? 'admin' : 'user';
+
     // User data to return (without password)
     const userData = {
       id: user._id!.toString(),
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: currentRole, // Use dynamically determined role from team.ts
       isEmailVerified: user.isEmailVerified,
     };
 

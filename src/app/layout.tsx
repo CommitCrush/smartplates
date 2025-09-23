@@ -20,7 +20,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${inter.variable}`}>
+  
+     
+    <html lang="en" className={`dark ${inter.variable}`} data-scroll-behavior="smooth">
       <body className="font-sans antialiased">
         <AuthProvider>
           {children}

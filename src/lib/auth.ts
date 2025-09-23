@@ -7,6 +7,9 @@
 
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { shouldBeAdmin } from '@/config/team';
+import { findUserByEmail } from '@/models/User';
+import { verifyPassword } from '@/utils/password';
 
 /**
  * Mock NextAuth configuration for development
@@ -23,37 +26,32 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        // Mock users for development
-        const mockUsers = [
-          {
-            id: 'admin-1',
-            email: 'admin@smartplates.dev',
-            name: 'Admin User',
-            role: 'admin'
-          },
-          {
-            id: 'user-1', 
-            email: 'user@smartplates.dev',
-            name: 'Regular User',
-            role: 'user'
-          }
-        ];
-
-        if (credentials?.email && credentials?.password) {
-          // Simple mock authentication
-          const user = mockUsers.find(u => u.email === credentials.email);
-          if (user && credentials.password === 'password123') {
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              role: user.role as 'admin' | 'user',
-              emailVerified: true
-            };
-          }
+        if (!credentials?.email || !credentials?.password) {
+          return null;
         }
-        
-        return null;
+
+        // Find user in MongoDB
+        const user = await findUserByEmail(credentials.email.toLowerCase());
+        if (!user || !user.password) {
+          return null;
+        }
+
+        // Verify password
+        const isValid = await verifyPassword(credentials.password, user.password);
+        if (!isValid) {
+          return null;
+        }
+
+        // Determine role from team.ts
+        const finalRole = shouldBeAdmin(user.email) ? 'admin' : (user.role || 'user');
+
+        return {
+          id: user._id?.toString() || '',
+          email: user.email,
+          name: user.name,
+          role: finalRole,
+          emailVerified: user.isEmailVerified || false
+        };
       }
     })
   ],
@@ -102,33 +100,23 @@ export const authOptions: NextAuthOptions = {
 };
 
 /**
- * Team member emails that should have admin access
- * Add team member emails here to grant admin privileges
- */
-const ADMIN_EMAILS = [
-  'admin@smartplates.dev',
-  'team@smartplates.dev',
-  // Add more admin emails as needed
-];
-
-/**
- * Determines user role based on email address
+ * Determines user role based on email address using team.ts configuration
  * 
  * @param email - User's email address
  * @returns UserRole - 'admin' or 'user'
  */
 export function getUserRole(email: string): 'admin' | 'user' {
-  return ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : 'user';
+  return shouldBeAdmin(email) ? 'admin' : 'user';
 }
 
 /**
- * Check if user has admin privileges
+ * Check if user has admin privileges using team.ts configuration
  * 
  * @param userEmail - User's email address
  * @returns boolean - True if user is admin
  */
 export function isAdminUser(userEmail: string): boolean {
-  return getUserRole(userEmail) === 'admin';
+  return shouldBeAdmin(userEmail);
 }
 
 /**

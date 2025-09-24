@@ -634,3 +634,48 @@
     /* linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), */
     url('/images/hero-background.png');
 }
+
+/* Am Ende der Datei hinzufügen */
+
+/* Smooth Transitions for Theme Changes */
+@layer base {
+  * {
+    transition: background-color 0.2s ease-in-out, 
+                border-color 0.2s ease-in-out, 
+                color 0.2s ease-in-out;
+  }
+}
+
+/* Theme Transition Optimization */
+@layer utilities {
+  .theme-transition {
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Prevent transition on initial load */
+  .no-transition * {
+    transition: none !important;
+  }
+}
+
+/* Enhanced Theme Support */
+@media (prefers-color-scheme: dark) {
+  html:not(.light) {
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  html:not(.dark) {
+    color-scheme: light;
+  }
+}
+
+/* Force theme states */
+html.light {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}

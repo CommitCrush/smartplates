@@ -1,97 +1,19 @@
 /**
- * Main'use client';
-
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/authContext';
-import { Menu, X, User, LogOut, Settings, ChefHat, Sun, Moon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
-export default function Navbar() {
-  const { user, isAuthenticated, isAdmin, signIn, signOut } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Check initial dark mode state
-  useEffect(() => {
-    setIsDarkMode(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('darkMode', 'true');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('darkMode', 'false');
-    }
-  };
-
-  // Load dark mode preference on mount
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode === 'true') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else if (savedDarkMode === 'false') {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    }
-  }, []); Component for SmartPlates
- * 
- * Features:
- * - Responsive navigation with mobile menu
- * - Authentication-based navigation (authenticated vs. public)
- * - Role-based menu items (admin, user, viewer)
- * - Google OAuth sign-in/sign-out
- * - Logo and branding
+ * Main Navigation Component for SmartPlates
  */
 
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/context/authContext';
-import { Menu, X, User, LogOut, Settings, ChefHat, Sun, Moon } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, ChefHat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, signIn, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Check initial dark mode state
-  useEffect(() => {
-    setIsDarkMode(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('darkMode', 'true');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('darkMode', 'false');
-    }
-  };
-
-  // Load dark mode preference on mount
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode === 'true') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else if (savedDarkMode === 'false') {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -112,21 +34,10 @@ export default function Navbar() {
               </span>
             </Link>
             
-            {/* Dark Mode Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleDarkMode}
-              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              aria-pressed={isDarkMode}
-            >
-              {isDarkMode ? (
-                <Sun className="h-5 w-5 text-foreground" />
-              ) : (
-                <Moon className="h-5 w-5 text-foreground" />
-              )}
-            </Button>
+            {/* Theme Toggle - Desktop */}
+            <div className="hidden md:block">
+              <ThemeToggle size="sm" />
+            </div>
           </div>
 
           {/* Desktop Navigation */}
@@ -158,7 +69,7 @@ export default function Navbar() {
                 About
               </Link>
 
-              {/* Authenticated User Navigation */}
+              {/* User Navigation */}
               {isAuthenticated && (
                 <>
                   <Link
@@ -227,17 +138,20 @@ export default function Navbar() {
                   <Link
                     href="/user/settings"
                     className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 p-2 rounded-md transition-colors"
+                    aria-label="Settings"
                   >
                     <Settings className="h-5 w-5" />
                   </Link>
                   
                   {/* Sign Out */}
                   <Button
-                    variant="ghost"
-                    onClick={() => signOut()}
-                    className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    variant="outline"
+                    onClick={signOut}
+                    className="flex items-center space-x-1 text-sm"
+                    aria-label="Sign out"
                   >
-                    <LogOut className="h-5 w-5" />
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
                   </Button>
                 </div>
               )}
@@ -245,14 +159,17 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Theme Toggle - Mobile */}
+            <ThemeToggle size="sm" />
+            
             <Button
               variant="ghost"
               onClick={toggleMenu}
-              className="text-foreground shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-              aria-label={isMenuOpen ? 'Close main menu' : 'Open main menu'}
-              aria-expanded={isMenuOpen}
+              className="inline-flex items-center justify-center p-2 rounded-md text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
               aria-controls="mobile-menu"
+              aria-expanded={isMenuOpen}
+              aria-label={isMenuOpen ? 'Close main menu' : 'Open main menu'}
             >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -302,7 +219,7 @@ export default function Navbar() {
               About
             </Link>
 
-            {/* Authenticated Mobile Navigation */}
+            {/* User Mobile Navigation */}
             {isAuthenticated && (
               <>
                 <Link
@@ -385,7 +302,8 @@ export default function Navbar() {
                       signOut();
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-destructive border-destructive hover:bg-destructive/10"
+                    className="w-full"
+                    aria-label="Sign out"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out

@@ -26,7 +26,7 @@ yarn-error.log*
 
 # Google Cloud Credentials (nicht pushen)
 .env*
-src/config/smartplates-project-471422-07dda0656722.json
+src/config/smartplates-project-471422-adb936280b4a.json
 # vercel
 .vercel
 # typescript

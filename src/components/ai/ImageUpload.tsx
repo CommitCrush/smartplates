@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 
-export default function ImageUpload({ image, onUpload, onNewImage, analyzing }: { image: File | null; onUpload: (file: File) => void; onNewImage: () => void; analyzing: boolean }) {
+export default function ImageUpload({ image, onUpload, onNewImage, analyzing, label }: { image: File | null; onUpload: (file: File) => void; onNewImage: () => void; analyzing: boolean; label?: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -13,8 +13,9 @@ export default function ImageUpload({ image, onUpload, onNewImage, analyzing }: 
     <div className="flex flex-col items-center gap-4">
       {!image ? (
         <>
+          <label className="block mb-2 font-medium">{label || 'Upload a fridge photo or take a picture'}</label>
           <button className="btn btn-outline w-full" onClick={() => fileInputRef.current?.click()}>
-            Bild hochladen oder Foto machen
+            {label || 'Upload a fridge photo or take a picture'}
           </button>
           <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
         </>

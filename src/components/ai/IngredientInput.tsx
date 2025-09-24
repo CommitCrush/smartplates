@@ -1,14 +1,13 @@
-import { useState } from 'react';
-const SUGGESTIONS = [
-  'Tomaten', 'Gurke', 'Paprika', 'Zwiebel', 'Knoblauch', 'Kartoffel', 'Karotte', 'Salat', 'Apfel', 'Banane', 'Milch', 'Käse', 'Joghurt', 'Butter', 'Ei', 'Hähnchen', 'Rindfleisch', 'Fisch', 'Reis', 'Nudeln', 'Brot', 'Öl', 'Essig', 'Basilikum', 'Petersilie', 'Thymian', 'Oregano'
-];
 
-export default function IngredientInput({ ingredients, onChange }: { ingredients: string[]; onChange: (ingredients: string[]) => void }) {
+import { useState } from 'react';
+import { INGREDIENTS } from '@/lib/ingredients';
+
+export default function IngredientInput({ ingredients = [], onChange, label }: { ingredients?: string[]; onChange: (ingredients: string[]) => void; label?: string }) {
   const [input, setInput] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
 
   const filteredSuggestions = input.length > 0
-    ? SUGGESTIONS.filter(s => s.toLowerCase().startsWith(input.toLowerCase()) && !ingredients.includes(s))
+    ? INGREDIENTS.filter(s => s.toLowerCase().includes(input.toLowerCase()) && !ingredients.includes(s)).slice(0, 15)
     : [];
   const handleAdd = () => {
     if (input.trim() && !ingredients.includes(input.trim())) {
@@ -26,7 +25,7 @@ export default function IngredientInput({ ingredients, onChange }: { ingredients
 
   return (
     <div className="relative">
-      <label className="block mb-2 font-medium">Zutaten eingeben</label>
+      <label className="block mb-2 font-medium">{label || 'Enter ingredients'}</label>
       <div className="flex gap-2 mb-2">
         <input
           type="text"

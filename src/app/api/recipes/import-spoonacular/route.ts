@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SpoonacularService } from '@/services/spoonacularService';
+import { getSpoonacularRecipe } from '@/services/spoonacularService';
 import { saveRecipeToDb } from '@/services/recipeService';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';

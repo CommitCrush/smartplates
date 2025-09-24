@@ -282,10 +282,15 @@ export async function GET(request: NextRequest) {
       difficulty: searchParams.get('difficulty') || undefined,
       cuisine: searchParams.get('cuisine') || undefined,
       search: searchParams.get('search') || undefined,
-      dietaryRestrictions: searchParams.get('dietaryRestrictions')?.split(',') || [],
+      dietaryRestrictions: (searchParams.get('dietaryRestrictions')?.split(',').map(d => {
+        // Only allow valid Spoonacular diet values
+        const validDiets = ['vegetarian','vegan','gluten free','ketogenic','paleo','primal','whole30'];
+        return validDiets.includes(d.trim().toLowerCase()) ? d.trim().toLowerCase() : null;
+      }).filter(Boolean)) || [],
       tags: searchParams.get('tags')?.split(',') || [],
       maxTime: searchParams.get('maxTime') ? parseInt(searchParams.get('maxTime')!) : undefined,
     };
+    console.log('API /api/recipes filters:', filters);
 
     // Extract pagination parameters
     const page = parseInt(searchParams.get('page') || '1');
@@ -296,11 +301,59 @@ export async function GET(request: NextRequest) {
     let source = 'local';
 
     // If 'search' param is present, treat as ingredient search
-    if (filters.search && filters.search.trim().length > 0) {
+      if (filters.search && filters.search.trim().length > 0) {
+        // Prevent invalid filter combinations that always fail (e.g. vegan breakfast with chicken/fish)
+        const forbiddenCombos = [
+          { category: 'breakfast', diet: 'vegan', forbiddenIngredients: ['chicken','fish','egg','milk','butter','yogurt','cheese'] }
+        ];
+        const activeCombo = forbiddenCombos.find(combo =>
+          filters.category === combo.category && filters.dietaryRestrictions.includes(combo.diet)
+        );
+        if (activeCombo) {
+          const lowerIngredients = filters.search.toLowerCase();
+          if (activeCombo.forbiddenIngredients.some(ing => lowerIngredients.includes(ing))) {
+            return NextResponse.json({ error: 'No recipes found: filter combination is not possible (vegan breakfast with animal products).' }, { status: 400 });
+          }
+        }
       // Use Spoonacular ingredient search first
       const { searchRecipesByIngredients, searchSpoonacularRecipes } = await import('@/services/spoonacularService');
-      const ingredientList = filters.search.split(',').map(s => s.trim()).filter(Boolean);
-      let spoonacularRecipes = await searchRecipesByIngredients(ingredientList, { number: limit });
+        // Simple German-to-English mapping for Spoonacular
+        const deToEn: Record<string, string> = {
+          'tomaten': 'tomato',
+          'gurke': 'cucumber',
+          'paprika': 'bell pepper',
+          'zwiebel': 'onion',
+          'knoblauch': 'garlic',
+          'kartoffel': 'potato',
+          'karotte': 'carrot',
+          'salat': 'lettuce',
+          'apfel': 'apple',
+          'banane': 'banana',
+          'milch': 'milk',
+          'käse': 'cheese',
+          'joghurt': 'yogurt',
+          'butter': 'butter',
+          'ei': 'egg',
+          'hähnchen': 'chicken',
+          'rindfleisch': 'beef',
+          'fisch': 'fish',
+          'reis': 'rice',
+          'nudeln': 'pasta',
+          'brot': 'bread',
+          'öl': 'oil',
+          'essig': 'vinegar',
+          'basilikum': 'basil',
+          'petersilie': 'parsley',
+          'thymian': 'thyme',
+          'oregano': 'oregano'
+        };
+        const ingredientList = filters.search.split(',').map(s => {
+          const key = s.trim().toLowerCase();
+          return deToEn[key] || key;
+        }).filter(Boolean);
+  console.log('Spoonacular ingredientList:', ingredientList);
+  let spoonacularRecipes = await searchRecipesByIngredients(ingredientList, { number: limit });
+  console.log('Spoonacular recipes result:', JSON.stringify(spoonacularRecipes, null, 2));
       // If filter is set, use complexSearch to filter further
       if (filters.category || filters.dietaryRestrictions.length > 0) {
         const filterOptions: any = { number: limit };

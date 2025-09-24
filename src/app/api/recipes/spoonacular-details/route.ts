@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SpoonacularService } from '@/services/spoonacularService';
+import { getSpoonacularRecipe } from '@/services/spoonacularService';
 
 const service = new SpoonacularService();
 

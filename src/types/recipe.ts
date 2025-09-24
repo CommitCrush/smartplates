@@ -10,6 +10,7 @@ export type RecipeCategory = 'breakfast' | 'lunch' | 'dinner' | 'dessert' | 'sna
 export type DietaryRestriction = 'vegetarian' | 'vegan' | 'gluten-free' | 'dairy-free' | 'nut-free' | 'keto' | 'paleo';
 
 export interface Recipe {
+  _id: string;
   id: string;
   title: string;
   description: string;

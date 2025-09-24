@@ -9,17 +9,26 @@ export function useRecipeSearch() {
     setLoading(true);
     setError(null);
     try {
-      const query = new URLSearchParams({
-        query: params.q || '',
-        type: params.category || '',
-        diet: params.diet || '',
-        maxReadyTime: params.quick ? '20' : '',
-      }).toString();
-      const res = await fetch(`/api/recipes/search-spoonacular?${query}`);
+      const queryParams = new URLSearchParams();
+      if (params.search) queryParams.append('search', params.search);
+      if (params.category) queryParams.append('category', params.category);
+      if (params.dietaryRestrictions && Array.isArray(params.dietaryRestrictions)) {
+        params.dietaryRestrictions.forEach((val: string) => queryParams.append('dietaryRestrictions', val));
+      }
+      if (params.tags && Array.isArray(params.tags)) {
+        params.tags.forEach((tag: string) => queryParams.append('tags', tag));
+      }
+      if (params.maxTime) queryParams.append('maxTime', params.maxTime.toString());
+      const res = await fetch(`/api/recipes?${queryParams.toString()}`);
       const data = await res.json();
-      setResults(data.results || []);
+      if (data.source) {
+        console.log('API Source:', data.source, data.recipes);
+      } else {
+        console.log('API Response:', data);
+      }
+      setResults(data.recipes || []);
     } catch (err: any) {
-      setError('Fehler bei der Rezeptsuche (Spoonacular)');
+      setError('Fehler bei der Rezeptsuche');
       setResults([]);
     } finally {
       setLoading(false);

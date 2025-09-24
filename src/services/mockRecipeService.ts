@@ -1,27 +1,34 @@
 import { useState, useEffect } from 'react';
-import { Recipe } from '@/types/recipe';
-import { searchSpoonacularRecipes, getSpoonacularRecipe } from './spoonacularService';
+import type { Recipe } from '@/types/recipe';
+import { getSpoonacularRecipe } from './spoonacularService';
 
 // Holt alle Rezepte (optional mit Filter)
-export function useAllRecipes(query = '', options = {}) {
+export function useAllRecipes(query = '', options: Record<string, string> = {}) {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    const opts = { ...options, number: 24 };
-    searchSpoonacularRecipes(query, opts)
-      .then(({ recipes }) => {
-        setRecipes(recipes);
-        setError(recipes.length === 0 ? 'Keine Rezepte gefunden' : '');
-        setLoading(false);
-      })
-      .catch(() => {
+    const fetchRecipes = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (query) params.append('search', query);
+        Object.entries(options).forEach(([key, value]) => {
+          if (value) params.append(key, value);
+        });
+        const res = await fetch(`/api/recipes?${params.toString()}`);
+        const data = await res.json();
+        setRecipes(data.recipes || []);
+        setError((data.recipes && data.recipes.length === 0) ? 'Keine Rezepte gefunden' : '');
+      } catch {
         setError('Fehler beim Laden der Rezepte');
+      } finally {
         setLoading(false);
-      });
-  }, [query, JSON.stringify(options)]);
+      }
+    };
+    fetchRecipes();
+  }, []);
 
   return { recipes, error, loading };
 }
@@ -56,17 +63,22 @@ export function useRecipesByMealType(type: string) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-  searchSpoonacularRecipes('', { type })
-      .then(({ recipes }) => {
-        setRecipes(recipes);
-        setError(recipes.length === 0 ? 'Keine Rezepte gefunden' : '');
-        setLoading(false);
-      })
-      .catch(() => {
+    const fetchRecipes = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (type) params.append('type', type);
+        const res = await fetch(`/api/recipes?${params.toString()}`);
+        const data = await res.json();
+        setRecipes(data.recipes || []);
+        setError((data.recipes && data.recipes.length === 0) ? 'Keine Rezepte gefunden' : '');
+      } catch {
         setError('Fehler beim Laden der Rezepte');
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    fetchRecipes();
   }, [type]);
 
   return { recipes, error, loading };

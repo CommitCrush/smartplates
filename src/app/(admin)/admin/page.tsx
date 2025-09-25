@@ -49,6 +49,13 @@ export default function AdminPage() {
       href: '/admin/settings',
       icon: Settings,
       color: 'text-gray-600'
+    },
+    {
+      title: 'Enhanced API Management',
+      description: 'Monitor and optimize Spoonacular API',
+      href: '/admin/spoonacular-enhanced',
+      icon: UserCog,
+      color: 'text-indigo-600'
     }
   ];
 

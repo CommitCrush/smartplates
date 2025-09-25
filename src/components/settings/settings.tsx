@@ -13,7 +13,7 @@ interface UserSettingsProps {
 }
 
 export function UserSettings({ className }: UserSettingsProps) {
-  const { user, updateProfile } = useAuth();
+  const { user, session } = useAuth();
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -22,17 +22,17 @@ export function UserSettings({ className }: UserSettingsProps) {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    dietaryRestrictions: user?.dietaryRestrictions || [],
+    dietaryRestrictions: [] as string[],
     notifications: {
-      email: user?.notifications?.email ?? true,
-      push: user?.notifications?.push ?? true,
-      mealReminders: user?.notifications?.mealReminders ?? true,
-      weeklyPlanning: user?.notifications?.weeklyPlanning ?? true,
+      email: true,
+      push: true,
+      mealReminders: true,
+      weeklyPlanning: true,
     },
     privacy: {
-      profilePublic: user?.privacy?.profilePublic ?? false,
-      recipesPublic: user?.privacy?.recipesPublic ?? true,
-      mealPlansPublic: user?.privacy?.mealPlansPublic ?? false,
+      profilePublic: false,
+      recipesPublic: true,
+      mealPlansPublic: false,
     }
   });
 
@@ -47,7 +47,7 @@ export function UserSettings({ className }: UserSettingsProps) {
     setFormData(prev => ({
       ...prev,
       [section]: {
-        ...prev[section as keyof typeof prev],
+        ...(prev[section as keyof typeof prev] as Record<string, any>),
         [field]: value
       }
     }));
@@ -59,7 +59,27 @@ export function UserSettings({ className }: UserSettingsProps) {
     setMessage('');
 
     try {
-      await updateProfile(formData);
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: session.user.id,
+          settings: formData,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to update settings');
+      }
+
       setMessage('Settings updated successfully!');
     } catch (error) {
       setMessage('Failed to update settings. Please try again.');

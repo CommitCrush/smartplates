@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserCountWidget, RecipeCountWidget, CommissionCountWidget } from '@/components/admin/AdminStatisticsWidgets';
+import AdminStatisticsWidgets from '@/components/admin/AdminStatisticsWidgets';
 import { Card } from '@/components/ui/card';
 
 interface AdminStatistics {
@@ -97,9 +97,7 @@ export default function StatisticsPage() {
       
       {/* Main Statistics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <UserCountWidget count={statistics.users.total} />
-        <RecipeCountWidget count={statistics.recipes.total} />
-        <CommissionCountWidget count={statistics.commissions.total_cookware_items} />
+        <AdminStatisticsWidgets />
       </div>
 
       {/* Detailed Statistics */}

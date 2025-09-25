@@ -78,14 +78,26 @@ export default function Navbar() {
               {isAuthenticated && (
                 <>
                   <Link
+                    href="/user"
+                    className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                    role="menuitem"
+                    tabIndex={0}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
                     href="/user/my_meal_plan/current"
-                    className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                    className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                    role="menuitem"
+                    tabIndex={0}
                   >
                     Meal Plans
                   </Link>
                   <Link
                     href="/user/my-recipe"
-                    className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                    className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                    role="menuitem"
+                    tabIndex={0}
                   >
                     My Recipes
                   </Link>
@@ -189,23 +201,38 @@ export default function Navbar() {
             {isAuthenticated && (
               <>
                 <Link
-                  href="/user/my_meal_plan/current"
-                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  href="/user"
+                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                   onClick={() => setIsMenuOpen(false)}
+                  role="menuitem"
+                  tabIndex={0}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/user/my_meal_plan/current"
+                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                  onClick={() => setIsMenuOpen(false)}
+                  role="menuitem"
+                  tabIndex={0}
                 >
                   Meal Plans
                 </Link>
                 <Link
                   href="/user/my-recipe"
-                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                   onClick={() => setIsMenuOpen(false)}
+                  role="menuitem"
+                  tabIndex={0}
                 >
                   My Recipes
                 </Link>
                 <Link
                   href="/user/profile/me"
-                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                   onClick={() => setIsMenuOpen(false)}
+                  role="menuitem"
+                  tabIndex={0}
                 >
                   Profile
                 </Link>

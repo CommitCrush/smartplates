@@ -10,10 +10,11 @@
 
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/authContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   Calendar, 
   ChefHat, 
@@ -39,7 +40,7 @@ interface DashboardStats {
 }
 
 export default function UserDashboardPage() {
-  const { data: session, status } = useSession();
+  const { user, isAuthenticated, status } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     totalRecipes: 0,
@@ -51,15 +52,15 @@ export default function UserDashboardPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/login');
+      router.push('/login');
       return;
     }
 
-    if (status === 'authenticated') {
+    if (isAuthenticated) {
       // Load user dashboard data
       loadDashboardData();
     }
-  }, [status, router]);
+  }, [status, isAuthenticated, router]);
 
   const loadDashboardData = async () => {
     try {
@@ -159,18 +160,35 @@ export default function UserDashboardPage() {
     );
   }
 
-  if (!session) {
+  if (!isAuthenticated) {
     return null;
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
+      {/* Header with Profile Image */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Welcome back, {session.user?.name || 'Chef'}!
-        </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <div className="flex items-center space-x-4 mb-4">
+          <div className="relative">
+            <Image
+              src={user?.image || '/placeholder-avatar.svg'}
+              alt={`${user?.name || 'User'}'s profile`}
+              width={80}
+              height={80}
+              className="rounded-full border-4 border-white shadow-lg"
+            />
+            <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Welcome back, {user?.name || 'Chef'}!
+            </h1>
+            <p className="mt-1 text-gray-600 dark:text-gray-400">
+              {user?.email}
+            </p>
+          </div>
+        </div>
+        <p className="text-gray-600 dark:text-gray-400">
           Here&apos;s what&apos;s happening in your kitchen today.
         </p>
       </div>

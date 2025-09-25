@@ -179,12 +179,12 @@ export default function AdminSettingsPage() {
 
       if (response.ok) {
         setUsers(prev => prev.map(u => u._id === userId ? { ...u, status: newStatus } : u));
-        setMessage({ type: 'success', text: 'Benutzerstatus aktualisiert' });
+        setMessage({ type: 'success', text: 'User status updated' });
       } else {
-        throw new Error('Fehler beim Aktualisieren des Benutzerstatus');
+        throw new Error('Error updating user status');
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Fehler beim Aktualisieren des Benutzerstatus' });
+      setMessage({ type: 'error', text: 'Error updating user status' });
     }
   };
 
@@ -218,12 +218,12 @@ export default function AdminSettingsPage() {
       });
 
       if (response.ok) {
-        setMessage({ type: 'success', text: 'Systemeinstellungen gespeichert' });
+        setMessage({ type: 'success', text: 'System settings saved' });
       } else {
-        throw new Error('Fehler beim Speichern der Systemeinstellungen');
+        throw new Error('Error saving system settings');
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Fehler beim Speichern der Systemeinstellungen' });
+      setMessage({ type: 'error', text: 'Error saving system settings' });
     }
   };
 
@@ -255,8 +255,8 @@ export default function AdminSettingsPage() {
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Activity },
-    { id: 'users', label: 'Benutzer', icon: Users },
-    { id: 'recipes', label: 'Rezepte', icon: BookOpen },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'recipes', label: 'Recipes', icon: BookOpen },
     { id: 'reports', label: 'Meldungen', icon: Shield },
     { id: 'system', label: 'System', icon: Settings },
   ] as const;
@@ -268,7 +268,7 @@ export default function AdminSettingsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin-Panel</h1>
           <p className="text-gray-600">
-            Verwalte Benutzer, Rezepte und Systemeinstellungen
+            Manage users, recipes and system settings
           </p>
         </div>
 

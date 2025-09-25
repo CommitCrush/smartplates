@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,12 +25,12 @@ import {
   Globe,
   Lock,
   Users,
-  Camera,
-  Trash2,
   Clock,
   Thermometer
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ImageUpload, { type UploadedImage } from '@/components/ui/ImageUpload';
+import Image from 'next/image';
 
 // Types for the enhanced form
 interface EnhancedIngredient {
@@ -49,14 +49,9 @@ interface EnhancedInstruction {
   temperature?: number; // cooking temperature
 }
 
-interface RecipeImage {
-  id: string;
-  file: File;
-  preview: string;
-  isPrimary: boolean;
-}
 
-interface EnhancedRecipeFormData {
+
+export interface EnhancedRecipeFormData {
   // Basic info
   title: string;
   description: string;
@@ -77,8 +72,9 @@ interface EnhancedRecipeFormData {
   dietaryTags: string[];
   customTags: string[];
   
-  // Media
-  images: File[];
+  // Media (Cloudinary URLs)
+  images: UploadedImage[];
+  primaryImageUrl?: string;
   
   // Recipe source and attribution
   source?: string;
@@ -144,7 +140,7 @@ export function EnhancedRecipeUploadForm({
     ingredients: [],
     instructions: [],
     servings: 4,
-    prepTime: 30,
+    prepTime: 15,
     cookTime: 30,
     difficulty: 'medium',
     category: 'dinner',
@@ -152,13 +148,14 @@ export function EnhancedRecipeUploadForm({
     dietaryTags: [],
     customTags: [],
     images: [],
+    primaryImageUrl: '',
     source: '',
     isOriginal: true,
     isPublic: false,
   });
 
   // Component states
-  const [images, setImages] = useState<RecipeImage[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [newIngredient, setNewIngredient] = useState({
     name: '', amount: 0, unit: '', notes: ''
   });
@@ -167,9 +164,9 @@ export function EnhancedRecipeUploadForm({
   });
   const [newTag, setNewTag] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [dragActive, setDragActive] = useState(false);
+
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   // Validation functions
   const validateField = (field: string, value: unknown): string => {
@@ -220,7 +217,7 @@ export function EnhancedRecipeUploadForm({
     });
     
     // Validate images
-    const imageError = validateField('images', images.map(img => img.file));
+    const imageError = validateField('images', uploadedImages);
     if (imageError) newErrors.images = imageError;
     
     setErrors(newErrors);
@@ -245,89 +242,69 @@ export function EnhancedRecipeUploadForm({
     }
   };
 
-  // Image handling
-  const handleImageUpload = useCallback((files: FileList | null) => {
-    if (!files) return;
-    
+  // Image handling with Cloudinary
+  const handleImageUpload = (uploadedImage: UploadedImage) => {
     const maxImages = validationRules.maxImages || 5;
-    const maxSize = validationRules.maxImageSize || 5 * 1024 * 1024;
     
-    const newImages: RecipeImage[] = [];
-    
-    Array.from(files).slice(0, maxImages - images.length).forEach((file) => {
-      if (file.size > maxSize) {
-        alert(`Datei ${file.name} ist zu groß (maximal 5MB)`);
-        return;
-      }
-      
-      if (!file.type.startsWith('image/')) {
-        alert(`Datei ${file.name} ist kein Bild`);
-        return;
-      }
-      
-      const imageId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const preview = URL.createObjectURL(file);
-      
-      newImages.push({
-        id: imageId,
-        file,
-        preview,
-        isPrimary: images.length === 0 && newImages.length === 0
-      });
-    });
-    
-    if (newImages.length > 0) {
-      setImages(prev => [...prev, ...newImages]);
-      
-      // Update form data
-      const allFiles = [...images.map(img => img.file), ...newImages.map(img => img.file)];
-      handleFieldChange('images', allFiles);
+    if (uploadedImages.length >= maxImages) {
+      setErrors(prev => ({ ...prev, images: `Maximum ${maxImages} images allowed` }));
+      return;
     }
-  }, [images, validationRules, handleFieldChange]);
 
-  const removeImage = (imageId: string) => {
-    setImages(prev => {
-      const updated = prev.filter(img => img.id !== imageId);
+    // Clear previous image errors
+    setErrors(prev => {
+      const { images: _, ...rest } = prev;
+      return rest;
+    });
+
+    setUploadedImages(prev => {
+      const newImages = [...prev, uploadedImage];
       
-      // If we removed the primary image, make the first remaining image primary
-      if (updated.length > 0 && !updated.some(img => img.isPrimary)) {
-        updated[0].isPrimary = true;
+      // Set as primary if it's the first image
+      if (newImages.length === 1) {
+        setFormData(current => ({
+          ...current,
+          primaryImageUrl: uploadedImage.url,
+          images: newImages
+        }));
+      } else {
+        setFormData(current => ({
+          ...current,
+          images: newImages
+        }));
       }
       
-      // Update form data
-      handleFieldChange('images', updated.map(img => img.file));
+      return newImages;
+    });
+  };
+
+  const removeImage = (imageUrl: string) => {
+    setUploadedImages(prev => {
+      const updated = prev.filter(img => img.url !== imageUrl);
+      
+      // If we removed the primary image, set the first remaining image as primary
+      const wasPrimary = formData.primaryImageUrl === imageUrl;
+      const newPrimaryUrl = wasPrimary && updated.length > 0 ? updated[0].url : 
+                           wasPrimary ? '' : formData.primaryImageUrl;
+      
+      setFormData(current => ({
+        ...current,
+        images: updated,
+        primaryImageUrl: newPrimaryUrl
+      }));
       
       return updated;
     });
   };
 
-  const setPrimaryImage = (imageId: string) => {
-    setImages(prev => prev.map(img => ({
-      ...img,
-      isPrimary: img.id === imageId
-    })));
+  const setPrimaryImage = (imageUrl: string) => {
+    setFormData(prev => ({
+      ...prev,
+      primaryImageUrl: imageUrl
+    }));
   };
 
-  // Drag and drop handlers
-  const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleImageUpload(e.dataTransfer.files);
-    }
-  }, [handleImageUpload]);
+  // Note: Drag and drop is now handled by the ImageUpload component
 
   // Ingredient management
   const addIngredient = () => {
@@ -409,7 +386,7 @@ export function EnhancedRecipeUploadForm({
     try {
       await onSubmit({
         ...formData,
-        images: images.map(img => img.file)
+        images: uploadedImages
       });
     } catch (error) {
       console.error('Form submission error:', error);
@@ -487,60 +464,29 @@ export function EnhancedRecipeUploadForm({
 
       {/* Image Upload */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-6">Bilder hochladen</h3>
+        <h3 className="text-lg font-semibold mb-6">Recipe Images</h3>
         
-        <div className="space-y-4">
-          {/* Upload Area */}
-          <div
-            className={cn(
-              "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
-              dragActive ? "border-primary bg-primary/5" : "border-gray-300",
-              images.length >= (validationRules.maxImages || 5) && "opacity-50 pointer-events-none"
-            )}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={(e) => handleImageUpload(e.target.files)}
-              className="hidden"
-            />
-            
-            <div className="space-y-3">
-              <Camera className="h-12 w-12 text-gray-400 mx-auto" />
-              <div>
-                <p className="text-lg font-medium">Bilder hinzufügen</p>
-                <p className="text-sm text-gray-500">
-                  Ziehe Bilder hierher oder{' '}
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-primary hover:underline"
-                  >
-                    wähle Dateien aus
-                  </button>
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Maximal {validationRules.maxImages || 5} Bilder, je bis zu 5MB
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Image Previews */}
-          {images.length > 0 && (
+        <ImageUpload
+          onUpload={handleImageUpload}
+          uploadType="recipe"
+          maxSize={5}
+          multiple={true}
+          showPreview={true}
+        />
+        
+        {/* Image Gallery */}
+        {uploadedImages.length > 0 && (
+          <div className="mt-6">
+            <h4 className="text-sm font-medium mb-4">Uploaded Images ({uploadedImages.length})</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {images.map((image) => (
-                <div key={image.id} className="relative group">
+              {uploadedImages.map((image, index) => (
+                <div key={image.publicId} className="relative group">
                   <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                    <img
-                      src={image.preview}
-                      alt="Recipe preview"
+                    <Image
+                      src={image.url}
+                      alt={`Recipe image ${index + 1}`}
+                      width={200}
+                      height={200}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -550,41 +496,41 @@ export function EnhancedRecipeUploadForm({
                     <Button
                       type="button"
                       size="sm"
-                      variant={image.isPrimary ? "default" : "secondary"}
-                      onClick={() => setPrimaryImage(image.id)}
+                      variant={formData.primaryImageUrl === image.url ? "default" : "secondary"}
+                      onClick={() => setPrimaryImage(image.url)}
                       className="text-xs"
                     >
-                      {image.isPrimary ? 'Hauptbild' : 'Als Hauptbild'}
+                      {formData.primaryImageUrl === image.url ? 'Primary' : 'Set Primary'}
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="destructive"
-                      onClick={() => removeImage(image.id)}
+                      onClick={() => removeImage(image.url)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
                   
-                  {image.isPrimary && (
+                  {formData.primaryImageUrl === image.url && (
                     <div className="absolute top-2 left-2">
                       <Badge variant="default" className="text-xs">
-                        Hauptbild
+                        Primary Image
                       </Badge>
                     </div>
                   )}
                 </div>
               ))}
             </div>
-          )}
-          
-          {errors.images && (
-            <p className="text-red-500 text-sm flex items-center gap-1">
-              <AlertCircle className="h-4 w-4" />
-              {errors.images}
-            </p>
-          )}
-        </div>
+          </div>
+        )}
+        
+        {errors.images && (
+          <p className="text-red-500 text-sm flex items-center gap-1 mt-4">
+            <AlertCircle className="h-4 w-4" />
+            {errors.images}
+          </p>
+        )}
       </Card>
 
       {/* Recipe Classification */}

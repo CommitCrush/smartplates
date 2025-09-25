@@ -17,9 +17,11 @@ import { Card } from '@/components/ui/card';
 
 interface RecipeDetailProps {
   recipe: Recipe;
+  isEditable?: boolean;
+  showUserActions?: boolean;
 }
 
-export function RecipeDetail({ recipe }: RecipeDetailProps) {
+export function RecipeDetail({ recipe, isEditable = false, showUserActions = false }: RecipeDetailProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Recipe Header */}
@@ -57,3 +59,5 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
     </div>
   );
 }
+
+export default RecipeDetail;

@@ -8,7 +8,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
+import { useAuth } from '@/context/authContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
@@ -30,7 +31,7 @@ interface UserProfileDropdownProps {
 }
 
 export default function UserProfileDropdown({ className = '', isMobile = false }: UserProfileDropdownProps) {
-  const { data: session, status } = useSession();
+  const { session, status, user, isAuthenticated, isAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -56,17 +57,17 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
     );
   }
 
-  if (!session) {
+  if (!isAuthenticated) {
     return (
       <div className={`flex items-center ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
         <Link
-          href="/auth/login"
-          className={`px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors ${isMobile ? 'w-full text-center' : ''}`}
+          href="/login"
+          className={`px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? 'w-full text-center' : ''}`}
         >
           Sign In
         </Link>
         <Link
-          href="/auth/register"
+          href="/register"
           className={`px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors ${isMobile ? 'w-full text-center' : ''}`}
         >
           Sign Up
@@ -75,72 +76,9 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
     );
   }
 
-  const userAvatar = session.user?.image || '/placeholder-avatar.svg';
-  const userName = session.user?.name || 'User';
-  const userEmail = session.user?.email || '';
-
-  // Mobile-optimized view for authenticated users
-  if (isMobile && session) {
-    return (
-      <div className="space-y-3">
-        {/* Mobile User Info */}
-        <div className="flex items-center space-x-3 px-3 py-2">
-          <Image
-            src={userAvatar}
-            alt={`${userName}'s avatar`}
-            width={40}
-            height={40}
-            className="rounded-full border border-gray-200 dark:border-gray-700"
-          />
-          <div className="flex-1">
-            <div className="font-semibold text-gray-900 dark:text-white">
-              {userName}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {userEmail}
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Navigation Links */}
-        <div className="space-y-1">
-          {navigationItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <item.icon className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-900 dark:text-white">{item.label}</span>
-            </Link>
-          ))}
-          <Link
-            href="/user/settings"
-            className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <Settings className="h-4 w-4 text-gray-500" />
-            <span className="text-gray-900 dark:text-white">Settings</span>
-          </Link>
-          {session.user?.role === 'admin' && (
-            <Link
-              href="/admin"
-              className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <Shield className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-900 dark:text-white">Admin Panel</span>
-            </Link>
-          )}
-          <button
-            onClick={handleSignOut}
-            className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full text-left"
-          >
-            <LogOut className="h-4 w-4 text-gray-500" />
-            <span className="text-gray-900 dark:text-white">Sign out</span>
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const userAvatar = user?.image || '/placeholder-avatar.svg';
+  const userName = user?.name || 'User';
+  const userEmail = user?.email || '';
 
   const navigationItems = [
     {
@@ -182,6 +120,69 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
       console.error('Sign out error:', error);
     }
   };
+
+  // Mobile-optimized view for authenticated users
+  if (isMobile && isAuthenticated) {
+    return (
+      <div className="space-y-3">
+        {/* Mobile User Info */}
+        <div className="flex items-center space-x-3 px-3 py-2">
+          <Image
+            src={userAvatar}
+            alt={`${userName}'s avatar`}
+            width={40}
+            height={40}
+            className="rounded-full border border-gray-200 dark:border-gray-700"
+          />
+          <div className="flex-1">
+            <div className="font-semibold text-gray-900 dark:text-white">
+              {userName}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {userEmail}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Links */}
+        <div className="space-y-1">
+          {navigationItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <item.icon className="h-4 w-4 text-gray-500" />
+              <span className="text-gray-900 dark:text-white">{item.label}</span>
+            </Link>
+          ))}
+          <Link
+            href="/user/settings"
+            className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Settings className="h-4 w-4 text-gray-500" />
+            <span className="text-gray-900 dark:text-white">Settings</span>
+          </Link>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <Shield className="h-4 w-4 text-gray-500" />
+              <span className="text-gray-900 dark:text-white">Admin Panel</span>
+            </Link>
+          )}
+          <button
+            onClick={handleSignOut}
+            className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full text-left"
+          >
+            <LogOut className="h-4 w-4 text-gray-500" />
+            <span className="text-gray-900 dark:text-white">Sign out</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -294,7 +295,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
             </Link>
             
             {/* Admin link for admin users */}
-            {session.user?.role === 'admin' && (
+            {isAdmin && (
               <Link
                 href="/admin"
                 onClick={() => setIsOpen(false)}

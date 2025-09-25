@@ -10,16 +10,47 @@
 // ========================================
 
 /**
+ * Recipe ingredient interface
+ */
+export interface RecipeIngredient {
+  id?: number;
+  name: string;
+  amount?: number;
+  unit?: string;
+  nameClean?: string;
+}
+
+/**
+ * Recipe interface for meal planning
+ */
+export interface Recipe {
+  id?: string | number;
+  title: string;
+  image?: string;
+  readyInMinutes?: number;
+  servings?: number;
+  extendedIngredients?: RecipeIngredient[];
+  instructions?: string;
+  summary?: string;
+  cuisines?: string[];
+  diets?: string[];
+  dishTypes?: string[];
+}
+
+/**
  * Individual meal slot within a day
  */
 export interface MealSlot {
   recipeId?: string; // Reference to Recipe (will be populated later)
   recipeName?: string; // For display purposes and mock data
+  name?: string; // Alternative name field
   servings?: number; // Number of servings planned
   notes?: string; // User notes for this meal
   cookingTime?: number; // In minutes
   prepTime?: number; // In minutes
   image?: string; // Recipe image URL
+  recipe?: Recipe; // Full recipe data when populated
+  ingredients?: RecipeIngredient[]; // Direct ingredients list
 }
 
 /**
@@ -28,9 +59,23 @@ export interface MealSlot {
 export interface MealPlanningSlot extends MealSlot {
   dayOfWeek?: number; // Day index (0-6) for weekly planning
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snacks'; // Meal type
-  ingredients?: string[]; // Ingredient list
   tags?: string[]; // Recipe tags
   targetDate?: Date; // Target date when adding from monthly calendar
+}
+
+/**
+ * Meal type enum for type safety
+ */
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
+
+/**
+ * Drag and drop item type for react-dnd
+ */
+export interface DragDropItemType {
+  id: string;
+  content: MealSlot;
+  mealType: MealType;
+  dayIndex: number;
 }
 
 /**
@@ -95,7 +140,13 @@ export function getWeekDates(weekStartDate: Date): Date[] {
  */
 export function formatWeekRange(weekStartDate: Date): string {
   const weekEndDate = new Date(weekStartDate.getTime() + (6 * 24 * 60 * 60 * 1000));
-  return `${weekStartDate.toLocaleDateString()} - ${weekEndDate.toLocaleDateString()}`;
+  const options: Intl.DateTimeFormatOptions = { 
+    month: 'short', 
+    day: 'numeric' 
+  };
+  const startStr = weekStartDate.toLocaleDateString('en-US', options);
+  const endStr = weekEndDate.toLocaleDateString('en-US', options);
+  return `${startStr} - ${endStr}`;
 }
 
 /**

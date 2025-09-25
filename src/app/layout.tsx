@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/authContext";
 import { ThemeProvider } from "@/context/themeContext";
-import { themeScript } from "@/lib/theme-script";
 import { ToastProvider } from "@/components/ui/use-toast";
+import { themeScript } from "@/lib/theme-script";
 
 // Import debug tools in development
 if (process.env.NODE_ENV === 'development') {
@@ -36,13 +36,13 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <div id="__next-root">
-          <ToastProvider>
-            <ThemeProvider>
-              <AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <ToastProvider>
                 {children}
-              </AuthProvider>
-            </ThemeProvider>
-          </ToastProvider>
+              </ToastProvider>
+            </AuthProvider>
+          </ThemeProvider>
         </div>
       </body>
     </html>

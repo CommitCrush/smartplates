@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/authContext';
 import { EnhancedRecipeUploadForm } from '@/components/forms/EnhancedRecipeUploadForm';
+import type { EnhancedRecipeFormData } from '@/components/forms/EnhancedRecipeUploadForm';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Lock, Globe, Users } from 'lucide-react';
@@ -23,36 +24,7 @@ export default function UploadRecipePage() {
   }, [user, loading, router]);
 
   // Handle form submission
-  const handleSubmit = async (formData: {
-    title: string;
-    description: string;
-    category: string;
-    cuisine?: string;
-    difficulty: string;
-    prepTime: number;
-    cookTime: number;
-    servings: number;
-    ingredients: Array<{ 
-      id: string; 
-      name: string; 
-      amount: number; 
-      unit: string; 
-      notes?: string;
-    }>;
-    instructions: Array<{ 
-      id: string; 
-      stepNumber: number; 
-      instruction: string;
-      time?: number;
-      temperature?: number;
-    }>;
-    customTags: string[];
-    dietaryTags: string[];
-    images: File[];
-    isPublic: boolean;
-    isOriginal: boolean;
-    source?: string;
-  }) => {
+  const handleSubmit = async (formData: EnhancedRecipeFormData) => {
     if (!user) return;
     
     setIsSubmitting(true);
@@ -61,18 +33,14 @@ export default function UploadRecipePage() {
       // Create FormData for file uploads
       const uploadData = new FormData();
       
-      // Add recipe data
+      // Add recipe data (images are already uploaded to Cloudinary)
       uploadData.append('recipeData', JSON.stringify({
         ...formData,
         tags: formData.customTags, // Convert customTags to tags for API compatibility
         userId: user.id,
-        images: undefined // Remove images from JSON
+        // Include Cloudinary image URLs
+        imageUrls: formData.images.map(img => img.url)
       }));
-      
-      // Add image files
-      formData.images.forEach((file, index) => {
-        uploadData.append(`image_${index}`, file);
-      });
       
       const response = await fetch('/api/recipes/upload', {
         method: 'POST',

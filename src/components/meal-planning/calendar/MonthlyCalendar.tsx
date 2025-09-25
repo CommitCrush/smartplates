@@ -565,7 +565,7 @@ export function MonthlyCalendar({
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <Card className={cn('w-full', className)}>
+    <Card id="monthly-calendar" className={cn('w-full', className)}>
       <CardHeader className="pb-4">
         <div className="flex flex-col space-y-4">
           <div className="flex items-center justify-between">
@@ -620,7 +620,7 @@ export function MonthlyCalendar({
 
       <CardContent>
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-0 border border-gray-200 rounded-lg overflow-hidden">
+        <div id="calendar-container" className="grid grid-cols-7 gap-0 border border-gray-200 rounded-lg overflow-hidden">
           {/* Week Day Headers */}
           {weekDays.map(day => (
             <div

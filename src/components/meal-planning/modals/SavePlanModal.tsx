@@ -33,6 +33,7 @@ export interface SaveOptions {
   saveLocally: boolean;
   saveToGoogleCalendar: boolean;
   includeShoppingList: boolean;
+  exportFormat?: 'pdf' | 'text' | 'json';
   mealPlanTitle?: string;
 }
 
@@ -46,6 +47,7 @@ export function SavePlanModal({
     saveLocally: true,
     saveToGoogleCalendar: false,
     includeShoppingList: true,
+    exportFormat: 'pdf',
     mealPlanTitle: ''
   });
 

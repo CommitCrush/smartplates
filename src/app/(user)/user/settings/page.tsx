@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus, Save } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 interface UserSettings {
   dietaryRestrictions: string[];
@@ -33,22 +33,23 @@ interface UserSettings {
 }
 
 const DIETARY_RESTRICTIONS = [
-  'Vegetarisch', 'Vegan', 'Glutenfrei', 'Laktosefrei', 'Pescetarisch',
+  'Vegetarian', 'Vegan', 'Gluten-Free', 'Lactose-Free', 'Pescetarian',
   'Paleo', 'Keto', 'Low-Carb', 'Halal', 'Kosher'
 ];
 
 const COMMON_ALLERGIES = [
-  'Nüsse', 'Erdnüsse', 'Milchprodukte', 'Eier', 'Fisch', 'Schalentiere',
-  'Soja', 'Weizen', 'Sesam', 'Sulfite'
+  'Nuts', 'Peanuts', 'Dairy', 'Eggs', 'Fish', 'Shellfish',
+  'Soy', 'Wheat', 'Sesame', 'Sulfites'
 ];
 
 const CUISINE_PREFERENCES = [
-  'Italienisch', 'Asiatisch', 'Mediterran', 'Mexikanisch', 'Indisch',
-  'Französisch', 'Deutsch', 'Amerikanisch', 'Griechisch', 'Türkisch'
+  'Italian', 'Asian', 'Mediterranean', 'Mexican', 'Indian',
+  'French', 'German', 'American', 'Greek', 'Turkish'
 ];
 
 export default function SettingsPage() {
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [settings, setSettings] = useState<UserSettings>({
     dietaryRestrictions: [],
     allergies: [],
@@ -91,8 +92,8 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error fetching settings:', error);
       toast({
-        title: 'Fehler',
-        description: 'Einstellungen konnten nicht geladen werden.',
+        title: 'Error',
+        description: 'Settings could not be loaded.',
         variant: 'destructive'
       });
     } finally {
@@ -114,8 +115,8 @@ export default function SettingsPage() {
 
       if (response.ok) {
         toast({
-          title: 'Erfolg',
-          description: 'Einstellungen erfolgreich gespeichert!',
+          title: 'Success',
+          description: 'Settings saved successfully!',
           variant: 'default'
         });
       } else {
@@ -124,8 +125,8 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({
-        title: 'Fehler',
-        description: 'Einstellungen konnten nicht gespeichert werden.',
+        title: 'Error',
+        description: 'Settings could not be saved.',
         variant: 'destructive'
       });
     } finally {
@@ -186,7 +187,7 @@ export default function SettingsPage() {
       <div className="container mx-auto py-8">
         <Card>
           <CardContent className="text-center py-8">
-            <p>Bitte melden Sie sich an, um Ihre Einstellungen zu verwalten.</p>
+            <p>Please sign in to manage your settings.</p>
           </CardContent>
         </Card>
       </div>
@@ -213,29 +214,29 @@ export default function SettingsPage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Einstellungen</h1>
+          <h1 className="text-3xl font-bold">Settings</h1>
           <Button 
             onClick={handleSaveSettings}
             disabled={isSaving}
             className="flex items-center gap-2"
           >
             <Save className="h-4 w-4" />
-            {isSaving ? 'Speichern...' : 'Alle Änderungen speichern'}
+            {isSaving ? 'Saving...' : 'Save All Changes'}
           </Button>
         </div>
 
         {/* Dietary Preferences */}
         <Card>
           <CardHeader>
-            <CardTitle>Ernährungseinstellungen</CardTitle>
+            <CardTitle>Dietary Settings</CardTitle>
             <CardDescription>
-              Ihre Ernährungsgewohnheiten und Einschränkungen für bessere Rezeptvorschläge
+              Your dietary habits and restrictions for better recipe recommendations
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Dietary Restrictions */}
             <div>
-              <Label className="text-base font-medium">Ernährungsformen</Label>
+              <Label className="text-base font-medium">Dietary Restrictions</Label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {settings.dietaryRestrictions.map(restriction => (
                   <Badge key={restriction} variant="secondary" className="flex items-center gap-1">
@@ -268,7 +269,7 @@ export default function SettingsPage() {
 
             {/* Allergies */}
             <div>
-              <Label className="text-base font-medium">Allergien & Unverträglichkeiten</Label>
+              <Label className="text-base font-medium">Allergies & Intolerances</Label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {settings.allergies.map(allergy => (
                   <Badge key={allergy} variant="destructive" className="flex items-center gap-1">
@@ -301,7 +302,7 @@ export default function SettingsPage() {
 
             {/* Cuisine Preferences */}
             <div>
-              <Label className="text-base font-medium">Küchen-Vorlieben</Label>
+              <Label className="text-base font-medium">Cuisine Preferences</Label>
               <div className="mt-2 flex flex-wrap gap-2">
                 {settings.cuisinePreferences.map(cuisine => (
                   <Badge key={cuisine} variant="default" className="flex items-center gap-1">
@@ -337,17 +338,17 @@ export default function SettingsPage() {
         {/* Email Notifications */}
         <Card>
           <CardHeader>
-            <CardTitle>E-Mail-Benachrichtigungen</CardTitle>
+            <CardTitle>Email Notifications</CardTitle>
             <CardDescription>
-              Wählen Sie, welche E-Mails Sie erhalten möchten
+              Choose which emails you would like to receive
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="recipe-recommendations">Rezept-Empfehlungen</Label>
+                <Label htmlFor="recipe-recommendations">Recipe Recommendations</Label>
                 <p className="text-sm text-muted-foreground">
-                  Wöchentliche personalisierte Rezeptvorschläge
+                  Weekly personalized recipe suggestions
                 </p>
               </div>
               <Switch

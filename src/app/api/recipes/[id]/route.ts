@@ -19,32 +19,61 @@ export async function GET(
     let recipe = null;
 
     // Check if it's a Spoonacular recipe ID
-    if (id.startsWith('spoonacular-')) {
-      const spoonacularId = id.replace('spoonacular-', '');
+    if (id.startsWith('spoonacular-') || /^\d+$/.test(id)) {
+      const spoonacularId = id.startsWith('spoonacular-') ? id.replace('spoonacular-', '') : id;
       
-     // Try to get from cache service
-try {
-  const { getRecipeInternal } = await import('@/services/spoonacularCacheService.server');
-  const cachedRecipe = await getRecipeInternal(spoonacularId);
-  
-  if (cachedRecipe) {
-    return NextResponse.json(cachedRecipe);
-  }
-} catch (cacheError) {
-  console.error('Cache service error:', cacheError);
-}
+      // Try to get from cache service first
+      try {
+        const { getRecipeInternal } = await import('@/services/spoonacularCacheService.server');
+        const cachedRecipe = await getRecipeInternal(spoonacularId);
+        
+        if (cachedRecipe) {
+          return NextResponse.json(cachedRecipe);
+        }
+      } catch (cacheError) {
+        console.error('Cache service error:', cacheError);
+      }
       
       // Fallback: search in MongoDB cache
       try {
         const cachedResult = await db.collection('spoonacularcaches').findOne({
-          recipeId: spoonacularId
+          recipeId: parseInt(spoonacularId)
         });
         
-        if (cachedResult) {
+        if (cachedResult && cachedResult.data) {
           return NextResponse.json(cachedResult.data);
         }
       } catch (dbError) {
         console.error('Database cache error:', dbError);
+      }
+
+      // If not in cache, try to fetch from Spoonacular API
+      try {
+        const spoonacularApiKey = process.env.SPOONACULAR_API_KEY;
+        if (spoonacularApiKey) {
+          const spoonacularUrl = `https://api.spoonacular.com/recipes/${spoonacularId}/information?apiKey=${spoonacularApiKey}&includeNutrition=true`;
+          
+          const response = await fetch(spoonacularUrl);
+          if (response.ok) {
+            const recipeData = await response.json();
+            
+            // Cache the result
+            try {
+              await db.collection('spoonacularcaches').insertOne({
+                recipeId: parseInt(spoonacularId),
+                data: recipeData,
+                cachedAt: new Date(),
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Cache for 7 days
+              });
+            } catch (cacheInsertError) {
+              console.error('Failed to cache recipe:', cacheInsertError);
+            }
+            
+            return NextResponse.json(recipeData);
+          }
+        }
+      } catch (apiError) {
+        console.error('Spoonacular API error:', apiError);
       }
       
       return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });

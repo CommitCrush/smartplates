@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import Layout from '@/components/layout/Layout';
+// Layout is provided by parent user layout
 import { WeeklyCalendar } from '@/components/meal-planning/calendar/WeeklyCalendar';
 import { MonthlyCalendar } from '@/components/meal-planning/calendar/MonthlyCalendar';
 import { MealSlotComponent } from '@/components/meal-planning/calendar/MealSlot';
@@ -39,13 +39,12 @@ import { RecipeDetailModal } from '@/components/meal-planning/modals/RecipeDetai
 import { getWeekStartDate, createEmptyMealPlan } from '@/types/meal-planning';
 import type { IMealPlan, MealSlot, MealPlanningSlot } from '@/types/meal-planning';
 // ...existing code...
-import { MealPlanPDFService } from '@/services/pdfDownloadService';
 import { 
-  captureWeeklyCalendarScreenshot, 
-  captureMonthlyCalendarScreenshot, 
-  captureTodayViewScreenshot 
-} from '@/services/screenshotService';
-import { exportToGoogleCalendar, downloadICSFile } from '@/services/googleCalendarService';
+  exportCalendarAsImage,
+  exportMealPlanToPDF,
+  exportGroceryListAsText,
+  printMealPlan
+} from '@/utils/mealPlanExport';
 
 // ========================================
 // Today View Component
@@ -379,7 +378,12 @@ export default function MealPlanningPage() {
 
   // Update a specific meal plan and sync with global storage
   const updateMealPlan = (updatedPlan: IMealPlan) => {
-    const weekKey = updatedPlan.weekStartDate.toISOString().split('T')[0];
+    // Ensure weekStartDate is a Date object
+    const weekStartDate = updatedPlan.weekStartDate instanceof Date 
+      ? updatedPlan.weekStartDate 
+      : new Date(updatedPlan.weekStartDate);
+      
+    const weekKey = weekStartDate.toISOString().split('T')[0];
     console.log('Updating meal plan for week:', weekKey, 'with', updatedPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'total meals');
     
     // Update global storage
@@ -614,21 +618,19 @@ export default function MealPlanningPage() {
   // Export handlers
   const handleExportMealPlan = async () => {
     try {
-      let result;
+      let elementId = '';
       if (viewMode === 'today') {
-        result = await captureTodayViewScreenshot();
+        elementId = 'today-view-container';
       } else if (viewMode === 'weekly') {
-        result = await captureWeeklyCalendarScreenshot();
+        elementId = 'weekly-calendar'; // Fixed: Match WeeklyCalendar component ID
       } else if (viewMode === 'monthly') {
-        result = await captureMonthlyCalendarScreenshot();
+        elementId = 'monthly-calendar'; // Fixed: Match MonthlyCalendar component ID
       }
       
-      if (result?.success) {
-        // Show success feedback (you could add a toast notification here)
-        console.log('📸 Screenshot captured successfully:', result.filename);
-      } else {
-        console.error('Screenshot failed:', result?.error);
-        alert('Screenshot failed: ' + (result?.error || 'Unknown error'));
+      if (elementId) {
+        const filename = `meal-plan-${viewMode}-${format(currentDate, 'yyyy-MM-dd')}`;
+        await exportCalendarAsImage(elementId, { format: 'png', filename });
+        console.log('📸 Screenshot captured successfully:', filename);
       }
     } catch (error) {
       console.error('Screenshot failed:', error);
@@ -639,12 +641,29 @@ export default function MealPlanningPage() {
   const handleSavePlan = async (options: SaveOptions) => {
     setIsSaving(true);
     try {
-      if (options.saveToGoogleCalendar && mealPlan) {
-        await exportToGoogleCalendar(mealPlan);
+      if (options.exportFormat === 'pdf' && mealPlan) {
+        await exportMealPlanToPDF(mealPlan, { format: 'pdf' });
       }
       if (options.includeShoppingList && mealPlan) {
-        // Shopping list generation logic here
-        console.log('Generating shopping list...');
+        // Generate grocery list from meal plan ingredients
+        const groceryList = mealPlan.days.flatMap(day => 
+          [...day.breakfast, ...day.lunch, ...day.dinner, ...day.snacks]
+            .flatMap(meal => {
+              // Get ingredients from recipe.extendedIngredients or direct ingredients array
+              const ingredients = meal.recipe?.extendedIngredients || meal.ingredients || [];
+              return ingredients;
+            })
+            .map(ingredient => ({
+              name: ingredient.name || ingredient.nameClean || 'Unknown ingredient',
+              amount: ingredient.amount?.toString() || '',
+              unit: ingredient.unit || '',
+              category: 'general'
+            }))
+        );
+        
+        if (groceryList.length > 0) {
+          exportGroceryListAsText(groceryList);
+        }
       }
       
       setShowSaveModal(false);
@@ -684,8 +703,7 @@ export default function MealPlanningPage() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <Layout>
-        <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -695,11 +713,11 @@ export default function MealPlanningPage() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setShowSaveModal(true)}
-              disabled={(!mealPlan && !mealPlans.length) || isSaving}
+              onClick={() => setShowQuickAdd(true)}
+              className="flex items-center gap-2"
             >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save Plan'}
+              <Plus className="h-4 w-4" />
+              Upload Recipe
             </Button>
           </div>
         </div>
@@ -916,7 +934,7 @@ export default function MealPlanningPage() {
                 title="Save & Export Options"
               >
                 <Save className="h-4 w-4" />
-                Save Plan
+                Export PDF
               </Button>
               
               <Button
@@ -974,7 +992,7 @@ export default function MealPlanningPage() {
         {/* Calendar Views */}
         <div className="bg-white rounded-lg border shadow-sm">
           {viewMode === 'today' && (
-            <div className="p-6 today-view-container">
+            <div id="today-view-container" className="p-6 today-view-container">
               <TodayView
                 currentDate={currentDate}
                 mealPlans={Array.from(globalMealPlans.values())}
@@ -990,7 +1008,7 @@ export default function MealPlanningPage() {
           )}
           
           {viewMode === 'weekly' && mealPlan && (
-            <div className="weekly-calendar-container">
+            <div id="weekly-calendar-container" className="weekly-calendar-container">
               <WeeklyCalendar
               mealPlan={mealPlan}
               mealPlans={Array.from(globalMealPlans.values())}
@@ -1010,7 +1028,7 @@ export default function MealPlanningPage() {
           )}
           
           {viewMode === 'monthly' && (
-            <div className="monthly-calendar-container">
+            <div id="monthly-calendar-container" className="monthly-calendar-container">
               <MonthlyCalendar
               currentDate={currentDate}
               mealPlans={Array.from(globalMealPlans.values())}
@@ -1080,7 +1098,6 @@ export default function MealPlanningPage() {
           />
         )}
         </div>
-      </Layout>
     </DndProvider>
   );
 }

@@ -67,6 +67,14 @@
     --color-accent: #fa6552;
     --color-muted: #f4f4f5;
 
+    /* Input-specific colors for Light Mode */
+    --color-input-background: #ffffff;        /* Heller Hintergrund im Light Mode */
+    --color-input-border: #e4e4e7;           /* Standard border */
+    --color-input-text: #18181b;             /* Dunkler Text im Light Mode */
+    --color-input-placeholder: #71717a;      /* Muted text */
+    --color-input-focus-border: #fa6552;     /* Coral accent */
+    --color-input-focus-ring: rgba(250, 101, 82, 0.2); /* Coral with transparency */
+
     /* Design Tokens */
     
     /* Spacing Scale - Based on 4px grid system */
@@ -147,6 +155,14 @@
     /* SmartPlates Dark Mode Akzentfarben - Nach Spezifikation */
     --color-accent: #FF7A69;              /* Primäre Akzentfarbe - leuchtendes Korallenrot */
     --color-muted: #1E1E1E;               /* Gedämpfte Bereiche */
+
+    /* Input-specific colors for Dark Mode */
+    --color-input-background: #252525;       /* Dunkler Input-Hintergrund */
+    --color-input-border: #4A4A4A;           /* Dark border */
+    --color-input-text: #FFFFFF;             /* Heller Text im Dark Mode */
+    --color-input-placeholder: #A0A0A0;      /* Subtle text */
+    --color-input-focus-border: #FF7A69;     /* Bright coral */
+    --color-input-focus-ring: rgba(255, 122, 105, 0.2); /* Bright coral with transparency */
     
     /* SmartPlates Dark Mode Primary Colors - Sekundäre Akzentfarbe (Pastellgrün) */
     --color-primary-50: #0a0f0a;          /* Sehr dunkles Grün */
@@ -222,55 +238,54 @@
     line-height: 1.625;
   }
 
-  /* SmartPlates Input Field Styling - Dark Mode Spezifikation */
+  /* Enhanced Input Field Styling - Theme-aware */
   input[type="email"],
   input[type="password"],
   input[type="text"],
   input[type="search"],
-  textarea {
-    color: var(--color-foreground) !important;
-    background-color: #252525 !important;  /* Spezifische Farbe für Input-Felder */
-    border-color: var(--color-border) !important;
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  textarea,
+  select {
+    color: var(--color-input-text) !important;
+    background-color: var(--color-input-background) !important;
+    border-color: var(--color-input-border) !important;
+    transition: all 0.2s ease-in-out;
   }
   
-  /* Input Placeholder Styling */
+  /* Input Placeholder Styling - Theme-aware */
   input::placeholder,
   textarea::placeholder {
-    color: var(--color-foreground-muted) !important;
+    color: var(--color-input-placeholder) !important;
     opacity: 0.7;
   }
   
-  /* Input Focus State - Primäre Akzentfarbe */
+  /* Input Focus State - Theme-aware */
   input:focus,
-  textarea:focus {
-    color: var(--color-foreground) !important;
-    background-color: #252525 !important;
-    border-color: #FF7A69 !important;  /* Korallenrot für Fokus */
+  textarea:focus,
+  select:focus {
+    color: var(--color-input-text) !important;
+    background-color: var(--color-input-background) !important;
+    border-color: var(--color-input-focus-border) !important;
     outline: none;
-    box-shadow: 0 0 0 2px rgba(255, 122, 105, 0.2) !important;
+    box-shadow: 0 0 0 2px var(--color-input-focus-ring) !important;
   }
   
-  /* Dark Mode Input Overrides */
-  .dark input[type="email"],
-  .dark input[type="password"],
-  .dark input[type="text"],
-  .dark input[type="search"],
-  .dark textarea {
-    color: var(--color-foreground) !important;
-    background-color: #252525 !important;
+  /* Input Hover State - Subtle enhancement */
+  input:hover:not(:focus),
+  textarea:hover:not(:focus),
+  select:hover:not(:focus) {
     border-color: var(--color-border) !important;
   }
   
-  .dark input::placeholder,
-  .dark textarea::placeholder {
-    color: var(--color-foreground-muted) !important;
-    opacity: 0.8;
-  }
-  
-  .dark input:focus,
-  .dark textarea:focus {
-    border-color: #FF7A69 !important;
-    box-shadow: 0 0 0 2px rgba(255, 122, 105, 0.2) !important;
+  /* Input Disabled State */
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--color-background-secondary) !important;
   }
 }
 
@@ -289,6 +304,24 @@
   
   /* Border utilities */
   .border-border { border-color: var(--color-border); }
+  
+  /* Input utility classes */
+  .input-primary {
+    color: var(--color-input-text);
+    background-color: var(--color-input-background);
+    border-color: var(--color-input-border);
+  }
+  
+  .input-primary:focus {
+    border-color: var(--color-input-focus-border);
+    box-shadow: 0 0 0 2px var(--color-input-focus-ring);
+  }
+  
+  /* Input background utilities for manual control */
+  .bg-input { background-color: var(--color-input-background); }
+  .border-input { border-color: var(--color-input-border); }
+  .text-input { color: var(--color-input-text); }
+  .placeholder-input::placeholder { color: var(--color-input-placeholder); }
   
   /* Primary colors */
   .text-primary-100 { color: var(--color-primary-100); }

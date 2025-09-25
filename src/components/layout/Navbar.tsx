@@ -1,4 +1,5 @@
 /**
+ * Main Navigation Component for SmartPlates
  * Main Navigation Bar Component
  * Features responsive design, authentication states, and user profile dropdown
  */
@@ -6,46 +7,17 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/context/authContext';
+import { Menu, X, User, LogOut, Settings, ChefHat } from 'lucide-react';
 import UserProfileDropdown from './UserProfileDropdown';
 import { Menu, X, User, LogOut, Settings, ChefHat, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, signIn, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Check initial dark mode state
-  useEffect(() => {
-    setIsDarkMode(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('darkMode', 'true');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('darkMode', 'false');
-    }
-  };
-
-  // Load dark mode preference on mount
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode === 'true') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else if (savedDarkMode === 'false') {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -65,6 +37,11 @@ export default function Navbar() {
                 SmartPlates
               </span>
             </Link>
+            
+            {/* Theme Toggle - Desktop */}
+            <div className="hidden md:block">
+              <ThemeToggle size="sm" />
+            </div>
           </div>
 
           {/* Desktop Navigation */}
@@ -104,7 +81,7 @@ export default function Navbar() {
                 Contact
               </Link>
 
-              {/* Authenticated User Navigation */}
+              {/* User Navigation */}
               {isAuthenticated && (
                 <>
                   <Link
@@ -136,6 +113,60 @@ export default function Navbar() {
 
           {/* Authentication & User Menu */}
           <div className="hidden md:block">
+            <div className="ml-4 flex items-center md:ml-6">
+              {!isAuthenticated ? (
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => signIn('google')}
+                    className="text-sm bg-accent hover:bg-accent/70 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                    aria-label="Sign in with Google"
+                  >
+                    Sign In
+                  </Button>
+                  
+                  <Link href="/register">
+                    <Button 
+                      variant="outline" 
+                      className="text-sm bg-accent hover:bg-accent/70 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                      aria-label="Get started with SmartPlates"
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-4">
+                  {/* User Profile Link */}
+                  <Link
+                    href="/user/profile"
+                    className="flex items-center space-x-2 text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors"
+                  >
+                    <User className="h-5 w-5" />
+                    <span className="text-sm font-medium">{user?.name}</span>
+                  </Link>
+                  
+                  {/* Settings */}
+                  <Link
+                    href="/user/settings"
+                    className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 p-2 rounded-md transition-colors"
+                    aria-label="Settings"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Link>
+                  
+                  {/* Sign Out */}
+                  <Button
+                    variant="outline"
+                    onClick={signOut}
+                    className="flex items-center space-x-1 text-sm"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
+                  </Button>
+                </div>
+              )}
             <div className="ml-4 flex items-center md:ml-6 space-x-4">
               {/* User Profile Dropdown */}
               <UserProfileDropdown />
@@ -152,14 +183,17 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            {/* Theme Toggle - Mobile */}
+            <ThemeToggle size="sm" />
+            
             <Button
               variant="ghost"
               onClick={toggleMenu}
-              className="text-foreground shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-              aria-label={isMenuOpen ? 'Close main menu' : 'Open main menu'}
-              aria-expanded={isMenuOpen}
+              className="inline-flex items-center justify-center p-2 rounded-md text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
               aria-controls="mobile-menu"
+              aria-expanded={isMenuOpen}
+              aria-label={isMenuOpen ? 'Close main menu' : 'Open main menu'}
             >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -218,7 +252,7 @@ export default function Navbar() {
               Contact
             </Link>
 
-            {/* Authenticated Mobile Navigation */}
+            {/* User Mobile Navigation */}
             {isAuthenticated && (
               <>
                 <Link
@@ -294,7 +328,8 @@ export default function Navbar() {
                       signOut();
                       setIsMenuOpen(false);
                     }}
-                    className="w-full text-destructive border-destructive hover:bg-destructive/10"
+                    className="w-full"
+                    aria-label="Sign out"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out

@@ -143,10 +143,11 @@ export async function searchSpoonacularRecipes(
       addRecipeInstructions: 'true'
     });
 
-    if (options.cuisine) params.append('cuisine', options.cuisine);
-    if (options.diet) params.append('diet', options.diet);
-    if (options.type) params.append('type', options.type);
-    if (options.maxReadyTime) params.append('maxReadyTime', options.maxReadyTime.toString());
+  if (options.cuisine) params.append('cuisine', options.cuisine);
+  if (options.diet) params.append('diet', options.diet);
+  if (options.type) params.append('type', options.type);
+  if (options.maxReadyTime) params.append('maxReadyTime', options.maxReadyTime.toString());
+  if (options.intolerances) params.append('intolerances', options.intolerances);
 
     const response = await fetch(`${BASE_URL}/complexSearch?${params}`, {
       headers: {

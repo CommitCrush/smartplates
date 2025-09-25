@@ -32,31 +32,16 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
-      <body className="font-sans antialiased">
-        <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </ThemeProvider>
-    <html 
-      lang="en" 
-      className={`dark ${inter.variable}`} 
-      data-scroll-behavior="smooth"
-      suppressHydrationWarning={true}
-    >
-      <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body 
-        className="font-sans antialiased" 
-        suppressHydrationWarning={true}
-        // Add data attributes that browser extensions might add
-        data-hydration-safe="true"
-      >
-        <div id="__next-root" suppressHydrationWarning={true}>
+      <body className="font-sans antialiased" suppressHydrationWarning>
+        <div id="__next-root">
           <ToastProvider>
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <ThemeProvider>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </ThemeProvider>
           </ToastProvider>
         </div>
       </body>

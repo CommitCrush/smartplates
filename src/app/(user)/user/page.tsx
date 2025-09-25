@@ -1,12 +1,3 @@
-export default function UserPage() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">User Dashboard</h1>
-      <p>User dashboard will be implemented here.</p>
-    </div>
-  );
-}
-
 /**
  * Main User Dashboard Page
  * 
@@ -116,14 +107,14 @@ export default function UserDashboardPage() {
     {
       title: 'Upload Recipe',
       description: 'Share your favorite recipe',
-      href: '/user/my_added_recipes/new',
+      href: '/user/my-recipe/new',
       icon: PlusCircle,
       color: 'bg-green-500'
     },
     {
       title: 'Browse Recipes',
       description: 'Discover new recipes',
-      href: '/recipes',
+      href: '/recipe',
       icon: BookOpen,
       color: 'bg-purple-500'
     },
@@ -142,21 +133,21 @@ export default function UserDashboardPage() {
       value: stats.totalRecipes,
       icon: ChefHat,
       color: 'text-blue-600',
-      href: '/user/my_added_recipes'
+      href: '/user/my-recipe'
     },
     {
       title: 'Meal Plans',
       value: stats.savedMealPlans,
       icon: Calendar,
       color: 'text-green-600',
-      href: '/user/my_saved_meal_plan'
+      href: '/user/my_meal_plan/current'
     },
     {
       title: 'Total Likes',
       value: stats.totalLikes,
       icon: Star,
       color: 'text-yellow-600',
-      href: '#'
+      href: '/user/profile/me'
     }
   ];
 
@@ -287,7 +278,7 @@ export default function UserDashboardPage() {
                   <span className="text-sm text-gray-900 dark:text-white">Cookware Recommendations</span>
                 </Link>
                 <Link 
-                  href="/recipes"
+                  href="/recipe"
                   className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <BookOpen className="h-5 w-5 text-gray-400" />

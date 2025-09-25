@@ -5,6 +5,7 @@ import IngredientInput from '@/components/ai/IngredientInput';
 import ImageUpload from '@/components/ai/ImageUpload';
 import RecipeResults from '@/components/ai/RecipeResults';
 import RecipeFilterDropdown from '@/components/ai/RecipeFilterDropdown';
+import { cn } from "@/lib/utils";
 
 export default function AiRecipePage() {
   const [ingredients, setIngredients] = useState<string[]>([]);
@@ -127,64 +128,133 @@ export default function AiRecipePage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6 text-green-700 dark:text-green-300">Smart Meal Planner: AI Recipe Suggestions</h1>
-      <div className="mb-6">
-  <IngredientInput ingredients={ingredients} onChange={handleIngredientsChange} />
-      </div>
-      <div className="mb-6">
-        <ImageUpload image={image} onUpload={handleImageUpload} onNewImage={handleNewImage} analyzing={analyzing} />
-      </div>
-      <div className="mb-6">
-        <RecipeFilterDropdown filters={filters} onChange={handleFilterChange} />
-      </div>
-      {/* Error display */}
-      {error && (
-        <div className="mb-8 rounded-xl shadow-lg bg-gradient-to-r from-red-50 to-red-200 dark:from-red-900 dark:to-red-800 p-6">
-          <h2 className="text-xl font-bold mb-4 text-red-900 dark:text-red-200">Error</h2>
-          <div className="text-red-700 dark:text-red-300">{error}</div>
-        </div>
-      )}
-      {/* Confirmed ingredients after image analysis */}
-      {showConfirm && recognizedIngredients.length > 0 && (
-        <div className="mb-8 rounded-xl shadow-lg bg-gradient-to-r from-green-50 to-green-200 dark:from-green-900 dark:to-green-800 p-6">
-          <h2 className="text-xl font-bold mb-4 text-green-900 dark:text-green-200">Confirmed Ingredients</h2>
-          <ul className="mb-2 grid grid-cols-2 gap-2">
-            {recognizedIngredients.map((ing, idx) => (
-              <li key={idx} className="bg-white dark:bg-green-950 rounded px-3 py-2 text-center font-medium shadow border border-green-300 dark:border-green-700">{ing}</li>
-            ))}
-          </ul>
-          <div className="flex gap-4 mt-2">
-            <button className="bg-primary text-white font-semibold rounded-lg px-4 py-2 shadow hover:bg-green-600 transition flex-1" onClick={handleSearchRecipes} disabled={analyzing}>
-              Confirm ingredients & show recipes
-            </button>
-            <button className="btn btn-outline flex-1" onClick={handleNewImage} disabled={analyzing}>Upload new image</button>
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#23293a] via-[#181e2a] to-[#232b3e] flex flex-col items-center justify-start">
+      {/* Hero Section */}
+      <div className="w-full flex justify-center items-center pt-10 pb-2 px-0">
+        <div className="flex flex-row items-stretch justify-center w-full max-w-5xl gap-0 h-[340px]">
+          {/* Left: Headline & Button */}
+          <div className="flex-1 flex flex-col justify-center items-start pl-16 pr-8 bg-transparent z-10">
+            <h1 className="text-5xl font-extrabold text-white mb-6 leading-tight drop-shadow-lg">
+              Smart Fridge AI<br />
+              <span className="text-primary">Your Fridge's Potential. Unlocked by AI!</span>
+            </h1>
+            <p className="text-xl text-gray-300 mb-8 max-w-lg">
+              Discover meal ideas based on your fridge contents. Scan or upload a fridge photo and let AI inspire your next recipe.
+            </p>
+          
+          </div>
+          {/* Right: Fridge image as background */}
+          <div className="flex-1 relative h-full">
+            <div
+              className="absolute inset-0 w-full h-full rounded-r-2xl"
+              style={{
+                backgroundImage: "url('/ein-kuehlschrank-voller-lebensmittel_1021598-278.jpg')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                filter: 'brightness(0.98)',
+              }}
+            />
           </div>
         </div>
-      )}
-      {/* Manual entry: show button to confirm and see recipes */}
-      {!showConfirm && ingredients.length > 0 && !image && (
-        <div className="mb-6 flex justify-center">
-          <button className="bg-primary text-white font-semibold rounded-lg px-6 py-2 shadow hover:bg-green-600 transition" onClick={handleSearchRecipes} disabled={analyzing}>
-            Show recipes
+      </div>
+      <div className="w-full max-w-4xl mx-auto px-0 py-10">
+        {/* Section 1: Input options */}
+        <h2 className="text-2xl font-bold text-white mb-6"> Add your ingredients</h2>
+        <div className="flex gap-6 mb-8">
+          <div className="flex-1 bg-[#232b3e] rounded-xl border border-gray-700 flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
+            <div className="mb-2 text-3xl text-primary"><i className="lucide lucide-image" /></div>
+            <div className="font-semibold text-white mb-1">Scan your fridge or upload a fridge photo</div>
+            <div className="text-gray-400 text-sm mb-4 text-center">Let AI analyze what's inside your fridge.</div>
+            <ImageUpload image={image} onUpload={handleImageUpload} onNewImage={handleNewImage} analyzing={analyzing} />
+          </div>
+          <div className="flex-1 bg-[#232b3e] rounded-xl border border-gray-700 flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
+            <div className="mb-2 text-3xl text-primary"><i className="lucide lucide-pencil" /></div>
+            <div className="font-semibold text-white mb-1">Enter what you have manually</div>
+
+            <IngredientInput ingredients={ingredients} onChange={handleIngredientsChange} />
+          </div>
+        </div>
+        <div className="border-t border-gray-700 my-8" />
+        {/* Section 2: Ingredient list and filters */}
+        <h2 className="text-2xl font-bold text-white mb-6"> Your current ingredient </h2>
+        <div className="flex flex-wrap gap-2 mb-6">
+          {/* Ingredient chips: green, red, gray */}
+          {[...ingredients, ...recognizedIngredients].map((ing, idx) => (
+            <span
+              key={idx}
+              className={cn(
+                "px-6 py-2 rounded-full flex items-center gap-3 font-semibold text-base",
+                "bg-[#232b3e] border-2 border-lime-400 text-white shadow"
+              )}
+            >
+              {ing}
+              <button
+                className="ml-2 w-7 h-7 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 transition text-white text-lg font-bold border-2 border-white"
+                onClick={() => {
+                  if (ingredients.includes(ing)) setIngredients(ingredients.filter(i => i !== ing));
+                  if (recognizedIngredients.includes(ing)) setRecognizedIngredients(recognizedIngredients.filter(i => i !== ing));
+                }}
+                aria-label="Remove ingredient"
+              >
+                &#10005;
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            className="bg-gray-700 text-white rounded-full px-4 py-2 font-semibold shadow hover:bg-gray-600 transition"
+            onClick={() => {
+              // Focus the manual input field by triggering IngredientInput's input
+              const inputEl = document.querySelector('#ingredient-manual-input') as HTMLInputElement;
+              if (inputEl) inputEl.focus();
+            }}
+          >
+            + Add another ingredient your ai didn't recognize
+          </button>
+         
+          <RecipeFilterDropdown filters={filters} onChange={handleFilterChange} />
+        </div>
+        {/* Error display */}
+        {error && (
+          <div className="mb-8 rounded-xl shadow-lg bg-gradient-to-r from-red-900 to-red-800 p-6">
+            <h2 className="text-xl font-bold mb-4 text-red-200">Error</h2>
+            <div className="text-red-300">{error}</div>
+          </div>
+        )}
+        {/* Main recipe search button */}
+        <div className="flex justify-center mb-4">
+          <button
+            className={cn(
+              "w-full max-w-md py-3 text-lg font-bold rounded-xl",
+              "bg-lime-400 text-gray-900 shadow-lg border border-lime-500",
+              "hover:bg-lime-500 hover:shadow-xl transition-all duration-150",
+              analyzing ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+            )}
+            onClick={handleSearchRecipes}
+            disabled={analyzing}
+          >
+            FIND RECIPES
           </button>
         </div>
-      )}
-      {/* Recipe results */}
-      {recipes.length > 0 && (
-        <>
-          <RecipeResults recipes={recipes} />
-          <div className="flex justify-center mt-8">
-            <button
-              className="px-6 py-3 rounded-xl bg-accent text-white font-bold hover:bg-accent/80 transition"
-              onClick={handleSearchRecipes}
-              disabled={analyzing}
-            >
-              Rezepte neu laden
-            </button>
-          </div>
-        </>
-      )}
+        <div className="text-center text-gray-400 text-sm mt-2">Upload ingredients to get started! Your next meal idea is waiting.</div>
+        {/* Recipe results */}
+        {recipes.length > 0 && (
+          <>
+            <RecipeResults recipes={recipes} />
+            <div className="flex justify-center mt-8">
+              <button
+                className="px-6 py-3 rounded-xl bg-accent text-white font-bold hover:bg-accent/80 transition"
+                onClick={handleSearchRecipes}
+                disabled={analyzing}
+              >
+                Reload recipes
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

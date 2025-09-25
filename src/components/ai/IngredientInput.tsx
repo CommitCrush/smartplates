@@ -25,9 +25,10 @@ export default function IngredientInput({ ingredients = [], onChange, label }: {
 
   return (
     <div className="relative">
-      <label className="block mb-2 font-medium">{label || 'Enter ingredients'}</label>
+      <label className="block mb-2 font-medium">{label || ''}</label>
       <div className="flex gap-2 mb-2">
         <input
+          id="ingredient-manual-input"
           type="text"
           value={input}
           onChange={e => {
@@ -36,7 +37,7 @@ export default function IngredientInput({ ingredients = [], onChange, label }: {
           }}
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
           className="border rounded px-3 py-2 flex-1"
-          placeholder="z.B. Tomaten"
+          placeholder="e.g. Tomato"
           autoComplete="off"
         />
         <button type="button" className="btn btn-secondary" onClick={handleAdd}>+</button>
@@ -58,14 +59,7 @@ export default function IngredientInput({ ingredients = [], onChange, label }: {
           ))}
         </ul>
       )}
-      <div className="flex gap-2 flex-wrap mt-2">
-        {ingredients.map((ing, i) => (
-          <span key={i} className="bg-green-100 px-3 py-1 rounded-full flex items-center gap-2">
-            {ing}
-            <button type="button" className="text-red-500" onClick={() => handleRemove(i)}>&times;</button>
-          </span>
-        ))}
-      </div>
+      {/* Ingredient chips are now only shown in the main ingredient list, not here */}
     </div>
   );
 }

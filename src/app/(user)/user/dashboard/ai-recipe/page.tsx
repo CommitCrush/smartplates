@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState } from "react";
 import IngredientInput from '@/components/ai/IngredientInput';
@@ -8,6 +7,7 @@ import RecipeFilterDropdown from '@/components/ai/RecipeFilterDropdown';
 import { cn } from "@/lib/utils";
 
 export default function AiRecipePage() {
+  const [debugResponse, setDebugResponse] = useState<any>(null);
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [image, setImage] = useState<File | null>(null);
   const [recognizedIngredients, setRecognizedIngredients] = useState<string[]>([]);
@@ -68,19 +68,25 @@ export default function AiRecipePage() {
 
   // Handle recipe search (manual or confirmed ingredients)
   const handleSearchRecipes = async () => {
-    setRecipes([]);
-    setError(null);
+  setRecipes([]);
+  setError(null);
+  setDebugResponse(null);
     const searchIngredients = [...ingredients, ...recognizedIngredients].join(',');
     const params = new URLSearchParams();
     if (searchIngredients) params.append('search', searchIngredients);
     if (filters.category) params.append('category', filters.category);
     if (filters.diet) params.append('dietaryRestrictions', filters.diet);
-    if (filters.allergy) params.append('dietaryRestrictions', filters.allergy);
+    if (filters.allergy) params.append('intolerances', filters.allergy);
     try {
       const res = await fetch(`/api/recipes?${params.toString()}`);
       const data = await res.json();
+      setDebugResponse({ status: res.status, data });
       if (!res.ok || data.error) {
-        setError(data.error || 'No recipes found.');
+        let errorMsg = 'No recipes found.';
+        if (data.error) errorMsg = data.error;
+        else if (res.status === 402) errorMsg = 'Recipe search failed: Spoonacular API quota/payment required.';
+        else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
+        setError(errorMsg);
         setRecipes([]);
         return;
       }
@@ -88,6 +94,7 @@ export default function AiRecipePage() {
     } catch (err) {
       setError('Server error. Please try again later.');
       setRecipes([]);
+      setDebugResponse({ status: 500, error: err });
     }
   };
 
@@ -95,25 +102,32 @@ export default function AiRecipePage() {
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
     setError(null);
+    setDebugResponse(null);
     const searchIngredients = recognizedIngredients.length > 0 ? recognizedIngredients.join(',') : ingredients.join(',');
     const params = new URLSearchParams();
     if (searchIngredients) params.append('search', searchIngredients);
     if (newFilters.category) params.append('category', newFilters.category);
     if (newFilters.diet) params.append('dietaryRestrictions', newFilters.diet);
-    if (newFilters.allergy) params.append('dietaryRestrictions', newFilters.allergy);
+    if (newFilters.allergy) params.append('intolerances', newFilters.allergy);
     fetch(`/api/recipes?${params.toString()}`)
       .then(async res => {
         const data = await res.json();
+        setDebugResponse({ status: res.status, data });
         if (!res.ok || data.error) {
-          setError(data.error || 'No recipes found.');
+          let errorMsg = 'No recipes found.';
+          if (data.error) errorMsg = data.error;
+          else if (res.status === 402) errorMsg = 'Recipe search failed: Spoonacular API quota/payment required.';
+          else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
+          setError(errorMsg);
           setRecipes([]);
           return;
         }
         setRecipes(data.recipes || []);
       })
-      .catch(() => {
+      .catch((err) => {
         setError('Server error. Please try again later.');
         setRecipes([]);
+        setDebugResponse({ status: 500, error: err });
       });
   };
 
@@ -129,6 +143,13 @@ export default function AiRecipePage() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#23293a] via-[#181e2a] to-[#232b3e] flex flex-col items-center justify-start">
+      {/* Debug Panel */}
+      {debugResponse && (
+        <div className="w-full max-w-4xl mx-auto my-4 p-4 bg-gray-900 rounded-xl border border-gray-700 text-gray-200 text-xs overflow-auto">
+          <div className="font-bold text-lime-400 mb-2">Debug Response</div>
+          <pre className="whitespace-pre-wrap break-words">{JSON.stringify(debugResponse, null, 2)}</pre>
+        </div>
+      )}
       {/* Hero Section */}
       <div className="w-full flex justify-center items-center pt-10 pb-2 px-0">
         <div className="flex flex-row items-stretch justify-center w-full max-w-5xl gap-0 h-[340px]">
@@ -164,13 +185,13 @@ export default function AiRecipePage() {
         <div className="flex gap-6 mb-8">
           <div className="flex-1 bg-[#232b3e] rounded-xl border border-gray-700 flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
             <div className="mb-2 text-3xl text-primary"><i className="lucide lucide-image" /></div>
-            <div className="font-semibold text-white mb-1">Scan your fridge or upload a fridge photo</div>
+            <div className="font-semibold text-white mb-1">Scan your fridge or upload a fridge photo 📷</div>
             <div className="text-gray-400 text-sm mb-4 text-center">Let AI analyze what's inside your fridge.</div>
             <ImageUpload image={image} onUpload={handleImageUpload} onNewImage={handleNewImage} analyzing={analyzing} />
           </div>
           <div className="flex-1 bg-[#232b3e] rounded-xl border border-gray-700 flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
             <div className="mb-2 text-3xl text-primary"><i className="lucide lucide-pencil" /></div>
-            <div className="font-semibold text-white mb-1">Enter what you have manually</div>
+            <div className="font-semibold text-white mb-1">Enter what you have  ✍️</div>
 
             <IngredientInput ingredients={ingredients} onChange={handleIngredientsChange} />
           </div>

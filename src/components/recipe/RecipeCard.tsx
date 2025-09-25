@@ -29,6 +29,13 @@ export function RecipeCard({
   showAuthor = true,
   priority = false 
 }: RecipeCardProps) {
+  // Helper: check if image URL is valid (has extension and not empty)
+  function getRecipeImage(url?: string) {
+    if (!url || typeof url !== 'string') return '/placeholder-recipe.jpg';
+    // Spoonacular images should end with .jpg, .png, .webp, etc.
+    if (!/\.(jpg|jpeg|png|webp|gif)$/i.test(url)) return '/placeholder-recipe.jpg';
+    return url;
+  }
   // Calculate total time - handle both RecipeCard and Recipe types
   const totalTime = (() => {
     if ('totalTime' in recipe) {
@@ -54,12 +61,17 @@ export function RecipeCard({
         {/* Recipe Image */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image
-            src={recipe.image || '/images/placeholder-recipe.jpg'}
+            src={getRecipeImage(recipe.image)}
             alt={recipe.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             priority={priority}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            onError={e => {
+              // fallback to placeholder if image fails to load
+              const target = e.target as HTMLImageElement;
+              if (target.src !== '/placeholder-recipe.jpg') target.src = '/placeholder-recipe.jpg';
+            }}
           />
           
           {/* Difficulty Badge */}

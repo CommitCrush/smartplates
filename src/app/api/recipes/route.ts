@@ -287,6 +287,7 @@ export async function GET(request: NextRequest) {
         const validDiets = ['vegetarian','vegan','gluten free','ketogenic','paleo','primal','whole30'];
         return validDiets.includes(d.trim().toLowerCase()) ? d.trim().toLowerCase() : null;
       }).filter(Boolean)) || [],
+      intolerances: (searchParams.get('intolerances')?.split(',').map(a => a.trim().toLowerCase()).filter(Boolean)) || [],
       tags: searchParams.get('tags')?.split(',') || [],
       maxTime: searchParams.get('maxTime') ? parseInt(searchParams.get('maxTime')!) : undefined,
     };
@@ -301,22 +302,23 @@ export async function GET(request: NextRequest) {
     let source = 'local';
 
     // If 'search' param is present, treat as ingredient search
-      if (filters.search && filters.search.trim().length > 0) {
-        // Prevent invalid filter combinations that always fail (e.g. vegan breakfast with chicken/fish)
-        const forbiddenCombos = [
-          { category: 'breakfast', diet: 'vegan', forbiddenIngredients: ['chicken','fish','egg','milk','butter','yogurt','cheese'] }
-        ];
-        const activeCombo = forbiddenCombos.find(combo =>
-          filters.category === combo.category && filters.dietaryRestrictions.includes(combo.diet)
-        );
-        if (activeCombo) {
-          const lowerIngredients = filters.search.toLowerCase();
-          if (activeCombo.forbiddenIngredients.some(ing => lowerIngredients.includes(ing))) {
-            return NextResponse.json({ error: 'No recipes found: filter combination is not possible (vegan breakfast with animal products).' }, { status: 400 });
-          }
+    if (filters.search && filters.search.trim().length > 0) {
+      // Prevent invalid filter combinations that always fail (e.g. vegan breakfast with chicken/fish)
+      const forbiddenCombos = [
+        { category: 'breakfast', diet: 'vegan', forbiddenIngredients: ['chicken','fish','egg','milk','butter','yogurt','cheese'] }
+      ];
+      const activeCombo = forbiddenCombos.find(combo =>
+        filters.category === combo.category && filters.dietaryRestrictions.includes(combo.diet)
+      );
+      if (activeCombo) {
+        const lowerIngredients = filters.search.toLowerCase();
+        if (activeCombo.forbiddenIngredients.some(ing => lowerIngredients.includes(ing))) {
+          return NextResponse.json({ error: 'No recipes found: filter combination is not possible (vegan breakfast with animal products).' }, { status: 400 });
         }
-      // Use Spoonacular ingredient search first
-      const { searchRecipesByIngredients, searchSpoonacularRecipes } = await import('@/services/spoonacularService');
+      }
+      try {
+        // Use Spoonacular ingredient search first
+        const { searchRecipesByIngredients, searchSpoonacularRecipes } = await import('@/services/spoonacularService');
         // Simple German-to-English mapping for Spoonacular
         const deToEn: Record<string, string> = {
           'tomaten': 'tomato',
@@ -351,24 +353,34 @@ export async function GET(request: NextRequest) {
           const key = s.trim().toLowerCase();
           return deToEn[key] || key;
         }).filter(Boolean);
-  console.log('Spoonacular ingredientList:', ingredientList);
-  let spoonacularRecipes = await searchRecipesByIngredients(ingredientList, { number: limit });
-  console.log('Spoonacular recipes result:', JSON.stringify(spoonacularRecipes, null, 2));
-      // If filter is set, use complexSearch to filter further
-      if (filters.category || filters.dietaryRestrictions.length > 0) {
-        const filterOptions: any = { number: limit };
-        if (filters.category) filterOptions.type = filters.category;
-        if (filters.dietaryRestrictions.length > 0) filterOptions.diet = filters.dietaryRestrictions.join(',');
-        // Use first ingredient as query for complexSearch
-        const query = ingredientList.join(',');
-        const filtered = await searchSpoonacularRecipes(query, filterOptions);
-        recipes = filtered.recipes;
-        total = recipes.length;
-        source = 'spoonacular-filtered';
-      } else {
-        recipes = spoonacularRecipes;
-        total = recipes.length;
-        source = 'spoonacular-ingredients';
+        console.log('Spoonacular ingredientList:', ingredientList);
+        let spoonacularRecipes = await searchRecipesByIngredients(ingredientList, { number: limit });
+        console.log('Spoonacular recipes result:', JSON.stringify(spoonacularRecipes, null, 2));
+        // If filter is set, use complexSearch to filter further
+        if (filters.category || filters.dietaryRestrictions.length > 0 || filters.intolerances.length > 0) {
+          const filterOptions: any = { number: limit };
+          if (filters.category) filterOptions.type = filters.category;
+          if (filters.dietaryRestrictions.length > 0) filterOptions.diet = filters.dietaryRestrictions.join(',');
+          if (filters.intolerances.length > 0) filterOptions.intolerances = filters.intolerances.join(',');
+          // Use first ingredient as query for complexSearch
+          const query = ingredientList.join(',');
+          try {
+            const filtered = await searchSpoonacularRecipes(query, filterOptions);
+            recipes = filtered.recipes;
+            total = recipes.length;
+            source = 'spoonacular-filtered';
+          } catch (spoonacularError: any) {
+            // Return Spoonacular error to frontend
+            return NextResponse.json({ error: `Spoonacular API error: ${spoonacularError.message || spoonacularError}` }, { status: 500 });
+          }
+        } else {
+          recipes = spoonacularRecipes;
+          total = recipes.length;
+          source = 'spoonacular-ingredients';
+        }
+      } catch (spoonacularError: any) {
+        // Return Spoonacular error to frontend
+        return NextResponse.json({ error: `Spoonacular API error: ${spoonacularError.message || spoonacularError}` }, { status: 500 });
       }
     } else {
       // Try to get cached Spoonacular data first

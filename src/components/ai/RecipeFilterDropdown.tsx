@@ -34,19 +34,19 @@ export default function RecipeFilterDropdown({ filters, onChange }: { filters: a
   return (
     <div className="flex gap-4 flex-wrap">
       <div>
-        <label className="block mb-1">Category</label>
+        <label className="block mb-1">Category 🍝</label>
         <select className="border rounded px-2 py-1" value={filters.category} onChange={e => onChange({ ...filters, category: e.target.value })}>
           {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
       </div>
       <div>
-        <label className="block mb-1">Diet</label>
+        <label className="block mb-1">Diet 🥗</label>
         <select className="border rounded px-2 py-1" value={filters.diet} onChange={e => onChange({ ...filters, diet: e.target.value })}>
           {diets.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
         </select>
       </div>
       <div>
-        <label className="block mb-1">Allergy</label>
+        <label className="block mb-1">Allergy 🚫</label>
         <select className="border rounded px-2 py-1" value={filters.allergy} onChange={e => onChange({ ...filters, allergy: e.target.value })}>
           {allergies.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
         </select>

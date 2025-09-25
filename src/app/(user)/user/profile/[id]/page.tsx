@@ -18,7 +18,7 @@ import {
   X,
   Calendar
 } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 interface UserProfilePageProps { 
   params: Promise<{ id: string }>; 
@@ -39,6 +39,7 @@ interface UserProfile {
 
 export default function UserProfilePage({ params }: UserProfilePageProps) {
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [userId, setUserId] = useState<string>('');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);

@@ -496,7 +496,8 @@ export async function searchRecipesByIngredientsWithCacheInternal(
   
   try {
     console.log(`🌐 API CALL for ingredient search: ${ingredients.join(', ')}`);
-    const apiRecipes = await searchRecipesByIngredients(ingredients, options);
+    const apiResult = await searchRecipesByIngredients(ingredients);
+    const apiRecipes = apiResult.recipes;
     
     await recordApiUsage('findByIngredients');
     
@@ -504,7 +505,7 @@ export async function searchRecipesByIngredientsWithCacheInternal(
     const cacheData = {
       cacheKey,
       ingredients,
-      data: apiRecipes.map(recipe => ({
+      data: apiRecipes.map((recipe: any) => ({
         id: parseInt(String(recipe.id || recipe._id || '0').replace('spoonacular-', '')),
         title: recipe.title,
         image: recipe.image,
@@ -569,7 +570,7 @@ export async function getPopularRecipesWithCacheInternal(
   
   try {
     console.log(`🌐 API CALL for popular recipes`);
-    const apiRecipes = await getPopularSpoonacularRecipes(options);
+    const apiRecipes = await getPopularSpoonacularRecipes();
     
     await recordApiUsage('random');
     
@@ -590,7 +591,7 @@ export async function getPopularRecipesWithCacheInternal(
     
     console.log(`💾 Cached popular recipes`);
     
-    return { recipes: apiRecipes, fromCache: false };
+    return apiRecipes;
     
   } catch (error) {
     console.error('Popular recipes API call failed:', error);
@@ -683,32 +684,34 @@ export async function importCachedRecipesToDB(): Promise<{ imported: number; ski
     
     const jsonPath = path.join(process.cwd(), 'public', 'cached-recipes.json');
     const jsonData = await fs.readFile(jsonPath, 'utf-8');
-    const cachedRecipes = JSON.parse(jsonData);
+    const parsedData = JSON.parse(jsonData);
+    const cachedRecipes = parsedData.recipes || parsedData; // Handle both {recipes: [...]} and [...] formats
     
     console.log(`📥 Found ${cachedRecipes.length} recipes in cached file`);
     
     for (const recipe of cachedRecipes) {
       try {
-        // Check if recipe already exists in cache
-        const existingRecipe = await SpoonacularRecipeCache.findOne({
-          spoonacularId: recipe.id
-        });
-        
-        if (existingRecipe) {
-          console.log(`⏩ Recipe ${recipe.id} (${recipe.title}) already cached, skipping`);
-          skipped++;
-          continue;
-        }
-        
-        // Create cache entry
+        // Create cache entry directly (skip duplicate check for performance)
         const cacheEntry = new SpoonacularRecipeCache({
           spoonacularId: recipe.id,
+          cacheKey: `recipe:${recipe.id}`,
           data: recipe,
           createdAt: new Date(),
-          expiresAt: new Date(Date.now() + CACHE_DURATION.recipe)
+          expiresAt: new Date(Date.now() + CACHE_CONFIG.RECIPE_TTL)
         });
         
-        await cacheEntry.save();
+        try {
+          await cacheEntry.save();
+        } catch (saveError: any) {
+          if (saveError.code === 11000) {
+            // Duplicate key error (recipe already exists)
+            console.log(`⏩ Recipe ${recipe.id} (${recipe.title}) already cached, skipping`);
+            skipped++;
+            continue;
+          } else {
+            throw saveError;
+          }
+        }
         
         console.log(`✅ Imported recipe ${recipe.id} (${recipe.title})`);
         imported++;
@@ -719,8 +722,7 @@ export async function importCachedRecipesToDB(): Promise<{ imported: number; ski
       }
     }
     
-    // Update quota tracking
-    await updateQuotaUsage('recipe', imported);
+    // Note: No quota tracking needed for importing cached data
     
     console.log(`📊 Import Summary - Imported: ${imported}, Skipped: ${skipped}, Errors: ${errors}`);
     
@@ -733,7 +735,7 @@ export async function importCachedRecipesToDB(): Promise<{ imported: number; ski
 }
 
 // Export internal functions for service integration
-export const searchRecipesInternal = searchRecipes;
-export const getRecipeInternal = getRecipe;
-export const searchRecipesByIngredientsInternal = searchRecipesByIngredients;
-export const getPopularRecipesInternal = getPopularRecipes;
+export { searchRecipesWithCacheInternal as searchRecipesInternal };
+export { getRecipeWithCacheInternal as getRecipeInternal };
+export { searchRecipesByIngredientsWithCacheInternal as searchRecipesByIngredientsInternal };
+export { getPopularRecipesWithCacheInternal as getPopularRecipesInternal };

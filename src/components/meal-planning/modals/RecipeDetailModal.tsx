@@ -427,11 +427,11 @@ export function RecipeDetailModal({
                 <ChefHat className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">Recipe Details Not Available</h3>
                 <p className="text-muted-foreground mb-4">
-                  We couldn't load the full recipe details for "{meal.recipeName}".
+                  We couldn&apos;t load the full recipe details for &quot;{meal.recipeName}&quot;.
                 </p>
                 <div className="text-sm text-muted-foreground">
                   <div>Planned for {meal.servings || 1} servings</div>
-                  {meal.notes && <div className="mt-1 italic">"{meal.notes}"</div>}
+                  {meal.notes && <div className="mt-1 italic">&quot;{meal.notes}&quot;</div>}
                 </div>
               </div>
             )}

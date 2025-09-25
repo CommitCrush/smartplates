@@ -143,8 +143,8 @@ export async function fetchAndCacheRecipes(): Promise<CachedRecipeData> {
     const categorizedRecipes: { [key: string]: Recipe[] } = {};
 
     // Fetch popular recipes first
-    const popularRecipes = await getPopularSpoonacularRecipes({ number: 20 });
-    allRecipes.push(...popularRecipes);
+    const popularResult = await getPopularSpoonacularRecipes();
+    allRecipes.push(...popularResult.recipes);
 
     // Fetch recipes by category (small batches to avoid limits)
     const categories = ['breakfast', 'lunch', 'dinner', 'dessert', 'snack'];
@@ -226,7 +226,7 @@ async function backgroundRefresh(currentData: CachedRecipeData): Promise<void> {
  */
 export async function getCachedOrFreshRecipes(): Promise<CachedRecipeData> {
   // 1. Versuche primären Cache zu laden (30 Tage gültig)
-  let cached = await loadCachedRecipes();
+      const cached = await loadCachedRecipes();
   
   if (cached && cached.recipes.length > 0) {
     // Prüfe ob Background-Refresh nötig ist (nach 7 Tagen)

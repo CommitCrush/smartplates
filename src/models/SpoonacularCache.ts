@@ -26,7 +26,7 @@ interface BaseCacheEntry {
 // ========================================
 
 export interface ISpoonacularRecipeCache extends Document, BaseCacheEntry {
-  spoonacularId: number;
+  spoonacularId: string;
   data: {
     id: number;
     title: string;
@@ -142,7 +142,7 @@ export interface ISpoonacularRecipeCache extends Document, BaseCacheEntry {
 
 const spoonacularRecipeCacheSchema = new Schema<ISpoonacularRecipeCache>({
   cacheKey: { type: String, required: true, unique: true, index: true },
-  spoonacularId: { type: Number, required: true, index: true },
+  spoonacularId: { type: String, required: true, unique: true, index: true },
   data: { type: Schema.Types.Mixed, required: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

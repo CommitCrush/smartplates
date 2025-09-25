@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/authContext";
+import { ToastProvider } from "@/components/ui/use-toast";
 
 // Import debug tools in development
 if (process.env.NODE_ENV === 'development') {
@@ -41,9 +42,11 @@ export default function RootLayout({
         data-hydration-safe="true"
       >
         <div id="__next-root" suppressHydrationWarning={true}>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <ToastProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ToastProvider>
         </div>
       </body>
     </html>

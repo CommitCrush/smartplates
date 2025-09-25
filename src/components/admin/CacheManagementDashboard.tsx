@@ -379,7 +379,7 @@ export function CacheManagementDashboard() {
             
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground">
-                💡 <strong>Tip:</strong> Run "Warm Up Cache" during off-peak hours to pre-populate 
+                💡 <strong>Tip:</strong> Run &quot;Warm Up Cache&quot; during off-peak hours to pre-populate 
                 popular recipes and improve user experience.
               </p>
             </div>

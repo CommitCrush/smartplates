@@ -74,7 +74,7 @@ export function SavePlanModal({
             Save Meal Plan
           </DialogTitle>
           <DialogDescription>
-            Choose how you'd like to save your meal plan. You can save locally, to Google Calendar, or both.
+            Choose how you&apos;d like to save your meal plan. You can save locally, to Google Calendar, or both.
           </DialogDescription>
         </DialogHeader>
 

@@ -7,6 +7,23 @@
 
 import { Recipe } from '@/types/recipe';
 
+/**
+ * Recipe filter interface for search functionality
+ */
+export interface RecipeFilters {
+  diet?: string;
+  cuisine?: string;
+  type?: string;
+  intolerances?: string;
+  includeIngredients?: string;
+  excludeIngredients?: string;
+  maxReadyTime?: number;
+  minServings?: number;
+  maxServings?: number;
+  offset?: number;
+  number?: number;
+}
+
 // Support both server-side and client-side API access
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY || process.env.NEXT_PUBLIC_SPOONACULAR_API_KEY;
 const BASE_URL = 'https://api.spoonacular.com/recipes';
@@ -138,7 +155,8 @@ export async function searchSpoonacularRecipes(
 export async function getSpoonacularRecipe(id: string): Promise<Recipe | null> {
   try {
     const cacheService = await import('./spoonacularCacheService.server');
-    return await cacheService.getRecipeInternal(id);
+    const result = await cacheService.getRecipeInternal(id);
+    return result.recipe;
   } catch (error) {
     console.error('Spoonacular recipe fetch error:', error);
     return null;
@@ -153,7 +171,8 @@ export async function searchRecipesByIngredients(
 ): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
     const cacheService = await import('./spoonacularCacheService.server');
-    return await cacheService.searchRecipesByIngredientsInternal(ingredients);
+    const result = await cacheService.searchRecipesByIngredientsInternal(ingredients);
+    return { ...result, totalResults: result.recipes.length };
   } catch (error) {
     console.error('Ingredient search error:', error);
     return { recipes: [], totalResults: 0, fromCache: false };
@@ -166,7 +185,8 @@ export async function searchRecipesByIngredients(
 export async function getPopularSpoonacularRecipes(): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
     const cacheService = await import('./spoonacularCacheService.server');
-    return await cacheService.getPopularRecipesInternal();
+    const result = await cacheService.getPopularRecipesInternal();
+    return { ...result, totalResults: result.recipes.length };
   } catch (error) {
     console.error('Popular recipes error:', error);
     return { recipes: [], totalResults: 0, fromCache: false };
@@ -196,8 +216,4 @@ export function rateLimitedRequest<T>(requestFn: () => Promise<T>): Promise<T> {
     }, delay);
   });
 }
-// Export internal functions for service integration
-export const searchRecipesInternal = searchRecipes;
-export const getRecipeInternal = getRecipe;
-export const searchRecipesByIngredientsInternal = searchRecipesByIngredients;
-export const getPopularRecipesInternal = getPopularRecipes;
+// Note: Internal functions are now exported from spoonacularCacheService.server.ts

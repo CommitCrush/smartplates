@@ -16,10 +16,10 @@ export default function UserLayout({ children }: UserLayoutProps) {
             </h1>
             <nav className="space-x-4">
              
-              <Link href="/user/profile" className="text-muted-foreground hover:text-foreground">
+              <Link href="/user/profile/me" className="text-muted-foreground hover:text-foreground">
                 Profile
               </Link>
-              <Link href="/user/dashboard/my_meal_plan/current" className="text-muted-foreground hover:text-foreground">
+              <Link href="/user/my_meal_plan/current" className="text-muted-foreground hover:text-foreground">
                 Meal Planning
               </Link>
             </nav>

@@ -263,7 +263,7 @@ export default function HomePage() {
           </div>
           
           <div className="text-center">
-            <a 
+            <Link 
               href="/recipe" 
               className={cn(
                 "inline-flex items-center gap-2 px-6 py-3 sm:px-8 sm:py-4",
@@ -280,7 +280,7 @@ export default function HomePage() {
             >
               Browse All Recipes
               <ArrowRight className="h-5 w-5" aria-hidden="true" />
-            </a>
+            </Link>
           </div>
 
           <div className="text-center mt-12">

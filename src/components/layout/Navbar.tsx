@@ -1,53 +1,6 @@
 /**
- * Main'use client';
-
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/authContext';
-import { Menu, X, User, LogOut, Settings, ChefHat, Sun, Moon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
-export default function Navbar() {
-  const { user, isAuthenticated, isAdmin, signIn, signOut } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // Check initial dark mode state
-  useEffect(() => {
-    setIsDarkMode(document.documentElement.classList.contains('dark'));
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('darkMode', 'true');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('darkMode', 'false');
-    }
-  };
-
-  // Load dark mode preference on mount
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode === 'true') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    } else if (savedDarkMode === 'false') {
-      setIsDarkMode(false);
-      document.documentElement.classList.remove('dark');
-    }
-  }, []); Component for SmartPlates
- * 
- * Features:
- * - Responsive navigation with mobile menu
- * - Authentication-based navigation (authenticated vs. public)
- * - Role-based menu items (admin, user, viewer)
- * - Google OAuth sign-in/sign-out
- * - Logo and branding
+ * Main Navigation Bar Component
+ * Features responsive design, authentication states, and user profile dropdown
  */
 
 'use client';
@@ -55,6 +8,7 @@ export default function Navbar() {
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/authContext';
+import UserProfileDropdown from './UserProfileDropdown';
 import { Menu, X, User, LogOut, Settings, ChefHat, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -104,29 +58,13 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <ChefHat className="h-8 w-8 text-primary-500" />
               <span className="text-xl font-bold text-foreground">
                 SmartPlates
               </span>
             </Link>
-            
-            {/* Dark Mode Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleDarkMode}
-              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-              aria-pressed={isDarkMode}
-            >
-              {isDarkMode ? (
-                <Sun className="h-5 w-5 text-foreground" />
-              ) : (
-                <Moon className="h-5 w-5 text-foreground" />
-              )}
-            </Button>
           </div>
 
           {/* Desktop Navigation */}
@@ -157,18 +95,26 @@ export default function Navbar() {
               >
                 About
               </Link>
+              <Link
+                href="/contact"
+                className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                role="menuitem"
+                tabIndex={0}
+              >
+                Contact
+              </Link>
 
               {/* Authenticated User Navigation */}
               {isAuthenticated && (
                 <>
                   <Link
-                    href="/user/meal-plans"
+                    href="/user/my_meal_plan/current"
                     className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
                     Meal Plans
                   </Link>
                   <Link
-                    href="/user/my-recipes"
+                    href="/user/my-recipe"
                     className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
                     My Recipes
@@ -190,57 +136,18 @@ export default function Navbar() {
 
           {/* Authentication & User Menu */}
           <div className="hidden md:block">
-            <div className="ml-4 flex items-center md:ml-6">
-              {!isAuthenticated ? (
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => signIn('google')}
-                    className="text-sm bg-accent hover:bg-accent/70 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                    aria-label="Sign in with Google"
-                  >
-                    Sign In
-                  </Button>
-                  
-                  <Link href="/register">
-                    <Button 
-                      variant="outline" 
-                      className="text-sm bg-accent hover:bg-accent/70 text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                      aria-label="Get started with SmartPlates"
-                    >
-                      Get Started
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-4">
-                  {/* User Profile Link */}
-                  <Link
-                    href="/user/profile"
-                    className="flex items-center space-x-2 text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-2 py-1 rounded-md transition-colors"
-                  >
-                    <User className="h-5 w-5" />
-                    <span className="text-sm font-medium">{user?.name}</span>
-                  </Link>
-                  
-                  {/* Settings */}
-                  <Link
-                    href="/user/settings"
-                    className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 p-2 rounded-md transition-colors"
-                  >
-                    <Settings className="h-5 w-5" />
-                  </Link>
-                  
-                  {/* Sign Out */}
-                  <Button
-                    variant="ghost"
-                    onClick={() => signOut()}
-                    className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  >
-                    <LogOut className="h-5 w-5" />
-                  </Button>
-                </div>
-              )}
+            <div className="ml-4 flex items-center md:ml-6 space-x-4">
+              {/* User Profile Dropdown */}
+              <UserProfileDropdown />
+              
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleDarkMode}
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
             </div>
           </div>
 
@@ -301,37 +208,39 @@ export default function Navbar() {
             >
               About
             </Link>
+            <Link
+              href="/contact"
+              className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+              onClick={() => setIsMenuOpen(false)}
+              role="menuitem"
+              tabIndex={0}
+            >
+              Contact
+            </Link>
 
             {/* Authenticated Mobile Navigation */}
             {isAuthenticated && (
               <>
                 <Link
-                  href="/user/meal-plans"
+                  href="/user/my_meal_plan/current"
                   className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Meal Plans
                 </Link>
                 <Link
-                  href="/user/my-recipes"
+                  href="/user/my-recipe"
                   className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   My Recipes
                 </Link>
                 <Link
-                  href="/user/profile"
+                  href="/user/profile/me"
                   className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Profile
-                </Link>
-                <Link
-                  href="/user/settings"
-                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Settings
                 </Link>
               </>
             )}

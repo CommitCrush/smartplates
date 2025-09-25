@@ -50,7 +50,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
       {/* Additional Notes */}
       {recipe.notes && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-3">Chef's Notes</h3>
+          <h3 className="text-lg font-semibold mb-3">Chef&apos;s Notes</h3>
           <p className="text-muted-foreground whitespace-pre-wrap">{recipe.notes}</p>
         </Card>
       )}

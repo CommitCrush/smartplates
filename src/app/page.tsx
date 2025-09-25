@@ -20,15 +20,7 @@ export default function HomePage() {
     <Layout>
       {/* Hero Section - Mobile-First Responsive */}
       <section 
-        className="relative pt-20 sm:pt-32 md:pt-40 lg:pt-52 pb-10 sm:pb-12 md:pb-16 lg:pb-20 min-h-[100vh] w-full bg-no-repeat"
-        style={{
-          backgroundImage: "url('/images/hero-background.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          imageRendering: 'crisp-edges',
-          backfaceVisibility: 'hidden',
-          transform: 'translateZ(0)',
-        }}
+        className="relative pt-20 sm:pt-32 md:pt-40 lg:pt-52 pb-10 sm:pb-12 md:pb-16 lg:pb-20 min-h-[100vh] w-full hero-background"
         aria-label="Hero section"
       >
         {/* Overlay for better text readability - Darker on mobile */}
@@ -263,7 +255,7 @@ export default function HomePage() {
           </div>
           
           <div className="text-center">
-            <a 
+            <Link 
               href="/recipe" 
               className={cn(
                 "inline-flex items-center gap-2 px-6 py-3 sm:px-8 sm:py-4",
@@ -280,7 +272,7 @@ export default function HomePage() {
             >
               Browse All Recipes
               <ArrowRight className="h-5 w-5" aria-hidden="true" />
-            </a>
+            </Link>
           </div>
 
           <div className="text-center mt-12">

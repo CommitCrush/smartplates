@@ -651,11 +651,11 @@
 
 /* Hero Section Background Styles */
 .hero-background {
-  background-image: url('/images/hero-background.png');
+  background-image: url('/images/herosection_bg_lightmode2.png');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
-  image-rendering: crisp-edges;
+ image-rendering: auto;
   backface-visibility: hidden;
   transform: translateZ(0);
 }

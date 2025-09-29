@@ -195,7 +195,18 @@ export default function AiRecipePage() {
 
             <IngredientInput ingredients={ingredients} onChange={handleIngredientsChange} />
           </div>
+          
         </div>
+         <button
+            className="bg-gray-700 text-white rounded-full px-4 py-2 font-semibold shadow hover:bg-gray-600 transition"
+            onClick={() => {
+              // Focus the manual input field by triggering IngredientInput's input
+              const inputEl = document.querySelector('#ingredient-manual-input') as HTMLInputElement;
+              if (inputEl) inputEl.focus();
+            }}
+          >
+            + Add  ingredient your ai didn't recognize
+          </button>
         <div className="border-t border-gray-700 my-8" />
         {/* Section 2: Ingredient list and filters */}
         <h2 className="text-2xl font-bold text-white mb-6"> Your current ingredient </h2>
@@ -224,16 +235,7 @@ export default function AiRecipePage() {
           ))}
         </div>
         <div className="flex flex-wrap gap-2 mb-6">
-          <button
-            className="bg-gray-700 text-white rounded-full px-4 py-2 font-semibold shadow hover:bg-gray-600 transition"
-            onClick={() => {
-              // Focus the manual input field by triggering IngredientInput's input
-              const inputEl = document.querySelector('#ingredient-manual-input') as HTMLInputElement;
-              if (inputEl) inputEl.focus();
-            }}
-          >
-            + Add another ingredient your ai didn't recognize
-          </button>
+         
          
           <RecipeFilterDropdown filters={filters} onChange={handleFilterChange} />
         </div>

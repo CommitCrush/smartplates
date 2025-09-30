@@ -649,23 +649,178 @@
   }
 }
 
-/* Hero Section Background Styles */
+/* Hero Section Background Styles - Responsive Image Optimization */
 .hero-background {
-  background-image: url('/images/herosection_bg_lightmode2.png');
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
- image-rendering: auto;
+  image-rendering: auto;
   backface-visibility: hidden;
   transform: translateZ(0);
+  
+  /* Mobile First - Kleinstes Bild für Mobile (480px breit) */
+  background-image: url('/images/herosection_bg/herosection_bg_lightmode2_480x270px.png');
 }
 
-/* Optional: Dark mode variant */
-.dark .hero-background {
-  /* Overlay für bessere Lesbarkeit im Dark Mode */
-  background-image: 
-    /* linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), */
-    url('/images/hero-background.png');
+/* Responsive Breakpoints für verschiedene Bildgrößen */
+
+/* Small Mobile (480px+) - Medium Mobile Bild */
+@media (min-width: 480px) {
+  .hero-background {
+    background-image: url('/images/herosection_bg/herosection_bg_lightmode_640x360px.png');
+  }
+}
+
+/* Tablet Portrait (640px+) - Tablet Bild */
+@media (min-width: 640px) {
+  .hero-background {
+    background-image: url('/images/herosection_bg/herosection_bg_lightmode_768x432px.png');
+  }
+}
+
+/* Tablet Landscape (768px+) - Large Tablet Bild */
+@media (min-width: 768px) {
+  .hero-background {
+    background-image: url('/images/herosection_bg/herosection_bg_lightmode_1024x576px.png');
+  }
+}
+
+/* Desktop (1024px+) - Desktop Bild */
+@media (min-width: 1024px) {
+  .hero-background {
+    background-image: url('/images/herosection_bg/herosection_bg_lightmode_1200x675px.png');
+  }
+}
+
+/* Large Desktop (1200px+) - Large Desktop Bild */
+@media (min-width: 1200px) {
+  .hero-background {
+    background-image: url('/images/herosection_bg/herosection_bg_lightmode_1440x700px.png');
+  }
+}
+
+/* Extra Large Desktop (1440px+) - Full Quality Original */
+@media (min-width: 1440px) {
+  .hero-background {
+    background-image: url('/images/herosection_bg/herosection_bg_lightmode_1920x700px.png');
+  }
+}
+
+/* Ultra Wide Screens (1920px+) - Highest Quality */
+@media (min-width: 1920px) {
+  .hero-background {
+    background-image: url('/images/herosection_bg/herosection_bg_lightmode_1920x700px.png');
+  }
+}
+
+
+
+/* Dark Mode Variants - Responsive mit verschiedenen Bildgrößen */
+/* .dark .hero-background {
+  background-image: url('/images/herosection_bg/dark/hero-dark-mobile-480w.jpg');
+}
+
+@media (min-width: 480px) {
+  .dark .hero-background {
+    background-image: url('/images/herosection_bg/dark/hero-dark-mobile-640w.jpg');
+  }
+}
+
+@media (min-width: 640px) {
+  .dark .hero-background {
+    background-image: url('/images/herosection_bg/dark/hero-dark-tablet-768w.jpg');
+  }
+}
+
+@media (min-width: 768px) {
+  .dark .hero-background {
+    background-image: url('/images/herosection_bg/dark/hero-dark-tablet-lg-1024w.jpg');
+  }
+}
+
+@media (min-width: 1024px) {
+  .dark .hero-background {
+    background-image: url('/images/herosection_bg/dark/hero-dark-desktop-1200w.jpg');
+  }
+}
+
+@media (min-width: 1200px) {
+  .dark .hero-background {
+    background-image: url('/images/herosection_bg/dark/hero-dark-desktop-lg-1440w.jpg');
+  }
+}
+
+@media (min-width: 1440px) {
+  .dark .hero-background {
+    background-image: url('/images/herosection_bg/dark/hero-dark-desktop-xl-1920w.jpg');
+  }
+}
+
+@media (min-width: 1920px) {
+  .dark .hero-background {
+    background-image: url('/images/herosection_bg/dark/hero-dark-desktop-xxl-2560w.jpg');
+  }
+} */
+
+/* Dark Mode Retina Support */
+/* @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .dark .hero-background {
+    background-image: url('/images/herosection_bg/dark/hero-dark-mobile-960w.jpg');
+  }
+  
+  @media (min-width: 480px) {
+    .dark .hero-background {
+      background-image: url('/images/herosection_bg/dark/hero-dark-mobile-1280w.jpg');
+    }
+  }
+  
+  @media (min-width: 640px) {
+    .dark .hero-background {
+      background-image: url('/images/herosection_bg/dark/hero-dark-tablet-1536w.jpg');
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .dark .hero-background {
+      background-image: url('/images/herosection_bg/dark/hero-dark-tablet-lg-2048w.jpg');
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .dark .hero-background {
+      background-image: url('/images/herosection_bg/dark/hero-dark-desktop-2400w.jpg');
+    }
+  }
+  
+  @media (min-width: 1200px) {
+    .dark .hero-background {
+      background-image: url('/images/herosection_bg/dark/hero-dark-desktop-lg-2880w.jpg');
+    }
+  }
+  
+  @media (min-width: 1440px) {
+    .dark .hero-background {
+      background-image: url('/images/herosection_bg/dark/hero-dark-desktop-xl-3840w.jpg');
+    }
+  }
+} */
+
+/* Performance Optimizations */
+.hero-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.hero-background.loading::before {
+  opacity: 1;
 }
 
 /* Am Ende der Datei hinzufügen */

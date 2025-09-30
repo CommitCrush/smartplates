@@ -118,7 +118,7 @@ export async function analyzeFridge(input: AnalyzeFridgeInput): Promise<AnalyzeF
         }
       } catch {
         // Try to extract array from text block
-        const match = rawContent.match(/\[(.*?)\]/s);
+        const match = rawContent.match(/\[([\s\S]*?)\]/);
         if (match) {
           ingredients = match[1]
             .split(/,|\n|\r|\*/)

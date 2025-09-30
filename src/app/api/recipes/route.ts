@@ -377,7 +377,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: `Spoonacular API error: ${spoonacularError.message || spoonacularError}` }, { status: 500 });
           }
         } else {
-          recipes = spoonacularRecipes;
+          recipes = spoonacularRecipes.recipes;
           total = recipes.length;
           source = 'spoonacular-ingredients';
         }
@@ -419,7 +419,7 @@ export async function GET(request: NextRequest) {
           filteredRecipes = filteredRecipes.filter(recipe => 
             recipe.title.toLowerCase().includes(searchLower) ||
             recipe.description.toLowerCase().includes(searchLower) ||
-            recipe.tags.some(tag => tag.toLowerCase().includes(searchLower))
+            recipe.tags?.some(tag => tag.toLowerCase().includes(searchLower))
           );
         }
         const startIndex = (page - 1) * limit;
@@ -500,23 +500,23 @@ export async function GET(request: NextRequest) {
           (recipe.tags || []).some((tag: string) => tag.toLowerCase().includes(searchLower))
         );
       }
-      recipes = filteredRecipes.slice((page - 1) * limit, page * limit);
-      total = filteredRecipes.length;
-      source = 'mock';
-    }
+        recipes = filteredRecipes.slice((page - 1) * limit, page * limit);
+        total = filteredRecipes.length;
+        source = 'mock';
+      }
 
-    // Response
-    return NextResponse.json({
-      recipes,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-      hasNext: (page * limit) < total,
-      hasPrev: page > 1,
-      source,
-      message: total > 0 ? `Found ${recipes.length} recipes (${source})` : 'No recipes found'
-    });
-
+      // Response
+      return NextResponse.json({
+        recipes,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        hasNext: (page * limit) < total,
+        hasPrev: page > 1,
+        source,
+        message: total > 0 ? `Found ${recipes.length} recipes (${source})` : 'No recipes found'
+      });
+    } // <-- Move this closing brace here to properly close the try block
   } catch (error) {
     console.error('Error fetching recipes:', error);
     return NextResponse.json(

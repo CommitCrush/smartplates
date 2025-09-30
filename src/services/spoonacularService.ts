@@ -141,21 +141,22 @@ export async function searchSpoonacularRecipes(
   filters: RecipeFilters = {}
 ): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
-    const params = new URLSearchParams({
-      apiKey: SPOONACULAR_API_KEY,
-      query,
-      number: (options.number || 12).toString(),
-      offset: (options.offset || 0).toString(),
-      addRecipeInformation: 'true',
-      fillIngredients: 'true',
-      addRecipeInstructions: 'true'
-    });
+    const params = new URLSearchParams();
+    if (SPOONACULAR_API_KEY) {
+      params.append('apiKey', SPOONACULAR_API_KEY);
+    }
+    if (searchTerm) params.append('query', searchTerm);
+    params.append('number', (filters.number || 12).toString());
+    params.append('offset', (filters.offset || 0).toString());
+    params.append('addRecipeInformation', 'true');
+    params.append('fillIngredients', 'true');
+    params.append('addRecipeInstructions', 'true');
 
-  if (options.cuisine) params.append('cuisine', options.cuisine);
-  if (options.diet) params.append('diet', options.diet);
-  if (options.type) params.append('type', options.type);
-  if (options.maxReadyTime) params.append('maxReadyTime', options.maxReadyTime.toString());
-  if (options.intolerances) params.append('intolerances', options.intolerances);
+  if (filters.cuisine) params.append('cuisine', filters.cuisine);
+  if (filters.diet) params.append('diet', filters.diet);
+  if (filters.type) params.append('type', filters.type);
+  if (filters.maxReadyTime) params.append('maxReadyTime', filters.maxReadyTime.toString());
+  if (filters.intolerances) params.append('intolerances', filters.intolerances);
 
     const response = await fetch(`${BASE_URL}/complexSearch?${params}`, {
       headers: {
@@ -173,10 +174,9 @@ export async function searchSpoonacularRecipes(
 
     return {
       recipes,
-      totalResults: data.totalResults
+      totalResults: data.totalResults,
+      fromCache: false
     };
-    const cacheService = await import('./spoonacularCacheService.server');
-    return await cacheService.searchRecipesInternal(searchTerm, filters);
   } catch (error) {
     console.error('Spoonacular search error:', error);
     return { recipes: [], totalResults: 0, fromCache: false };

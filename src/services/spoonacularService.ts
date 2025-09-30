@@ -141,6 +141,40 @@ export async function searchSpoonacularRecipes(
   filters: RecipeFilters = {}
 ): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
+    const params = new URLSearchParams({
+      apiKey: SPOONACULAR_API_KEY,
+      query,
+      number: (options.number || 12).toString(),
+      offset: (options.offset || 0).toString(),
+      addRecipeInformation: 'true',
+      fillIngredients: 'true',
+      addRecipeInstructions: 'true'
+    });
+
+  if (options.cuisine) params.append('cuisine', options.cuisine);
+  if (options.diet) params.append('diet', options.diet);
+  if (options.type) params.append('type', options.type);
+  if (options.maxReadyTime) params.append('maxReadyTime', options.maxReadyTime.toString());
+  if (options.intolerances) params.append('intolerances', options.intolerances);
+
+    const response = await fetch(`${BASE_URL}/complexSearch?${params}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Spoonacular API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data: SpoonacularSearchResponse = await response.json();
+    
+    const recipes = data.results.map(convertSpoonacularRecipe);
+
+    return {
+      recipes,
+      totalResults: data.totalResults
+    };
     const cacheService = await import('./spoonacularCacheService.server');
     return await cacheService.searchRecipesInternal(searchTerm, filters);
   } catch (error) {

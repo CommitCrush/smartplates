@@ -283,12 +283,17 @@ export async function GET(request: NextRequest) {
       difficulty: searchParams.get('difficulty') || undefined,
       cuisine: searchParams.get('cuisine') || undefined,
       search: searchParams.get('search') || undefined,
-      dietaryRestrictions: searchParams.getAll('dietaryRestrictions').filter(Boolean),
-      tags: searchParams.getAll('tags').filter(Boolean),
+      dietaryRestrictions: (searchParams.get('dietaryRestrictions')?.split(',').map(d => {
+        // Only allow valid Spoonacular diet values
+        const validDiets = ['vegetarian','vegan','gluten free','ketogenic','paleo','primal','whole30'];
+        return validDiets.includes(d.trim().toLowerCase()) ? d.trim().toLowerCase() : null;
+      }).filter(Boolean)) || [],
+      intolerances: (searchParams.get('intolerances')?.split(',').map(a => a.trim().toLowerCase()).filter(Boolean)) || [],
+      tags: searchParams.get('tags')?.split(',') || [],
       maxTime: searchParams.get('maxTime') ? parseInt(searchParams.get('maxTime')!) : undefined,
       allergy: searchParams.get('allergy') || undefined,
     };
-    console.log('API Query Params:', filters);
+    console.log('API /api/recipes filters:', filters);
 
     // Pagination
     const page = parseInt(searchParams.get('page') || '1');
@@ -298,6 +303,130 @@ export async function GET(request: NextRequest) {
     let total = 0;
     let source = 'mongodb';
 
+    // If 'search' param is present, treat as ingredient search
+    if (filters.search && filters.search.trim().length > 0) {
+      // Prevent invalid filter combinations that always fail (e.g. vegan breakfast with chicken/fish)
+      const forbiddenCombos = [
+        { category: 'breakfast', diet: 'vegan', forbiddenIngredients: ['chicken','fish','egg','milk','butter','yogurt','cheese'] }
+      ];
+      const activeCombo = forbiddenCombos.find(combo =>
+        filters.category === combo.category && filters.dietaryRestrictions.includes(combo.diet)
+      );
+      if (activeCombo) {
+        const lowerIngredients = filters.search.toLowerCase();
+        if (activeCombo.forbiddenIngredients.some(ing => lowerIngredients.includes(ing))) {
+          return NextResponse.json({ error: 'No recipes found: filter combination is not possible (vegan breakfast with animal products).' }, { status: 400 });
+        }
+      }
+      try {
+        // Use Spoonacular ingredient search first
+        const { searchRecipesByIngredients, searchSpoonacularRecipes } = await import('@/services/spoonacularService');
+        // Simple German-to-English mapping for Spoonacular
+        const deToEn: Record<string, string> = {
+          'tomaten': 'tomato',
+          'gurke': 'cucumber',
+          'paprika': 'bell pepper',
+          'zwiebel': 'onion',
+          'knoblauch': 'garlic',
+          'kartoffel': 'potato',
+          'karotte': 'carrot',
+          'salat': 'lettuce',
+          'apfel': 'apple',
+          'banane': 'banana',
+          'milch': 'milk',
+          'käse': 'cheese',
+          'joghurt': 'yogurt',
+          'butter': 'butter',
+          'ei': 'egg',
+          'hähnchen': 'chicken',
+          'rindfleisch': 'beef',
+          'fisch': 'fish',
+          'reis': 'rice',
+          'nudeln': 'pasta',
+          'brot': 'bread',
+          'öl': 'oil',
+          'essig': 'vinegar',
+          'basilikum': 'basil',
+          'petersilie': 'parsley',
+          'thymian': 'thyme',
+          'oregano': 'oregano'
+        };
+        const ingredientList = filters.search.split(',').map(s => {
+          const key = s.trim().toLowerCase();
+          return deToEn[key] || key;
+        }).filter(Boolean);
+        console.log('Spoonacular ingredientList:', ingredientList);
+        let spoonacularRecipes = await searchRecipesByIngredients(ingredientList, { number: limit });
+        console.log('Spoonacular recipes result:', JSON.stringify(spoonacularRecipes, null, 2));
+        // If filter is set, use complexSearch to filter further
+        if (filters.category || filters.dietaryRestrictions.length > 0 || filters.intolerances.length > 0) {
+          const filterOptions: any = { number: limit };
+          if (filters.category) filterOptions.type = filters.category;
+          if (filters.dietaryRestrictions.length > 0) filterOptions.diet = filters.dietaryRestrictions.join(',');
+          if (filters.intolerances.length > 0) filterOptions.intolerances = filters.intolerances.join(',');
+          // Use first ingredient as query for complexSearch
+          const query = ingredientList.join(',');
+          try {
+            const filtered = await searchSpoonacularRecipes(query, filterOptions);
+            recipes = filtered.recipes;
+            total = recipes.length;
+            source = 'spoonacular-filtered';
+          } catch (spoonacularError: any) {
+            // Return Spoonacular error to frontend
+            return NextResponse.json({ error: `Spoonacular API error: ${spoonacularError.message || spoonacularError}` }, { status: 500 });
+          }
+        } else {
+          recipes = spoonacularRecipes;
+          total = recipes.length;
+          source = 'spoonacular-ingredients';
+        }
+      } catch (spoonacularError: any) {
+        // Return Spoonacular error to frontend
+        return NextResponse.json({ error: `Spoonacular API error: ${spoonacularError.message || spoonacularError}` }, { status: 500 });
+      }
+    } else {
+      // Try to get cached Spoonacular data first
+      try {
+        const cachedData = await getCachedOrFreshRecipes();
+        if (cachedData.recipes.length > 0) {
+          const searchResults = searchCachedRecipes(
+            cachedData,
+            filters.search || '',
+            filters.category,
+            filters.difficulty
+          );
+          const startIndex = (page - 1) * limit;
+          const endIndex = startIndex + limit;
+          recipes = searchResults.slice(startIndex, endIndex);
+          total = searchResults.length;
+          source = 'spoonacular-cached';
+        }
+      } catch (cacheError) {
+        console.warn('⚠️ Cache system failed, falling back to mock data:', cacheError);
+      }
+      // Fallback to mock data if cache is empty or failed
+      if (recipes.length === 0) {
+        let filteredRecipes = mockRecipes;
+        if (filters.category) {
+          filteredRecipes = filteredRecipes.filter(recipe => recipe.category === filters.category);
+        }
+        if (filters.difficulty) {
+          filteredRecipes = filteredRecipes.filter(recipe => recipe.difficulty === filters.difficulty);
+        }
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          filteredRecipes = filteredRecipes.filter(recipe => 
+            recipe.title.toLowerCase().includes(searchLower) ||
+            recipe.description.toLowerCase().includes(searchLower) ||
+            recipe.tags.some(tag => tag.toLowerCase().includes(searchLower))
+          );
+        }
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        recipes = filteredRecipes.slice(startIndex, endIndex);
+        total = filteredRecipes.length;
+        source = 'local';
+      }
     // 1. Suche in MongoDB
     try {
       const { getCollection, COLLECTIONS } = await import('@/lib/db');

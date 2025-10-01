@@ -146,23 +146,30 @@ export class MealPlanService {
       }
 
       // If no plan exists, create a new one
-      return await this.createMealPlan({
-        weekStartDate: weekKey,
-        title: `Week of ${weekStartDate.toLocaleDateString()}`,
-      });
-    } catch (error) {
-      // If creation fails due to duplicate, try to get the existing plan again
-      if (error instanceof Error && error.message.includes('already exists')) {
-        try {
-          const existingPlans = await this.getMealPlans(weekKey);
-          if (existingPlans && existingPlans.length > 0) {
-            return existingPlans[0];
+      try {
+        return await this.createMealPlan({
+          weekStartDate: weekKey,
+          title: `Week of ${weekStartDate.toLocaleDateString()}`,
+        });
+      } catch (createError) {
+        // If creation fails due to duplicate, try to get the existing plan again
+        if (createError instanceof Error && (
+          createError.message.includes('already exists') || 
+          createError.message.includes('duplicate') ||
+          createError.message.includes('one meal plan per week')
+        )) {
+          console.log('Meal plan already exists, fetching existing one...');
+          const retryPlans = await this.getMealPlans(weekKey);
+          if (retryPlans && retryPlans.length > 0) {
+            return retryPlans[0];
           }
-        } catch (retryError) {
-          console.error('Retry fetch failed:', retryError);
+          // If we still can't find it, create a fallback error
+          throw new Error('Unable to find or create meal plan for this week');
         }
+        // Re-throw other creation errors
+        throw createError;
       }
-      
+    } catch (error) {
       console.error('Error getting or creating weekly plan:', error);
       throw error;
     }

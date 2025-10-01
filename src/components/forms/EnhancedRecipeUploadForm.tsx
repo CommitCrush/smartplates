@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,10 +21,8 @@ import {
   Save, 
   AlertCircle, 
   Upload, 
-  Image as ImageIcon,
   Globe,
   Lock,
-  Users,
   Clock,
   Thermometer
 } from 'lucide-react';
@@ -129,7 +127,7 @@ const COMMON_UNITS = [
 export function EnhancedRecipeUploadForm({
   onSubmit,
   isLoading = false,
-  user,
+  _user,
   submitButtonText = 'Rezept hochladen',
   validationRules = {}
 }: EnhancedRecipeUploadFormProps) {

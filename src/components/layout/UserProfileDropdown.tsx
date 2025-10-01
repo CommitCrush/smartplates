@@ -31,7 +31,7 @@ interface UserProfileDropdownProps {
 }
 
 export default function UserProfileDropdown({ className = '', isMobile = false }: UserProfileDropdownProps) {
-  const { session, status, user, isAuthenticated, isAdmin } = useAuth();
+  const { status, user, isAuthenticated, isAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -102,8 +102,14 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
     {
       icon: Calendar,
       label: 'Meal Plans',
-      href: '/user/my_meal_plan/current',
+      href: '/user/meal-plan/current',
       description: 'Your meal planning'
+    },
+    {
+      icon: Star,
+      label: 'Saved Plans',
+      href: '/user/meal-plan',
+      description: 'Your saved meal plans'
     },
     {
       icon: BookOpen,

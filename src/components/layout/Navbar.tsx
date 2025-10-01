@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function Navbar() {
-  const { user, isAuthenticated, isAdmin, signIn, signOut } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -86,7 +86,7 @@ export default function Navbar() {
                     Dashboard
                   </Link>
                   <Link
-                    href="/user/my_meal_plan/current"
+                    href="/user/meal-plan/current"
                     className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                     role="menuitem"
                     tabIndex={0}
@@ -210,7 +210,7 @@ export default function Navbar() {
                   Dashboard
                 </Link>
                 <Link
-                  href="/user/my_meal_plan/current"
+                  href="/user/meal-plan/current"
                   className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                   onClick={() => setIsMenuOpen(false)}
                   role="menuitem"

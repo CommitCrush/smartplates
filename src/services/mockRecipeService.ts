@@ -11,17 +11,29 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
     const fetchRecipes = async () => {
       setLoading(true);
       try {
+        // Only fetch if there's a meaningful search query or specific options
+        const hasFilters = Object.values(options).some(value => value && value !== 'all');
+        if (!query && !hasFilters) {
+          // No search query and no filters - don't make API call
+          setRecipes([]);
+          setError('');
+          setLoading(false);
+          return;
+        }
+
         const params = new URLSearchParams();
         if (query) params.append('search', query);
         Object.entries(options).forEach(([key, value]) => {
-          if (value) params.append(key, value);
+          if (value && value !== 'all') params.append(key, value);
         });
+        
         const res = await fetch(`/api/recipes?${params.toString()}`);
         const data = await res.json();
         setRecipes(data.recipes || []);
-        setError((data.recipes && data.recipes.length === 0) ? 'Keine Rezepte gefunden' : '');
-      } catch {
-        setError('Fehler beim Laden der Rezepte');
+        setError((data.recipes && data.recipes.length === 0) ? 'No recipes found' : '');
+      } catch (error) {
+        console.error('Error loading recipes:', error);
+        setError('Error loading recipes');
       } finally {
         setLoading(false);
       }
@@ -47,7 +59,7 @@ export function useRecipeById(recipeId: string) {
         setLoading(false);
       })
       .catch(() => {
-        setError('Fehler beim Laden des Rezepts');
+        setError('Error loading recipe');
         setLoading(false);
       });
   }, [recipeId]);
@@ -70,9 +82,9 @@ export function useRecipesByMealType(type: string) {
         const res = await fetch(`/api/recipes?${params.toString()}`);
         const data = await res.json();
         setRecipes(data.recipes || []);
-        setError((data.recipes && data.recipes.length === 0) ? 'Keine Rezepte gefunden' : '');
+        setError((data.recipes && data.recipes.length === 0) ? 'No recipes found' : '');
       } catch {
-        setError('Fehler beim Laden der Rezepte');
+        setError('Error loading recipes');
       } finally {
         setLoading(false);
       }

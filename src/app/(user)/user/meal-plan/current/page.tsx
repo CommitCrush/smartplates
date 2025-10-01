@@ -1,5 +1,5 @@
 /**
- * Current Meal Plan Page
+ * Current Meal Plan Page - Clean URL Structure
  * 
  * Fetches or creates the current week's meal plan and redirects to it
  */
@@ -32,13 +32,13 @@ export default function CurrentMealPlanPage() {
         startOfWeek.setHours(0, 0, 0, 0);
 
         // Try to fetch existing meal plan for current week
-        const response = await fetch(`/api/meal-plans?weekStartDate=${startOfWeek.toISOString()}&userId=${session.user.id}`);
+        const response = await fetch(`/api/meal-plans?weekStart=${startOfWeek.toISOString()}`);
         
         if (response.ok) {
           const data = await response.json();
-          if (data.mealPlans && data.mealPlans.length > 0) {
-            // Redirect to existing meal plan
-            router.replace(`/user/my_meal_plan/${data.mealPlans[0]._id}`);
+          if (data.success && data.data && data.data.length > 0) {
+            // Redirect to existing meal plan with clean URL
+            router.replace(`/user/meal-plan/${data.data[0]._id}`);
             return;
           }
         }
@@ -50,17 +50,32 @@ export default function CurrentMealPlanPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            userId: session.user.id,
             weekStartDate: startOfWeek.toISOString(),
             title: `Week of ${startOfWeek.toLocaleDateString()}`
           }),
         });
 
         if (createResponse.ok) {
-          const newMealPlan = await createResponse.json();
-          router.replace(`/user/my_meal_plan/${newMealPlan._id}`);
+          const data = await createResponse.json();
+          if (data.success && data.data) {
+            router.replace(`/user/meal-plan/${data.data._id}`);
+          } else {
+            throw new Error('Invalid response from server');
+          }
+        } else if (createResponse.status === 409) {
+          // Meal plan already exists, try to fetch it again
+          const retryResponse = await fetch(`/api/meal-plans?weekStart=${startOfWeek.toISOString()}`);
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            if (retryData.success && retryData.data && retryData.data.length > 0) {
+              router.replace(`/user/meal-plan/${retryData.data[0]._id}`);
+              return;
+            }
+          }
+          throw new Error('Failed to create or find meal plan');
         } else {
-          throw new Error('Failed to create meal plan');
+          const errorData = await createResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to create meal plan');
         }
       } catch (error) {
         console.error('Error fetching/creating meal plan:', error);

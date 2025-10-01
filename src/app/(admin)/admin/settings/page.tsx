@@ -12,7 +12,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -21,22 +20,13 @@ import {
   User,
   BookOpen,
   Shield,
-  Database,
   Activity,
-  Search,
-  Filter,
-  MoreVertical,
   Eye,
-  Edit,
   Trash2,
-  Ban,
   CheckCircle,
   XCircle,
   AlertTriangle,
-  MessageCircle,
-  Star,
-  TrendingUp,
-  Calendar
+  Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -112,7 +102,7 @@ export default function AdminSettingsPage() {
     backupFrequency: 'daily',
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [_isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -183,7 +173,7 @@ export default function AdminSettingsPage() {
       } else {
         throw new Error('Error updating user status');
       }
-    } catch (error) {
+    } catch (_error) {
       setMessage({ type: 'error', text: 'Error updating user status' });
     }
   };
@@ -203,7 +193,7 @@ export default function AdminSettingsPage() {
       } else {
         throw new Error('Fehler bei der Rezept-Moderation');
       }
-    } catch (error) {
+    } catch (_error) {
       setMessage({ type: 'error', text: 'Fehler bei der Rezept-Moderation' });
     }
   };
@@ -222,7 +212,7 @@ export default function AdminSettingsPage() {
       } else {
         throw new Error('Error saving system settings');
       }
-    } catch (error) {
+    } catch (_error) {
       setMessage({ type: 'error', text: 'Error saving system settings' });
     }
   };

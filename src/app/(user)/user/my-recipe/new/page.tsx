@@ -458,7 +458,7 @@ export default function NewRecipePage() {
             <CardTitle>Ingredients</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {formData.ingredients.map((ingredient, index) => (
+            {formData.ingredients.map((ingredient) => (
               <div key={ingredient.id} className="flex items-center space-x-2">
                 <input
                   type="text"

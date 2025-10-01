@@ -101,7 +101,7 @@ export default function UserDashboardPage() {
     {
       title: 'Plan Meals',
       description: 'Create your weekly meal plan',
-      href: '/user/my_meal_plan/current',
+      href: '/user/meal-plan/current',
       icon: Calendar,
       color: 'bg-blue-500'
     },
@@ -141,7 +141,7 @@ export default function UserDashboardPage() {
       value: stats.savedMealPlans,
       icon: Calendar,
       color: 'text-green-600',
-      href: '/user/my_meal_plan/current'
+      href: '/user/meal-plan/current'
     },
     {
       title: 'Total Likes',

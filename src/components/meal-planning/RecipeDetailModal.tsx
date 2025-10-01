@@ -6,6 +6,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import { X } from 'lucide-react';
 import type { MealSlot } from '@/types/meal-planning';
 
@@ -34,10 +35,13 @@ export function RecipeDetailModal({ isOpen, meal, onClose }: RecipeDetailModalPr
         
         <div className="space-y-4">
           {meal.image && (
-            <img 
+            <Image 
               src={meal.image} 
               alt={meal.recipeName || 'Recipe'} 
+              width={400}
+              height={192}
               className="w-full h-48 object-cover rounded-lg"
+              sizes="(max-width: 768px) 100vw, 400px"
             />
           )}
           

@@ -59,7 +59,7 @@ export default function ProductList() {
         ))}
       </ul>
       <footer className="text-center text-xs text-gray-500 mt-10">
-        <p>Dies ist ein Demo-Projekt für einen Web-Dev-Kurs. Alle Links führen zu Amazon-Produkten, ohne Affiliate-Tracking.</p>
+        <p>All links lead to Amazon products, without affiliate tracking</p>
       </footer>
     </div>
   );

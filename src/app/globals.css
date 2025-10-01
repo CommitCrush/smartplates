@@ -64,6 +64,7 @@
     --color-foreground-cta: #18181b;
     --color-border: #e4e4e7;
     --color-border-muted: #f4f4f5;
+    --color-border-footer: #aabc91;      /* Footer Border - Sage Green */
     --color-accent: #fa6552;
     --color-muted: #f4f4f5;
 
@@ -151,6 +152,7 @@
     /* SmartPlates Dark Mode Borders - Nach Spezifikation */
     --color-border: #4A4A4A;              /* Standard Ränder für Formularfelder */
     --color-border-muted: #3A3A3A;        /* Subtilere Ränder */
+    --color-border-footer: #c1d3af;       /* Footer Border - Light Sage Green */
     
     /* SmartPlates Dark Mode Akzentfarben - Nach Spezifikation */
     --color-accent: #FF7A69;              /* Primäre Akzentfarbe - leuchtendes Korallenrot */
@@ -374,6 +376,7 @@
   /* Border utilities - Enhanced for components */
   .border-border { border-color: var(--color-border); }
   .border-border-muted { border-color: var(--color-border-muted); }
+  .border-border-footer { border-color: var(--color-border-footer); }
   .border-neutral-200 { border-color: var(--color-neutral-200); }
   .border-neutral-300 { border-color: var(--color-neutral-300); }
   .border-neutral-700 { border-color: var(--color-neutral-700); }

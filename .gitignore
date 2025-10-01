@@ -34,7 +34,8 @@ src/config/smartplates-project-471422-adb936280b4a.json
 next-env.d.ts
 .github/ui_ux_issus/
 
-
+.env.local
+.env
 
 
 config/*.json

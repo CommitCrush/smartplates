@@ -26,7 +26,6 @@ export interface RecipeFilters {
 
 // Support both server-side and client-side API access
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY || process.env.NEXT_PUBLIC_SPOONACULAR_API_KEY;
-const BASE_URL = 'https://api.spoonacular.com/recipes';
 
 if (!SPOONACULAR_API_KEY) {
   console.warn('SPOONACULAR_API_KEY not found in environment variables');
@@ -103,6 +102,7 @@ function convertSpoonacularRecipe(spoonacularRecipe: SpoonacularRecipe): Recipe 
   const description = spoonacularRecipe.summary.replace(/<[^>]*>/g, '');
 
   return {
+    _id: `spoonacular-${spoonacularRecipe.id}`,
     id: `spoonacular-${spoonacularRecipe.id}`,
     title: spoonacularRecipe.title,
     description: description.substring(0, 300) + '...', // Truncate long descriptions

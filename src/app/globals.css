@@ -135,7 +135,7 @@
 
   .dark {
     /* SmartPlates Dark Mode Backgrounds - Nach Spezifikation */
-    --color-background: #121212;          /* Primärer Hintergrund - sehr dunkles, weiches Grau */
+    --color-background: #373739;          /* Primärer Hintergrund - dunkles Grau */
     --color-background-secondary: #1E1E1E; /* Sekundärer Hintergrund für Karten & Footer */
     --color-background-card: #1E1E1E;     /* Karten-Hintergrund - leicht helleres Grau */
     --color-background-cta: #1E1E1E;      /* CTA Sektion Hintergrund */
@@ -659,7 +659,7 @@
   transform: translateZ(0);
   
   /* Mobile First - Kleinstes Bild für Mobile (480px breit) */
-  background-image: url('/images/herosection_bg/herosection_bg_lightmode2_480x270px.png');
+  background-image: url('/images/herosection_bg/herosection_bg_lightmode_768x432px.png');
 }
 
 /* Responsive Breakpoints für verschiedene Bildgrößen */
@@ -667,7 +667,7 @@
 /* Small Mobile (480px+) - Medium Mobile Bild */
 @media (min-width: 480px) {
   .hero-background {
-    background-image: url('/images/herosection_bg/herosection_bg_lightmode_640x360px.png');
+    background-image: url('/images/herosection_bg/herosection_bg_lightmode_768x432px.png');
   }
 }
 
@@ -716,51 +716,50 @@
 
 
 /* Dark Mode Variants - Responsive mit verschiedenen Bildgrößen */
-/* .dark .hero-background {
-  background-image: url('/images/herosection_bg/dark/hero-dark-mobile-480w.jpg');
+.dark .hero-background { background-image: url('/images/herosection_bg/darkmode/herosection_bg_darkmode_768x432px.png');
 }
 
 @media (min-width: 480px) {
   .dark .hero-background {
-    background-image: url('/images/herosection_bg/dark/hero-dark-mobile-640w.jpg');
+    background-image: url('/images/herosection_bg/darkmode/herosection_bg_darkmode_768x432px.png');
   }
 }
 
 @media (min-width: 640px) {
   .dark .hero-background {
-    background-image: url('/images/herosection_bg/dark/hero-dark-tablet-768w.jpg');
+    background-image: url('/images/herosection_bg/darkmode/herosection_bg_darkmode_768x432px.png');
   }
 }
 
 @media (min-width: 768px) {
   .dark .hero-background {
-    background-image: url('/images/herosection_bg/dark/hero-dark-tablet-lg-1024w.jpg');
+    background-image: url('/images/herosection_bg/darkmode/herosection_bg_darkmode_1024x576px.png');
   }
 }
 
 @media (min-width: 1024px) {
   .dark .hero-background {
-    background-image: url('/images/herosection_bg/dark/hero-dark-desktop-1200w.jpg');
+    background-image: url('/images/herosection_bg/darkmode/herosection_bg_darkmode_1200x675px.png');
   }
 }
 
 @media (min-width: 1200px) {
   .dark .hero-background {
-    background-image: url('/images/herosection_bg/dark/hero-dark-desktop-lg-1440w.jpg');
+    background-image: url('/images/herosection_bg/darkmode/herosection_bg_darkmode_1440x700px.png');
   }
 }
 
 @media (min-width: 1440px) {
   .dark .hero-background {
-    background-image: url('/images/herosection_bg/dark/hero-dark-desktop-xl-1920w.jpg');
+    background-image: url('/images/herosection_bg/darkmode/herosection_bg_darkmode_1920x700px.png');
   }
 }
 
 @media (min-width: 1920px) {
   .dark .hero-background {
-    background-image: url('/images/herosection_bg/dark/hero-dark-desktop-xxl-2560w.jpg');
+    background-image: url('/images/herosection_bg/darkmode/herosection_bg_darkmode_1920x700px.png');
   }
-} */
+}
 
 /* Dark Mode Retina Support */
 /* @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
@@ -803,7 +802,7 @@
       background-image: url('/images/herosection_bg/dark/hero-dark-desktop-xl-3840w.jpg');
     }
   }
-} */
+}
 
 /* Performance Optimizations */
 .hero-background::before {

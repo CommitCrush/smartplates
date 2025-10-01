@@ -51,7 +51,8 @@ export interface Recipe {
   
   
   isPending?: boolean;
-  moderationNotes?: string;
+    moderationNotes?: string;
+  }
   
 
 export interface RecipeIngredient {

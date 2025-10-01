@@ -76,60 +76,25 @@ interface SpoonacularSearchResponse {
  * Converts Spoonacular recipe to our Recipe format
  */
 function convertSpoonacularRecipe(spoonacularRecipe: SpoonacularRecipe): Recipe {
-  const ingredients = spoonacularRecipe.extendedIngredients.map((ing, index) => ({
-    id: `spoonacular-ingredient-${index}`,
-    name: ing.name,
-    amount: ing.amount,
-    unit: ing.unit,
-    notes: ''
-  }));
-
-  const instructions = spoonacularRecipe.analyzedInstructions[0]?.steps.map((step) => ({
-    id: `spoonacular-step-${step.number}`,
-    stepNumber: step.number,
-    instruction: step.step
-  })) || [];
-
-  // Determine meal type from dish types
-  let category: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'dessert' = 'dinner'; // default
-  const dishTypes = spoonacularRecipe.dishTypes || [];
-  if (dishTypes.includes('breakfast')) category = 'breakfast';
-  else if (dishTypes.includes('lunch')) category = 'lunch';
-  else if (dishTypes.includes('dessert')) category = 'dessert';
-  else if (dishTypes.includes('snack')) category = 'snack';
+  // ...existing code...
 
   // Clean HTML from summary
   const description = spoonacularRecipe.summary.replace(/<[^>]*>/g, '');
 
   return {
-    _id: `spoonacular-${spoonacularRecipe.id}`,
     id: `spoonacular-${spoonacularRecipe.id}`,
     title: spoonacularRecipe.title,
-    description: description.substring(0, 300) + '...', // Truncate long descriptions
+    description: description.substring(0, 300) + '...',
+    summary: spoonacularRecipe.summary || '',
     image: spoonacularRecipe.image,
     servings: spoonacularRecipe.servings,
-    prepTime: Math.floor(spoonacularRecipe.readyInMinutes * 0.3),
-    cookTime: Math.floor(spoonacularRecipe.readyInMinutes * 0.7),
-    totalTime: spoonacularRecipe.readyInMinutes,
-    difficulty: 'medium' as const,
-    category,
-    cuisine: spoonacularRecipe.cuisines[0] || 'international',
-    dietaryRestrictions: (spoonacularRecipe.diets as ('vegetarian' | 'vegan' | 'gluten-free' | 'dairy-free' | 'nut-free' | 'keto' | 'paleo')[]) || [],
-    tags: [
-      ...spoonacularRecipe.cuisines,
-      ...spoonacularRecipe.diets,
-      'spoonacular'
-    ],
-    ingredients,
-    instructions,
-    rating: 4.0,
-    ratingsCount: 0,
-    likesCount: 0,
-    authorId: 'spoonacular',
-    authorName: 'Spoonacular',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isPublished: true
+    readyInMinutes: spoonacularRecipe.readyInMinutes,
+    extendedIngredients: spoonacularRecipe.extendedIngredients || [],
+    analyzedInstructions: spoonacularRecipe.analyzedInstructions || [],
+    cuisines: spoonacularRecipe.cuisines || [],
+    dishTypes: spoonacularRecipe.dishTypes || [],
+    diets: spoonacularRecipe.diets || [],
+    nutrition: spoonacularRecipe.nutrition || undefined
   };
 }
 

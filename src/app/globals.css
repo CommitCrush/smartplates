@@ -136,10 +136,10 @@
   .dark {
     /* SmartPlates Dark Mode Backgrounds - Nach Spezifikation */
     --color-background: #373739;          /* Primärer Hintergrund - dunkles Grau */
-    --color-background-secondary: #1E1E1E; /* Sekundärer Hintergrund für Karten & Footer */
-    --color-background-card: #1E1E1E;     /* Karten-Hintergrund - leicht helleres Grau */
-    --color-background-cta: #1E1E1E;      /* CTA Sektion Hintergrund */
-    --color-background-footer: #1E1E1E;   /* Footer Hintergrund */
+    --color-background-secondary: #373739; /* Sekundärer Hintergrund für Karten & Footer */
+    --color-background-card: #373739;     /* Karten-Hintergrund - konsistentes dunkles Grau */
+    --color-background-cta: #373739;      /* CTA Sektion Hintergrund */
+    --color-background-footer: #373739;   /* Footer Hintergrund */
     
     /* SmartPlates Dark Mode Text - Nach Spezifikation */
     --color-foreground: #FFFFFF;          /* Überschriften & wichtiger Text - reines Weiß */
@@ -154,7 +154,7 @@
     
     /* SmartPlates Dark Mode Akzentfarben - Nach Spezifikation */
     --color-accent: #FF7A69;              /* Primäre Akzentfarbe - leuchtendes Korallenrot */
-    --color-muted: #1E1E1E;               /* Gedämpfte Bereiche */
+    --color-muted: #373739;               /* Gedämpfte Bereiche - konsistentes dunkles Grau */
 
     /* Input-specific colors for Dark Mode */
     --color-input-background: #252525;       /* Dunkler Input-Hintergrund */

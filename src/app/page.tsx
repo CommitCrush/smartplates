@@ -288,7 +288,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section - Mobile-First Responsive */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-primary-100">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 ">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-primary-900 mb-3 sm:mb-4 leading-tight">
             Ready to Transform Your Cooking?

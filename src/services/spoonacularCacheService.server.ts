@@ -148,22 +148,16 @@ export async function searchRecipesWithCacheInternal(
         id: `spoonacular-${result.id}`,
         title: result.title,
         description: result.summary?.replace(/<[^>]*>/g, '').substring(0, 200) + '...' || 'Delicious recipe from Spoonacular',
-        image: result.image,
-        servings: result.servings || 4,
-        totalTime: result.readyInMinutes || 30,
-        difficulty: 'medium' as const,
-        category: 'dinner',
-        cuisine: result.cuisines?.[0] || 'international',
-        rating: 4.0,
-        ratingsCount: 0,
-        authorId: 'spoonacular',
-        authorName: 'Spoonacular',
-        isPublished: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        tags: ['spoonacular'],
-        ingredients: [],
-        instructions: []
+  image: result.image,
+  servings: result.servings || 4,
+  readyInMinutes: result.readyInMinutes || 30,
+  summary: result.summary || '',
+  extendedIngredients: result.extendedIngredients || [],
+  analyzedInstructions: result.analyzedInstructions || [],
+  cuisines: result.cuisines || [],
+  dishTypes: result.dishTypes || [],
+  diets: result.diets || [],
+  nutrition: result.nutrition || undefined
       })),
       totalResults: cachedResult.data.totalResults,
       fromCache: true
@@ -181,26 +175,20 @@ export async function searchRecipesWithCacheInternal(
     if (staleCache) {
       console.log(`🔄 Serving stale cache for: "${query}"`);
       return {
-        recipes: staleCache.data.results.map((result: any) => ({
+  recipes: staleCache.data.results.map((result: any) => ({
           id: `spoonacular-${result.id}`,
           title: result.title,
-          description: result.summary?.replace(/<[^>]*>/g, '').substring(0, 200) + '...' || 'Delicious recipe from Spoonacular',
+          description: result.summary || '',
+          summary: result.summary || '',
           image: result.image,
+          readyInMinutes: result.readyInMinutes || 30,
           servings: result.servings || 4,
-          totalTime: result.readyInMinutes || 30,
-          difficulty: 'medium' as const,
-          category: 'dinner',
-          cuisine: result.cuisines?.[0] || 'international',
-          rating: 4.0,
-          ratingsCount: 0,
-          authorId: 'spoonacular',
-          authorName: 'Spoonacular',
-          isPublished: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          tags: ['spoonacular'],
-          ingredients: [],
-          instructions: []
+          extendedIngredients: result.extendedIngredients || [],
+          analyzedInstructions: result.analyzedInstructions || [],
+          cuisines: result.cuisines || [],
+          dishTypes: result.dishTypes || [],
+          diets: result.diets || [],
+          nutrition: result.nutrition || undefined
         })),
         totalResults: staleCache.data.totalResults,
         fromCache: true
@@ -228,10 +216,16 @@ export async function searchRecipesWithCacheInternal(
         results: apiResult.recipes.map(recipe => ({
           id: parseInt(String(recipe.id || recipe._id || '0').replace('spoonacular-', '')),
           title: recipe.title,
+          summary: recipe.summary || '',
           image: recipe.image,
-          readyInMinutes: recipe.totalTime,
+          readyInMinutes: recipe.readyInMinutes,
           servings: recipe.servings,
-          cuisines: [recipe.cuisine],
+          cuisines: recipe.cuisines || [],
+          dishTypes: recipe.dishTypes || [],
+          diets: recipe.diets || [],
+          extendedIngredients: recipe.extendedIngredients || [],
+          analyzedInstructions: recipe.analyzedInstructions || [],
+          nutrition: recipe.nutrition || undefined
           // Store minimal data for search results, full data cached separately
         })),
         totalResults: apiResult.totalResults,
@@ -263,26 +257,20 @@ export async function searchRecipesWithCacheInternal(
     if (staleCache) {
       console.log(`🔄 API failed, serving stale cache for: "${query}"`);
       return {
-        recipes: staleCache.data.results.map((result: any) => ({
+  recipes: staleCache.data.results.map((result: any) => ({
           id: `spoonacular-${result.id}`,
           title: result.title,
-          description: result.summary?.replace(/<[^>]*>/g, '').substring(0, 200) + '...' || 'Delicious recipe from Spoonacular',
+          description: result.summary || '',
+          summary: result.summary || '',
           image: result.image,
+          readyInMinutes: result.readyInMinutes || 30,
           servings: result.servings || 4,
-          totalTime: result.readyInMinutes || 30,
-          difficulty: 'medium' as const,
-          category: 'dinner',
-          cuisine: result.cuisines?.[0] || 'international',
-          rating: 4.0,
-          ratingsCount: 0,
-          authorId: 'spoonacular',
-          authorName: 'Spoonacular',
-          isPublished: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          tags: ['spoonacular'],
-          ingredients: [],
-          instructions: []
+          extendedIngredients: result.extendedIngredients || [],
+          analyzedInstructions: result.analyzedInstructions || [],
+          cuisines: result.cuisines || [],
+          dishTypes: result.dishTypes || [],
+          diets: result.diets || [],
+          nutrition: result.nutrition || undefined
         })),
         totalResults: staleCache.data.totalResults,
         fromCache: true
@@ -316,40 +304,17 @@ export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ re
     const recipe: Recipe = {
       id: recipeId,
       title: cachedRecipe.data.title,
-      description: cachedRecipe.data.summary?.replace(/<[^>]*>/g, '').substring(0, 300) + '...' || '',
+      description: cachedRecipe.data.summary || '',
+      summary: cachedRecipe.data.summary || '',
       image: cachedRecipe.data.image,
       servings: cachedRecipe.data.servings,
-      prepTime: Math.floor(cachedRecipe.data.readyInMinutes * 0.3),
-      cookTime: Math.floor(cachedRecipe.data.readyInMinutes * 0.7),
-      totalTime: cachedRecipe.data.readyInMinutes,
-      difficulty: 'medium',
-      category: cachedRecipe.data.dishTypes?.includes('breakfast') ? 'breakfast' : 
-                cachedRecipe.data.dishTypes?.includes('lunch') ? 'lunch' : 
-                cachedRecipe.data.dishTypes?.includes('dessert') ? 'dessert' : 
-                cachedRecipe.data.dishTypes?.includes('snack') ? 'snack' : 'dinner',
-      cuisine: cachedRecipe.data.cuisines?.[0] || 'international',
-      dietaryRestrictions: cachedRecipe.data.diets || [],
-      tags: [...(cachedRecipe.data.cuisines || []), ...(cachedRecipe.data.diets || []), 'spoonacular'],
-      ingredients: cachedRecipe.data.extendedIngredients?.map((ing: any, index: number) => ({
-        id: `spoonacular-ingredient-${index}`,
-        name: ing.name,
-        amount: ing.amount,
-        unit: ing.unit,
-        notes: ''
-      })) || [],
-      instructions: cachedRecipe.data.analyzedInstructions?.[0]?.steps?.map((step: any) => ({
-        id: `spoonacular-step-${step.number}`,
-        stepNumber: step.number,
-        instruction: step.step
-      })) || [],
-      rating: 4.0,
-      ratingsCount: 0,
-      likesCount: cachedRecipe.data.aggregateLikes || 0,
-      authorId: 'spoonacular',
-      authorName: 'Spoonacular',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isPublished: true
+      readyInMinutes: cachedRecipe.data.readyInMinutes,
+      extendedIngredients: cachedRecipe.data.extendedIngredients || [],
+      analyzedInstructions: cachedRecipe.data.analyzedInstructions || [],
+      cuisines: cachedRecipe.data.cuisines || [],
+      dishTypes: cachedRecipe.data.dishTypes || [],
+      diets: cachedRecipe.data.diets || [],
+      nutrition: cachedRecipe.data.nutrition || undefined
     };
     
     return { recipe, fromCache: true };
@@ -386,36 +351,25 @@ export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ re
       data: {
         id: numericId,
         title: apiRecipe.title,
-        summary: apiRecipe.description,
+        description: apiRecipe.summary || '',
+        summary: apiRecipe.summary || '',
         image: apiRecipe.image,
-        readyInMinutes: apiRecipe.totalTime,
+        readyInMinutes: apiRecipe.readyInMinutes,
         servings: apiRecipe.servings,
-        extendedIngredients: Array.isArray(apiRecipe.ingredients) 
-          ? apiRecipe.ingredients.map((ing: any) => ({
-              id: parseInt(String(ing.id || '0').replace('spoonacular-ingredient-', '')),
-              name: ing.name || '',
-              amount: ing.amount || 1,
-              unit: ing.unit || '',
-              original: `${ing.amount || 1} ${ing.unit || ''} ${ing.name || ''}`,
-              originalName: ing.name || '',
-              meta: []
+        extendedIngredients: Array.isArray(apiRecipe.extendedIngredients) 
+          ? apiRecipe.extendedIngredients.map((ing: any) => ({
+              id: ing.id,
+              name: ing.name,
+              amount: ing.amount,
+              unit: ing.unit,
+              notes: ing.notes || ''
             }))
           : [],
-        analyzedInstructions: [{
-          name: '',
-          steps: Array.isArray(apiRecipe.instructions) 
-            ? apiRecipe.instructions.map((inst: any) => ({
-                number: inst.stepNumber || 1,
-                step: inst.instruction || inst,
-                ingredients: [],
-                equipment: []
-              }))
-            : []
-        }],
-        cuisines: [apiRecipe.cuisine],
-        dishTypes: [apiRecipe.category],
-        diets: apiRecipe.dietaryRestrictions,
-        aggregateLikes: apiRecipe.likesCount
+        analyzedInstructions: apiRecipe.analyzedInstructions || [],
+        cuisines: apiRecipe.cuisines || [],
+        dishTypes: apiRecipe.dishTypes || [],
+        diets: apiRecipe.diets || [],
+        nutrition: apiRecipe.nutrition || undefined
       },
       expiresAt: new Date(Date.now() + CACHE_CONFIG.RECIPE_TTL)
     };
@@ -428,7 +382,7 @@ export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ re
     
     console.log(`💾 Cached recipe: ${recipeId}`);
     
-    return { recipe: apiRecipe, fromCache: false };
+  return { recipe: apiRecipe, fromCache: false };
     
   } catch (error) {
     console.error('Recipe API call failed:', error);
@@ -461,23 +415,17 @@ export async function searchRecipesByIngredientsWithCacheInternal(
     const recipes: Recipe[] = cachedResult.data.slice(0, 6).map((item: any) => ({
       id: `spoonacular-${item.id}`,
       title: item.title,
-      description: item.summary?.replace(/<[^>]*>/g, '').substring(0, 200) + '...' || 'Recipe found by ingredients',
+      description: item.summary || '',
+      summary: item.summary || '',
       image: item.image,
-      servings: 4,
-      totalTime: 30,
-      difficulty: 'medium' as const,
-      category: 'dinner',
-      cuisine: 'international',
-      rating: 4.0,
-      ratingsCount: 0,
-      authorId: 'spoonacular',
-      authorName: 'Spoonacular',
-      isPublished: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      tags: ['spoonacular'],
-      ingredients: [],
-      instructions: []
+      servings: item.servings || 4,
+      readyInMinutes: item.readyInMinutes || 30,
+      extendedIngredients: item.extendedIngredients || [],
+      analyzedInstructions: item.analyzedInstructions || [],
+      cuisines: item.cuisines || [],
+      dishTypes: item.dishTypes || [],
+      diets: item.diets || [],
+      nutrition: item.nutrition || undefined
     }));
     
     return { recipes, fromCache: true };
@@ -508,10 +456,17 @@ export async function searchRecipesByIngredientsWithCacheInternal(
       data: apiRecipes.map((recipe: any) => ({
         id: parseInt(String(recipe.id || recipe._id || '0').replace('spoonacular-', '')),
         title: recipe.title,
+        description: recipe.summary || '',
+        summary: recipe.summary || '',
         image: recipe.image,
-        usedIngredientCount: 2,
-        missedIngredientCount: 1,
-        likes: recipe.likesCount || 0
+        servings: recipe.servings || 4,
+        readyInMinutes: recipe.readyInMinutes || 30,
+        extendedIngredients: recipe.extendedIngredients || [],
+        analyzedInstructions: recipe.analyzedInstructions || [],
+        cuisines: recipe.cuisines || [],
+        dishTypes: recipe.dishTypes || [],
+        diets: recipe.diets || [],
+        nutrition: recipe.nutrition || undefined
       })),
       expiresAt: new Date(Date.now() + CACHE_CONFIG.INGREDIENT_SEARCH_TTL)
     };
@@ -536,12 +491,12 @@ export async function searchRecipesByIngredientsWithCacheInternal(
  * Get popular recipes with caching
  */
 export async function getPopularRecipesWithCacheInternal(
-  options: any = {}
+  options: Record<string, unknown> = {}
 ): Promise<{ recipes: Recipe[]; fromCache: boolean }> {
   await connectToDatabase();
   
-  const tags = options.tags || [];
-  const number = options.number || 10;
+  const tags: string[] = Array.isArray(options.tags) ? options.tags : [];
+  const number = typeof options.number === 'number' ? options.number : 10;
   const cacheKey = generateRandomCacheKey(tags, number);
   
   // Check cache
@@ -553,8 +508,15 @@ export async function getPopularRecipesWithCacheInternal(
       $inc: { requestCount: 1 },
       $set: { lastAccessed: new Date() }
     });
-    
-    return { recipes: cachedResult.data.recipes, fromCache: true };
+    // Ensure all cached recipes have a description field
+    const recipesWithDescription = (cachedResult.data.recipes || []).map((r: unknown) => {
+      const recipe = typeof r === 'object' && r !== null ? r as Record<string, unknown> : {};
+      return {
+        ...recipe,
+        description: (recipe.description as string) || (recipe.summary as string) || ''
+      } as Recipe;
+    });
+    return { recipes: recipesWithDescription, fromCache: true };
   }
   
   // Check quota and make API call
@@ -563,14 +525,21 @@ export async function getPopularRecipesWithCacheInternal(
     const staleCache = await SpoonacularRandomCache.findOne({ cacheKey });
     if (staleCache) {
       console.log(`🔄 Serving stale popular recipes cache`);
-      return { recipes: staleCache.data.recipes, fromCache: true };
+      const recipesWithDescription = (staleCache.data.recipes || []).map((r: unknown) => {
+        const recipe = typeof r === 'object' && r !== null ? r as Record<string, unknown> : {};
+        return {
+          ...recipe,
+          description: (recipe.description as string) || (recipe.summary as string) || ''
+        } as Recipe;
+      });
+      return { recipes: recipesWithDescription, fromCache: true };
     }
     return { recipes: [], fromCache: false };
   }
   
   try {
     console.log(`🌐 API CALL for popular recipes`);
-    const apiRecipes = await getPopularSpoonacularRecipes();
+  const apiRecipes = await getPopularSpoonacularRecipes();
     
     await recordApiUsage('random');
     
@@ -579,19 +548,24 @@ export async function getPopularRecipesWithCacheInternal(
       cacheKey,
       tags,
       number,
-      data: { recipes: apiRecipes },
+      data: { recipes: apiRecipes.recipes },
       expiresAt: new Date(Date.now() + CACHE_CONFIG.RANDOM_TTL)
     };
-    
     await SpoonacularRandomCache.findOneAndUpdate(
       { cacheKey },
       cacheData,
       { upsert: true, new: true }
     );
-    
     console.log(`💾 Cached popular recipes`);
-    
-    return apiRecipes;
+    // Ensure all returned recipes have a description field
+    const recipesWithDescription = (apiRecipes.recipes || []).map((r: unknown) => {
+      const recipe = typeof r === 'object' && r !== null ? r as Record<string, unknown> : {};
+      return {
+        ...recipe,
+        description: (recipe.description as string) || (recipe.summary as string) || ''
+      } as Recipe;
+    });
+    return { recipes: recipesWithDescription, fromCache: false };
     
   } catch (error) {
     console.error('Popular recipes API call failed:', error);
@@ -602,7 +576,7 @@ export async function getPopularRecipesWithCacheInternal(
 /**
  * Get cache statistics
  */
-export async function getCacheStatsInternal(): Promise<any> {
+export async function getCacheStatsInternal(): Promise<unknown> {
   await connectToDatabase();
   
   const [
@@ -633,7 +607,7 @@ export async function getCacheStatsInternal(): Promise<any> {
 /**
  * Get quota status
  */
-export async function getQuotaStatusInternal(): Promise<any> {
+export async function getQuotaStatusInternal(): Promise<unknown> {
   await connectToDatabase();
   
   const quotaTracker = await SpoonacularQuotaTracker.findOne({ date: getTodayString() });
@@ -702,8 +676,10 @@ export async function importCachedRecipesToDB(): Promise<{ imported: number; ski
         
         try {
           await cacheEntry.save();
-        } catch (saveError: any) {
-          if (saveError.code === 11000) {
+        } catch (saveError: unknown) {
+          if (
+            typeof saveError === 'object' && saveError !== null && 'code' in saveError && (saveError as { code?: number }).code === 11000
+          ) {
             // Duplicate key error (recipe already exists)
             console.log(`⏩ Recipe ${recipe.id} (${recipe.title}) already cached, skipping`);
             skipped++;

@@ -8,7 +8,6 @@
 import { Recipe } from '@/types/recipe';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { PRELOADED_RECIPES, SimpleRecipe } from './preloadedRecipes';
 
 // Cache directory
 const CACHE_DIR = path.join(process.cwd(), '.cache');
@@ -226,54 +225,29 @@ async function backgroundRefresh(currentData: CachedRecipeData): Promise<void> {
  */
 export async function getCachedOrFreshRecipes(): Promise<CachedRecipeData> {
   // 1. Versuche primären Cache zu laden (30 Tage gültig)
-      const cached = await loadCachedRecipes();
-  
+  const cached = await loadCachedRecipes();
   if (cached && cached.recipes.length > 0) {
-    // Prüfe ob Background-Refresh nötig ist (nach 7 Tagen)
     if (shouldRefreshCache(cached.lastUpdated, cached.lastRefreshAttempt)) {
       console.log('🔄 Starting background refresh...');
-      backgroundRefresh(cached); // Non-blocking
+      backgroundRefresh(cached);
     }
-    
     return cached;
   }
-  
   // 2. Versuche persistent Cache (niemals abgelaufen)
   const persistentCache = await loadPersistentCache();
-  
   if (persistentCache && persistentCache.recipes.length > 0) {
     console.log('📦 Using persistent cache as fallback');
-    
-    // Versuche Fresh Fetch im Hintergrund
     backgroundRefresh(persistentCache);
-    
     return persistentCache;
   }
-  
   // 3. Versuche Fresh Fetch
   try {
     console.log('🚀 No cache available, attempting fresh fetch...');
     const freshData = await fetchAndCacheRecipes();
     return freshData;
-    
   } catch (fetchError) {
     console.error('❌ Fresh fetch failed:', fetchError);
-    
-    // 4. Fallback zu preloaded recipes
-    console.log('📋 Using preloaded recipes as last resort');
-    
-    const fallbackData: CachedRecipeData = {
-      recipes: PRELOADED_RECIPES as unknown as Recipe[],
-      categories: categorizeSimpleRecipes(PRELOADED_RECIPES),
-      lastUpdated: Date.now(),
-      totalCount: PRELOADED_RECIPES.length,
-      source: 'preloaded'
-    };
-    
-    // Speichere preloaded data als Backup
-    await saveCachedRecipes(fallbackData);
-    
-    return fallbackData;
+    throw fetchError;
   }
 }
 
@@ -282,34 +256,18 @@ export async function getCachedOrFreshRecipes(): Promise<CachedRecipeData> {
  */
 function categorizeRecipes(recipes: Recipe[]): { [key: string]: Recipe[] } {
   const categories: { [key: string]: Recipe[] } = {};
-  
   recipes.forEach(recipe => {
-    const category = recipe.mealType || recipe.category || 'other';
-    if (!categories[category]) {
-      categories[category] = [];
+      // Nutze dishTypes als Kategorie, falls vorhanden, sonst 'other'
+      const dishType = Array.isArray(recipe.dishTypes) && recipe.dishTypes.length > 0 ? recipe.dishTypes[0] : 'other';
+    if (!categories[dishType]) {
+      categories[dishType] = [];
     }
-    categories[category].push(recipe);
+    categories[dishType].push(recipe);
   });
-  
   return categories;
+  
 }
 
-/**
- * Categorize simple recipes by their category field
- */
-function categorizeSimpleRecipes(recipes: SimpleRecipe[]): { [key: string]: Recipe[] } {
-  const categories: { [key: string]: Recipe[] } = {};
-  
-  recipes.forEach(recipe => {
-    const category = recipe.category || 'other';
-    if (!categories[category]) {
-      categories[category] = [];
-    }
-    categories[category].push(recipe as unknown as Recipe);
-  });
-  
-  return categories;
-}
 
 /**
  * Search within cached recipes
@@ -318,29 +276,37 @@ export function searchCachedRecipes(
   cache: CachedRecipeData,
   query: string,
   category?: string,
-  difficulty?: string
+  difficulty?: 'easy' | 'medium' | 'hard'
 ): Recipe[] {
   let results = cache.recipes;
 
-  // Filter by category first
+  // Filter by category (dishType) first
   if (category && cache.categories[category]) {
     results = cache.categories[category];
   }
 
-  // Apply difficulty filter
+  // Filter by difficulty (berechnet aus readyInMinutes)
   if (difficulty) {
-    results = results.filter(recipe => recipe.difficulty === difficulty);
+    results = results.filter(recipe => {
+      const time = recipe.readyInMinutes ?? 0;
+      if (difficulty === 'easy') return time <= 15;
+      if (difficulty === 'medium') return time > 15 && time <= 30;
+      if (difficulty === 'hard') return time > 30;
+      return true;
+    });
   }
 
   // Apply search query
   if (query) {
     const searchLower = query.toLowerCase();
-    results = results.filter(recipe =>
-      recipe.title.toLowerCase().includes(searchLower) ||
-      recipe.description.toLowerCase().includes(searchLower) ||
-      (recipe.tags || []).some(tag => tag.toLowerCase().includes(searchLower)) ||
-      (recipe.cuisine && recipe.cuisine.toLowerCase().includes(searchLower))
-    );
+    results = results.filter(recipe => {
+      const titleMatch = recipe.title.toLowerCase().includes(searchLower);
+      const descMatch = recipe.description.toLowerCase().includes(searchLower);
+      const cuisinesMatch = Array.isArray(recipe.cuisines) && recipe.cuisines.some(c => c.toLowerCase().includes(searchLower));
+      const dishTypesMatch = Array.isArray(recipe.dishTypes) && recipe.dishTypes.some(d => d.toLowerCase().includes(searchLower));
+      const dietsMatch = Array.isArray(recipe.diets) && recipe.diets.some(d => d.toLowerCase().includes(searchLower));
+      return titleMatch || descMatch || cuisinesMatch || dishTypesMatch || dietsMatch;
+    });
   }
 
   return results;

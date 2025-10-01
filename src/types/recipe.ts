@@ -6,15 +6,58 @@
  */
 
 
-// Angepasst an Spoonacular-API
+// Spoonacular-kompatibles Recipe-Interface
 export interface Recipe {
   _id?: string;
+  id?: string | number;
+  title: string;
+  description: string;
+  summary: string;
+  image?: string;
+  readyInMinutes: number;
+  servings: number;
+  extendedIngredients: RecipeIngredient[];
+  analyzedInstructions: RecipeInstructionBlock[];
+  cuisines: string[];
+  dishTypes: string[];
+  diets: string[];
+  nutrition?: RecipeNutrition;
+  rating?: number;
+  ratingsCount?: number;
+  likesCount?: number;
+  authorId?: string;
+  authorName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isPublished?: boolean;
+  isPending?: boolean;
+  moderationNotes?: string;
+}
+
+export interface RecipeIngredient {
   id: number | string;
-  maxPrepTime?: number;
-  maxCookTime?: number;
-  cuisine?: string[];
-  tags?: string[];
-  minRating?: number;
+  name: string;
+  amount: number;
+  unit: string;
+  notes?: string;
+}
+
+export interface RecipeInstructionBlock {
+  name?: string;
+  steps: RecipeInstruction[];
+}
+
+export interface RecipeInstruction {
+  number: number;
+  step: string;
+}
+
+export interface RecipeNutrition {
+  nutrients: Array<{
+    name: string;
+    amount: number;
+    unit: string;
+  }>;
 }
 
 export interface RecipeSearchResult {

@@ -283,7 +283,7 @@ export interface ISpoonacularRandomCache extends Document, BaseCacheEntry {
   tags: string[];
   number: number;
   data: {
-    recipes: any[]; // Full recipe objects from random endpoint
+    recipes: ISpoonacularRecipeCache['data'][]; // Full recipe objects from random endpoint
   };
 }
 
@@ -556,7 +556,7 @@ export function generateNutritionCacheKey(recipeId: number): string {
   return `nutrition:${recipeId}`;
 }
 
-export default {
+const spoonacularCacheExports = {
   SpoonacularRecipeCache,
   SpoonacularSearchCache,
   SpoonacularIngredientSearchCache,
@@ -569,3 +569,5 @@ export default {
   generateRecipeCacheKey,
   generateNutritionCacheKey
 };
+
+export default spoonacularCacheExports;

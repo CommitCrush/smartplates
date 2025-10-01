@@ -116,7 +116,7 @@ export function FavoritesList({ userId, className }: FavoritesListProps) {
                 No Favorites Yet
               </h3>
               <p className="text-muted-foreground">
-                You haven't favorited any recipes yet. Start exploring and save your favorite recipes!
+                You haven&apos;t favorited any recipes yet. Start exploring and save your favorite recipes!
               </p>
             </div>
           ) : (

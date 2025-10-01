@@ -242,5 +242,48 @@ if (typeof process !== 'undefined') {
   });
 }
 
+// Create a client promise for compatibility
+const clientPromise = (async () => {
+  if (!client) {
+    await connectToDatabase();
+  }
+  return client!;
+})();
+
+// MongoDBService class for compatibility
+export class MongoDBService {
+  private static instance: MongoDBService;
+  
+  static getInstance(): MongoDBService {
+    if (!this.instance) {
+      this.instance = new MongoDBService();
+    }
+    return this.instance;
+  }
+  
+  static async connect() {
+    return await connectToDatabase();
+  }
+  
+  static async getCollection<T extends Document = Document>(name: string) {
+    return await getCollection<T>(name);
+  }
+  
+  async connect() {
+    return await connectToDatabase();
+  }
+  
+  async getCollection<T extends Document = Document>(name: string) {
+    return await getCollection<T>(name);
+  }
+  
+  getDatabase() {
+    return connectToDatabase();
+  }
+}
+
 // Export MongoDB types for convenience
 export { ObjectId, type Db, type Collection, type Document };
+
+// Default export for client promise compatibility
+export default clientPromise;

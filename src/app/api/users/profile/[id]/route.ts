@@ -15,8 +15,20 @@ export async function GET(
     const { id } = await params;
     const session = await getServerSession(authOptions);
 
+    // Handle "me" parameter - use current user's ID from session
+    let targetUserId = id;
+    if (id === 'me') {
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { error: 'User not authenticated' },
+          { status: 401 }
+        );
+      }
+      targetUserId = session.user.id;
+    }
+
     // Find the requested user
-    const user = await findUserById(id);
+    const user = await findUserById(targetUserId);
     
     if (!user) {
       return NextResponse.json(

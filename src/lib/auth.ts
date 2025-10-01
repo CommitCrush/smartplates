@@ -42,8 +42,8 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Determine role from team.ts
-        const finalRole = shouldBeAdmin(user.email) ? 'admin' : (user.role || 'user');
+        // Determine role from team.ts - only admin or user for auth
+        const finalRole = shouldBeAdmin(user.email) ? 'admin' : 'user';
 
         return {
           id: user._id?.toString() || '',

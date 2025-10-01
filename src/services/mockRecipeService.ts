@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import type { Recipe } from '@/types/recipe';
-import { getSpoonacularRecipe } from './spoonacularService';
 
 // Holt alle Rezepte (optional mit Filter)
 export function useAllRecipes(query = '', options: Record<string, string> = {}) {
@@ -28,7 +27,7 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
       }
     };
     fetchRecipes();
-  }, []);
+  }, [query, JSON.stringify(options)]);
 
   return { recipes, error, loading };
 }
@@ -41,10 +40,10 @@ export function useRecipeById(recipeId: string) {
 
   useEffect(() => {
     setLoading(true);
-    getSpoonacularRecipe(recipeId)
-      .then((data) => {
-        setRecipe(data);
-        setError(!data ? 'Kein Rezept gefunden' : '');
+        fetch(`/api/recipes/${recipeId}`)
+      .then(res => res.json())
+      .then(data => {
+        setRecipe(data.recipe);
         setLoading(false);
       })
       .catch(() => {

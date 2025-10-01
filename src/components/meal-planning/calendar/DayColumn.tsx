@@ -33,6 +33,9 @@ interface DayColumnProps {
     targetDayIndex: number,
     targetMealType: string
   ) => void;
+  onShowRecipe?: (meal: MealSlot) => void;
+  onCopyRecipe?: (meal: MealSlot) => void;
+  copiedRecipe?: MealSlot | null;
   isToday?: boolean;
   className?: string;
 }
@@ -50,6 +53,9 @@ export function DayColumn({
   onMealsChange,
   onAddRecipe,
   onCrossDayMealMove,
+  onShowRecipe,
+  onCopyRecipe,
+  copiedRecipe,
   isToday = false,
   className
 }: DayColumnProps) {
@@ -164,8 +170,15 @@ export function DayColumn({
     const [{ isOver }, drop] = useDrop({
       accept: 'meal',
       drop: (item: { meal: MealSlot; mealType: MealType; dayIndex: number; mealIndex: number }) => {
+        console.log('📍 Drop detected:', { 
+          draggedFrom: { dayIndex: item.dayIndex, mealType: item.mealType }, 
+          droppedTo: { dayIndex, mealType },
+          meal: item.meal.recipeName
+        });
+        
         // Check if it's a cross-day move
         if (item.dayIndex !== dayIndex && onCrossDayMealMove) {
+          console.log('🔄 Cross-day move');
           onCrossDayMealMove(
             { meal: item.meal },
             item.dayIndex,
@@ -175,6 +188,7 @@ export function DayColumn({
             mealType
           );
         } else {
+          console.log('🔃 Same day move');
           // Same day move
           handleMealMove(item.meal, item.mealType, item.dayIndex, item.mealIndex, mealType);
         }
@@ -209,7 +223,6 @@ export function DayColumn({
             {/* Meal Type Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <span className="text-lg">{icon}</span>
                 <h4 className={cn('text-sm font-medium', color)}>
                   {label}
                 </h4>
@@ -242,6 +255,8 @@ export function DayColumn({
                       mealIndex={mealIndex}
                       onRemove={() => handleRemoveMeal(key, mealIndex)}
                       onUpdate={(updatedMeal) => handleMealUpdate(key, mealIndex, updatedMeal)}
+                      onShowRecipe={onShowRecipe}
+                      onCopyRecipe={onCopyRecipe}
                       isToday={isToday}
                     />
                   ))
@@ -249,17 +264,31 @@ export function DayColumn({
                   // Empty state
                   <div 
                     className={cn(
-                      'border-2 border-dashed border-gray-200 rounded-lg p-3',
+                      'border-2 border-dashed rounded-lg p-3',
                       'flex flex-col items-center justify-center text-center',
-                    'hover:border-gray-300 hover:bg-gray-50 transition-colors',
-                    'cursor-pointer group min-h-[50px]'
-                  )}
-                  onClick={() => handleAddMeal(key)}
-                >
-                  <Plus className="h-4 w-4 text-gray-400 group-hover:text-gray-500 mb-1" />
-                  <span className="text-xs text-gray-400 group-hover:text-gray-500">
-                    Add {label.toLowerCase()}
-                  </span>
+                      'transition-colors cursor-pointer group min-h-[50px]',
+                      copiedRecipe 
+                        ? 'border-green-300 bg-green-50 hover:border-green-400 hover:bg-green-100' 
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    )}
+                    onClick={() => handleAddMeal(key)}
+                  >
+                    <Plus className={cn(
+                      'h-4 w-4 mb-1 transition-colors',
+                      copiedRecipe 
+                        ? 'text-green-500 group-hover:text-green-600' 
+                        : 'text-gray-400 group-hover:text-gray-500'
+                    )} />
+                    <span className={cn(
+                      'text-xs transition-colors',
+                      copiedRecipe 
+                        ? 'text-green-600 group-hover:text-green-700' 
+                        : 'text-gray-400 group-hover:text-gray-500'
+                    )}>
+                      {copiedRecipe 
+                        ? `Paste "${copiedRecipe.recipeName || 'Recipe'}"` 
+                        : `Add ${label.toLowerCase()}`}
+                    </span>
                 </div>
               )}
               </div>

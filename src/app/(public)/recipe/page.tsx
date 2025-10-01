@@ -69,7 +69,7 @@ export default function RecipePage() {
     type: selectedCategory,
     diet: selectedDiet,
     intolerances: selectedAllergy,
-    number: showMore ? 60 : 30,
+    number: showMore ? '60' : '30',
     // Spoonacular API does not support difficulty, so we filter client-side
   });
 
@@ -115,7 +115,7 @@ export default function RecipePage() {
 
         {/* Search and Filters */}
         <div className="bg-background-card border border-border rounded-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
               <div className="relative">
@@ -238,16 +238,6 @@ export default function RecipePage() {
                 </div>
               )}
             </div>
-            
-            {/* Upload Button */}
-            <div>
-              <Link href="/recipe/upload">
-                <button className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-center gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-800">
-                  <Plus className="h-4 w-4" />
-                  Upload Recipe
-                </button>
-              </Link>
-            </div>
           </div>
         </div>
 
@@ -285,9 +275,9 @@ export default function RecipePage() {
               {recipes
                 .filter((recipe) => {
                   if (!selectedDifficulty) return true;
-                  if (selectedDifficulty === 'easy') return recipe.totalTime <= 15;
-                  if (selectedDifficulty === 'medium') return recipe.totalTime > 15 && recipe.totalTime <= 30;
-                  if (selectedDifficulty === 'hard') return recipe.totalTime > 30;
+                  if (selectedDifficulty === 'easy') return (recipe.totalTime || 0) <= 15;
+                  if (selectedDifficulty === 'medium') return (recipe.totalTime || 0) > 15 && (recipe.totalTime || 0) <= 30;
+                  if (selectedDifficulty === 'hard') return (recipe.totalTime || 0) > 30;
                   return true;
                 })
                 .map((recipe) => (

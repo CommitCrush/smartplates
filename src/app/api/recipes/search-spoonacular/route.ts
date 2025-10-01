@@ -18,6 +18,22 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '12');
     const offset = parseInt(searchParams.get('offset') || '0');
 
+    let result;
+
+    // If ingredients are provided, search by ingredients
+    if (ingredients) {
+      const ingredientList = ingredients.split(',').map(i => i.trim());
+      const searchResult = await searchRecipesByIngredients(ingredientList);
+      result = { recipes: searchResult.recipes, totalResults: searchResult.totalResults };
+    } else {
+      // Otherwise, search by query
+      result = await searchSpoonacularRecipes(query, {
+        cuisine: cuisine || undefined,
+        diet: diet || undefined,
+        type: category || undefined,
+        number: limit,
+        offset
+      });
   let recipes: any[] = [];
     let total = 0;
     let source = 'mongodb';
@@ -103,10 +119,7 @@ export async function POST(request: NextRequest) {
     let result;
 
     if (ingredients && ingredients.length > 0) {
-      const recipes = await searchRecipesByIngredients(ingredients, { 
-        number: pagination.limit 
-      });
-      result = { recipes, totalResults: recipes.length };
+      result = await searchRecipesByIngredients(ingredients);
     } else {
       result = await searchSpoonacularRecipes(query, {
         ...filters,

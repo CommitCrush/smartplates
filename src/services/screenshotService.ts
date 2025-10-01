@@ -33,6 +33,10 @@ export async function captureWeeklyCalendarScreenshot(
     // Dynamic import to avoid SSR issues
     const html2canvas = (await import('html2canvas')).default;
     
+    if (!html2canvas) {
+      throw new Error('html2canvas library failed to load');
+    }
+    
     // Find the element to capture
     const element = document.querySelector(elementSelector) as HTMLElement;
     
@@ -48,6 +52,24 @@ export async function captureWeeklyCalendarScreenshot(
     element.style.background = includeBackground ? '#ffffff' : 'transparent';
     element.style.padding = '20px';
     element.style.borderRadius = '8px';
+    
+    // Fix CSS lab() color issues by temporarily replacing with supported colors
+    const tempStyleSheet = document.createElement('style');
+    tempStyleSheet.textContent = `
+      * {
+        color: rgb(0, 0, 0) !important;
+        background-color: rgb(255, 255, 255) !important;
+        border-color: rgb(229, 231, 235) !important;
+      }
+      .bg-gray-50 { background-color: rgb(249, 250, 251) !important; }
+      .bg-gray-100 { background-color: rgb(243, 244, 246) !important; }
+      .text-gray-500 { color: rgb(107, 114, 128) !important; }
+      .text-gray-600 { color: rgb(75, 85, 99) !important; }
+      .text-gray-900 { color: rgb(17, 24, 39) !important; }
+      .border-gray-200 { border-color: rgb(229, 231, 235) !important; }
+      .border-gray-300 { border-color: rgb(209, 213, 219) !important; }
+    `;
+    document.head.appendChild(tempStyleSheet);
     
     // Capture the screenshot
     const canvas = await html2canvas(element, {
@@ -73,8 +95,11 @@ export async function captureWeeklyCalendarScreenshot(
       }
     });
 
-    // Restore original styling
+    // Restore original styling and remove temp stylesheet
     element.style.cssText = originalStyle;
+    if (tempStyleSheet && tempStyleSheet.parentNode) {
+      tempStyleSheet.parentNode.removeChild(tempStyleSheet);
+    }
 
     // Convert canvas to blob
     const blob = await new Promise<Blob>((resolve) => {

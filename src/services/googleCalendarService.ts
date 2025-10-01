@@ -175,7 +175,7 @@ export async function exportToGoogleCalendar(mealPlan: IMealPlan): Promise<{
 export function generateICSFile(mealPlan: IMealPlan): Blob {
   const events = generateCalendarEvents(mealPlan);
   
-  let icsContent = [
+  const icsContent = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//SmartPlates//Meal Planning//EN',

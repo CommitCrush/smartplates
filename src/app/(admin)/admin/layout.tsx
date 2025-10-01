@@ -1,6 +1,6 @@
 
 import React from "react";
-import Link from "next/link";
+import Navbar from "@/components/layout/Navbar";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 
 export default function AdminLayout({
@@ -10,12 +10,9 @@ export default function AdminLayout({
 }) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Admin Navbar */}
-      <header className="h-16 flex items-center px-8 border-b border-border bg-card/80 backdrop-blur sticky top-0 z-30">
-        <Link href="/admin" className="text-2xl font-bold text-primary">
-          SmartPlates Admin
-        </Link>
-      </header>
+      {/* Unified Navbar */}
+      <Navbar />
+      
       {/* Main Content with Sidebar */}
       <div className="flex flex-1 w-full max-w-7xl mx-auto">
         <AdminSidebar />

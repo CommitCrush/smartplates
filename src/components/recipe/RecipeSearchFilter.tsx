@@ -2,8 +2,6 @@
 
 import Image from 'next/image';
 import type { Recipe } from '@/types/recipe';
-
-// ...existing code...
 import { useState, useEffect } from 'react';
 import { useRecipeSearch } from '@/hooks/useRecipeSearch';
 import { cn } from '@/lib/utils';
@@ -28,17 +26,18 @@ export default function RecipeSearchFilter({ className }: { className?: string }
 			async function fetchDetails() {
 				if (results.length === 0) return;
 			const promises = results.map(async (recipe: Recipe) => {
-					if (!details[recipe.id]) {
-						const res = await fetch(`/api/recipes/spoonacular-details?id=${recipe.id}`);
+					const recipeId = recipe.id || recipe._id;
+					if (!recipeId || !details[recipeId.toString()]) {
+						const res = await fetch(`/api/recipes/spoonacular-details?id=${recipeId}`);
 						const data = await res.json();
-						return { id: recipe.id, title: data.title, description: data.summary };
+						return { id: recipeId?.toString(), title: data.title, description: data.summary };
 					}
-					return { id: recipe.id, title: details[recipe.id]?.title, description: details[recipe.id]?.description };
+					return { id: recipeId?.toString(), title: details[recipeId.toString()]?.title, description: details[recipeId.toString()]?.description };
 				});
 				const allDetails = await Promise.all(promises);
 			const newDetails: Record<string, Partial<Recipe>> = {};
 				allDetails.forEach(d => {
-					if (d) newDetails[d.id] = d;
+					if (d && d.id) newDetails[d.id] = d;
 				});
 				setDetails(newDetails);
 			}
@@ -132,10 +131,11 @@ export default function RecipeSearchFilter({ className }: { className?: string }
 				{error && <div className="text-red-500">{error}</div>}
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
 										{results.map((recipe: Recipe) => {
-											const detail = details[recipe.id] || {};
+											const recipeId = recipe.id || recipe._id;
+											const detail = recipeId ? details[recipeId.toString()] || {} : {};
 											return (
 												<div
-													key={recipe.id || recipe._id}
+													key={recipeId?.toString() || Math.random().toString()}
 													className="bg-white shadow-md rounded-2xl overflow-hidden transition hover:scale-[1.02] dark:bg-neutral-900"
 												>
 																	<Image

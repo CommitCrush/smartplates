@@ -17,9 +17,11 @@ import { Card } from '@/components/ui/card';
 
 interface RecipeDetailProps {
   recipe: Recipe;
+  isEditable?: boolean;
+  showUserActions?: boolean;
 }
 
-export function RecipeDetail({ recipe }: RecipeDetailProps) {
+export function RecipeDetail({ recipe, isEditable = false, showUserActions = false }: RecipeDetailProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Recipe Header */}
@@ -28,12 +30,17 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Ingredients */}
         <div className="lg:col-span-1">
-          <RecipeIngredients ingredients={recipe.ingredients} servings={recipe.servings} />
+          <RecipeIngredients 
+            ingredients={Array.isArray(recipe.ingredients) ? recipe.ingredients : []} 
+            servings={recipe.servings} 
+          />
         </div>
 
         {/* Instructions */}
         <div className="lg:col-span-2">
-          <RecipeInstructions instructions={recipe.instructions} />
+          <RecipeInstructions 
+            instructions={Array.isArray(recipe.instructions) ? recipe.instructions : []} 
+          />
         </div>
       </div>
 
@@ -45,10 +52,12 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
       {/* Additional Notes */}
       {recipe.notes && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-3">Chef's Notes</h3>
+          <h3 className="text-lg font-semibold mb-3">Chef&apos;s Notes</h3>
           <p className="text-muted-foreground whitespace-pre-wrap">{recipe.notes}</p>
         </Card>
       )}
     </div>
   );
 }
+
+export default RecipeDetail;

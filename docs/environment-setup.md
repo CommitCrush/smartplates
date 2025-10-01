@@ -43,6 +43,20 @@ This guide explains how to set up environment variables for the SmartPlates appl
 | `NODE_ENV` | `development` | Environment mode |
 | `DEBUG` | `false` | Enable debug logging |
 
+### Image Upload (Cloudinary)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | `your-cloud-name` |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | `123456789012345` |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | `your-api-secret` |
+
+### External APIs
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SPOONACULAR_API_KEY` | Spoonacular recipe API key | `your-spoonacular-key` |
+
 ### Future Features (Optional)
 
 | Variable | Description |

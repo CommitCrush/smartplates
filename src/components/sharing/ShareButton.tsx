@@ -15,7 +15,7 @@ interface ShareButtonProps {
   recipeId: string;
   recipeTitle: string;
   recipeImage?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'lg' | 'default' | 'icon';
   variant?: 'default' | 'outline' | 'ghost';
   className?: string;
 }
@@ -24,7 +24,7 @@ export function ShareButton({
   recipeId,
   recipeTitle,
   recipeImage,
-  size = 'md',
+  size = 'default',
   variant = 'outline',
   className 
 }: ShareButtonProps) {

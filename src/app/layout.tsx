@@ -3,7 +3,13 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/authContext";
 import { ThemeProvider } from "@/context/themeContext";
+import { ToastProvider } from "@/components/ui/use-toast";
 import { themeScript } from "@/lib/theme-script";
+
+// Import debug tools in development
+if (process.env.NODE_ENV === 'development') {
+  import('@/utils/spoonacularDebug');
+}
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,11 +32,18 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className="font-sans antialiased">
-        <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </ThemeProvider>
+      <body className="font-sans antialiased" suppressHydrationWarning>
+        <div id="__next-root">
+          <ThemeProvider>
+            <AuthProvider>
+              <ToastProvider>
+                {children}
+              </ToastProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </div>
       </body>
     </html>
   );

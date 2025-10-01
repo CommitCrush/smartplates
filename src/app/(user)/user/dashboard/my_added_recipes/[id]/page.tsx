@@ -1,1 +1,0 @@
-interface RecipeDetailPageProps { params: Promise<{ id: string }>; } export default async function RecipeDetailPage({ params }: RecipeDetailPageProps) { const { id } = await params; return <div className="p-6"><h1 className="text-2xl font-bold mb-6">Recipe Details</h1><p>Recipe ID: {id}</p></div>; }

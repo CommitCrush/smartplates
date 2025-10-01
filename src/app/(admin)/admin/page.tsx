@@ -16,39 +16,46 @@ import Link from 'next/link';
 export default function AdminPage() {
   const quickActions = [
     {
-      title: 'Benutzer verwalten',
-      description: 'Benutzerkonten verwalten und moderieren',
-      href: '/admin/dashboard/manage-users',
+      title: 'Manage Users',
+      description: 'Manage and moderate user accounts',
+      href: '/admin/users',
       icon: Users,
       color: 'text-blue-600'
     },
     {
-      title: 'Rezepte verwalten',
-      description: 'Rezepte überprüfen und moderieren',
-      href: '/admin/dashboard/manage-recipes',
+      title: 'Manage Recipes',
+      description: 'Review and moderate recipes',
+      href: '/admin/recipes',
       icon: ChefHat,
       color: 'text-green-600'
     },
     {
-      title: 'Statistiken',
-      description: 'Detaillierte System-Statistiken',
-      href: '/admin/dashboard/statistics',
+      title: 'Analytics',
+      description: 'Detailed system analytics',
+      href: '/admin/analytics',
       icon: BarChart3,
       color: 'text-purple-600'
     },
     {
-      title: 'Kommissionen',
-      description: 'Cookware-Kommissionen verwalten',
-      href: '/admin/dashboard/manage_cookware_commissions',
+      title: 'Cookware Commissions',
+      description: 'Manage cookware commissions',
+      href: '/admin/commissions',
       icon: Package,
       color: 'text-orange-600'
     },
     {
-      title: 'System-Einstellungen',
-      description: 'Admin-Konfiguration verwalten',
+      title: 'System Settings',
+      description: 'Manage admin configuration',
       href: '/admin/settings',
       icon: Settings,
       color: 'text-gray-600'
+    },
+    {
+      title: 'Enhanced API Management',
+      description: 'Monitor and optimize Spoonacular API',
+      href: '/admin/spoonacular-enhanced',
+      icon: UserCog,
+      color: 'text-indigo-600'
     }
   ];
 
@@ -59,14 +66,14 @@ export default function AdminPage() {
         <div>
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground mt-1">
-            SmartPlates System-Verwaltung und Übersicht
+            SmartPlates system management and overview
           </p>
         </div>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
           <Button variant="outline" asChild>
             <Link href="/admin/settings">
               <Settings className="h-4 w-4 mr-2" />
-              Einstellungen
+              Settings
             </Link>
           </Button>
         </div>
@@ -76,7 +83,7 @@ export default function AdminPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-primary" />
-          <h2 className="text-xl font-semibold">System-Übersicht</h2>
+          <h2 className="text-xl font-semibold">System Overview</h2>
         </div>
         <AdminStatisticsWidgets />
       </div>
@@ -85,7 +92,7 @@ export default function AdminPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-2">
           <UserCog className="h-5 w-5 text-primary" />
-          <h2 className="text-xl font-semibold">Schnellaktionen</h2>
+          <h2 className="text-xl font-semibold">Quick Actions</h2>
         </div>
         
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -107,7 +114,7 @@ export default function AdminPage() {
                   </CardDescription>
                   <Button asChild variant="outline" size="sm" className="w-full">
                     <Link href={action.href}>
-                      Öffnen
+                      Open
                     </Link>
                   </Button>
                 </CardContent>
@@ -119,13 +126,13 @@ export default function AdminPage() {
 
       {/* Recent Activity */}
       <div className="space-y-6">
-        <h2 className="text-xl font-semibold">Aktuelle Aktivität</h2>
+        <h2 className="text-xl font-semibold">Recent Activity</h2>
         
         <Card>
           <CardHeader>
-            <CardTitle>System-Status</CardTitle>
+            <CardTitle>System Status</CardTitle>
             <CardDescription>
-              Letzte System-Events und Benachrichtigungen
+              Latest system events and notifications
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -133,31 +140,31 @@ export default function AdminPage() {
               <div className="flex items-center justify-between py-2 border-b">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">System läuft normal</span>
+                  <span className="text-sm">System running normally</span>
                 </div>
-                <span className="text-xs text-muted-foreground">vor 2 Minuten</span>
+                <span className="text-xs text-muted-foreground">2 minutes ago</span>
               </div>
               
               <div className="flex items-center justify-between py-2 border-b">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Datenbank-Backup abgeschlossen</span>
+                  <span className="text-sm">Database backup completed</span>
                 </div>
-                <span className="text-xs text-muted-foreground">vor 1 Stunde</span>
+                <span className="text-xs text-muted-foreground">1 hour ago</span>
               </div>
               
               <div className="flex items-center justify-between py-2 border-b">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm">5 neue Benutzer registriert</span>
+                  <span className="text-sm">5 new users registered</span>
                 </div>
-                <span className="text-xs text-muted-foreground">heute</span>
+                <span className="text-xs text-muted-foreground">today</span>
               </div>
             </div>
             
             <div className="mt-6">
               <Button variant="outline" size="sm" className="w-full">
-                Alle Events anzeigen
+                View All Events
               </Button>
             </div>
           </CardContent>

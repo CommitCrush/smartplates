@@ -33,6 +33,7 @@ export interface SaveOptions {
   saveLocally: boolean;
   saveToGoogleCalendar: boolean;
   includeShoppingList: boolean;
+  exportFormat?: 'pdf' | 'text' | 'json';
   mealPlanTitle?: string;
 }
 
@@ -46,6 +47,7 @@ export function SavePlanModal({
     saveLocally: true,
     saveToGoogleCalendar: false,
     includeShoppingList: true,
+    exportFormat: 'pdf',
     mealPlanTitle: ''
   });
 
@@ -74,7 +76,7 @@ export function SavePlanModal({
             Save Meal Plan
           </DialogTitle>
           <DialogDescription>
-            Choose how you'd like to save your meal plan. You can save locally, to Google Calendar, or both.
+            Choose how you&apos;d like to save your meal plan. You can save locally, to Google Calendar, or both.
           </DialogDescription>
         </DialogHeader>
 

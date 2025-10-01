@@ -127,8 +127,8 @@ export async function getRecipes(
     }
     
     // Otherwise get popular recipes
-    const recipes = await getPopularSpoonacularRecipes({ number: limit });
-    return recipes;
+    const result = await getPopularSpoonacularRecipes();
+    return result.recipes;
   } catch (error) {
     console.error('Error fetching recipes:', error);
     return [];
@@ -183,7 +183,8 @@ export async function getPopularRecipes(limit: number = 10): Promise<Recipe[]> {
   const { getPopularSpoonacularRecipes } = await import('@/services/spoonacularService');
   
   try {
-    return await getPopularSpoonacularRecipes({ number: limit });
+    const result = await getPopularSpoonacularRecipes();
+    return result.recipes;
   } catch (error) {
     console.error('Error fetching popular recipes:', error);
     return [];

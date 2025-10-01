@@ -18,7 +18,7 @@ import Layout from '@/components/layout/Layout';
 export default function HomePage() {
   return (
     <Layout>
-           {/* Hero Section - Mobile-First Responsive */}
+         {/* Hero Section - Mobile-First Responsive */}
       <section 
         className="relative pt-20 sm:pt-32 md:pt-40 lg:pt-52 pb-10 sm:pb-12 md:pb-16 lg:pb-20 min-h-[100vh] w-full hero-background flex items-center"
         aria-label="Hero section"

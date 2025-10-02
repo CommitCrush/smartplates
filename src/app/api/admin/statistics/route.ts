@@ -8,7 +8,9 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getAllUsers, findUserByEmail } from '@/models/User';
+import { SpoonacularRecipeCache } from '@/models/SpoonacularCache';
 import { User } from '@/types/user';
+import { shouldBeAdmin } from '@/config/team';
 
 interface AdminStatistics {
   totalUsers: number;
@@ -46,21 +48,12 @@ async function getStatistics(): Promise<NextResponse> {
     }
 
     console.log('🔍 Admin Statistics: Checking admin privileges for:', session.user.email);
-    
-    // Check if user is admin
-    let currentUser;
-    try {
-      currentUser = await findUserByEmail(session.user.email);
-      console.log('🔍 Admin Statistics: User found:', !!currentUser, 'Role:', currentUser?.role);
-    } catch (dbError) {
-      console.error('❌ Admin Statistics: Database error finding user:', dbError);
-      return NextResponse.json(
-        { error: 'Database connection failed' },
-        { status: 500 }
-      );
-    }
-    
-    if (!currentUser || currentUser.role !== 'admin') {
+
+    // Check if user is admin using team config
+    const isAdmin = shouldBeAdmin(session.user.email);
+    console.log('🔍 Admin Statistics: User admin status:', isAdmin);
+
+    if (!isAdmin) {
       console.log('❌ Admin Statistics: Access denied - not admin');
       return NextResponse.json(
         { error: 'Forbidden - Admin access required' },
@@ -99,9 +92,21 @@ async function getStatistics(): Promise<NextResponse> {
       return lastLogin && new Date(lastLogin) >= thirtyDaysAgo;
     }).length;
 
-    // Mock data for recipes and meal plans (will be replaced with real data in Phase 2)
-    const totalRecipes = Math.floor(Math.random() * 500) + 100;
-    const publicRecipes = Math.floor(totalRecipes * 0.7);
+    // Fetch real recipe data from Spoonacular cache
+    let totalRecipes = 0;
+    let publicRecipes = 0;
+    try {
+      totalRecipes = await SpoonacularRecipeCache.countDocuments();
+      // For now, assume all cached recipes are public
+      publicRecipes = totalRecipes;
+      console.log('🔍 Admin Statistics: Found recipes:', totalRecipes);
+    } catch (recipeError) {
+      console.error('❌ Admin Statistics: Error fetching recipes:', recipeError);
+      totalRecipes = 0;
+      publicRecipes = 0;
+    }
+
+    // Mock data for meal plans (will be replaced with real data when meal plans are implemented)
     const totalMealPlans = Math.floor(Math.random() * 200) + 50;
     const activeMealPlans = Math.floor(totalMealPlans * 0.6);
 

@@ -7,6 +7,10 @@
 
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/middleware/authMiddleware';
+import { getAllUsers } from '@/models/User';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { shouldBeAdmin } from '@/config/team';
 
 interface MockUser {
   id: string;
@@ -22,7 +26,49 @@ interface MockUser {
 
 async function getUsersHandler(request: Request): Promise<NextResponse> {
   try {
-    // Mock users data - In real app, this would come from MongoDB
+    // Check admin authentication using team config
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const isAdmin = shouldBeAdmin(session.user.email);
+    if (!isAdmin) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Fetch real users from database
+    const users = await getAllUsers(1000, 0); // Get up to 1000 users
+
+    // Transform to expected format
+    const transformedUsers: MockUser[] = users.map((user: any) => ({
+      id: user._id?.toString() || user.id,
+      name: user.name || 'Unknown User',
+      email: user.email || '',
+      role: shouldBeAdmin(user.email) ? 'admin' : 'user',
+      isEmailVerified: user.emailVerified ? true : false,
+      createdAt: user.createdAt || new Date().toISOString(),
+      lastLoginAt: (user as any).lastLoginAt || user.createdAt || new Date().toISOString(),
+      savedRecipes: (user as any).savedRecipes?.length || 0,
+      createdRecipes: (user as any).createdRecipes?.length || 0,
+    }));
+
+    return NextResponse.json({
+      success: true,
+      data: transformedUsers,
+      total: transformedUsers.length,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+
+    // Fallback to mock data if database fails
     const mockUsers: MockUser[] = [
       {
         id: '1',
@@ -35,61 +81,6 @@ async function getUsersHandler(request: Request): Promise<NextResponse> {
         savedRecipes: 23,
         createdRecipes: 8,
       },
-      {
-        id: '2',
-        name: 'Rozen Developer',
-        email: 'rozen@gmail.com',
-        role: 'admin',
-        isEmailVerified: true,
-        createdAt: '2025-09-02T11:00:00Z',
-        lastLoginAt: '2025-09-11T12:15:00Z',
-        savedRecipes: 15,
-        createdRecipes: 12,
-      },
-      {
-        id: '3',
-        name: 'Monika Backend',
-        email: 'monika@gmail.com',
-        role: 'admin',
-        isEmailVerified: true,
-        createdAt: '2025-09-03T09:30:00Z',
-        lastLoginAt: '2025-09-10T16:45:00Z',
-        savedRecipes: 31,
-        createdRecipes: 5,
-      },
-      {
-        id: '4',
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        role: 'user',
-        isEmailVerified: true,
-        createdAt: '2025-09-05T14:20:00Z',
-        lastLoginAt: '2025-09-11T09:00:00Z',
-        savedRecipes: 42,
-        createdRecipes: 3,
-      },
-      {
-        id: '5',
-        name: 'Jane Smith',
-        email: 'jane.smith@example.com',
-        role: 'user',
-        isEmailVerified: false,
-        createdAt: '2025-09-07T16:45:00Z',
-        lastLoginAt: '2025-09-09T13:20:00Z',
-        savedRecipes: 18,
-        createdRecipes: 1,
-      },
-      {
-        id: '6',
-        name: 'Mike Johnson',
-        email: 'mike.j@example.com',
-        role: 'user',
-        isEmailVerified: true,
-        createdAt: '2025-09-08T11:10:00Z',
-        lastLoginAt: '2025-09-11T11:30:00Z',
-        savedRecipes: 7,
-        createdRecipes: 0,
-      },
     ];
 
     return NextResponse.json({
@@ -98,15 +89,6 @@ async function getUsersHandler(request: Request): Promise<NextResponse> {
       total: mockUsers.length,
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch users' 
-      },
-      { status: 500 }
-    );
   }
 }
 

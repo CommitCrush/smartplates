@@ -82,16 +82,10 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
 
   const navigationItems = [
     {
-      icon: Users,
-      label: 'Dashboard',
-      href: '/user',
-      description: 'Your personal dashboard'
-    },
-    {
       icon: User,
-      label: 'Your Profile',
-      href: '/user/profile/me',
-      description: 'View and edit profile'
+  label: 'Your Profile',
+  href: '/user/dashboard',
+  description: 'Go to your dashboard'
     },
     {
       icon: ChefHat,

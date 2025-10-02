@@ -81,6 +81,16 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as 'admin' | 'user';
+
+        // Load user avatar from database
+        try {
+          const user = await findUserByEmail(session.user.email);
+          if (user?.avatar) {
+            session.user.image = user.avatar;
+          }
+        } catch (error) {
+          console.error('Error loading user avatar:', error);
+        }
       }
       return session;
     },

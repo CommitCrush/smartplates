@@ -33,6 +33,11 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* Cloudinary Upload Widget Script */}
+        <script
+          src="https://upload-widget.cloudinary.com/latest/global/all.js"
+          type="text/javascript"
+        ></script>
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <div id="__next-root">

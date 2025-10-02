@@ -61,7 +61,7 @@ async function getUsersHandler(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({
       success: true,
-      data: transformedUsers,
+      users: transformedUsers,
       total: transformedUsers.length,
       timestamp: new Date().toISOString(),
     });
@@ -85,7 +85,7 @@ async function getUsersHandler(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({
       success: true,
-      data: mockUsers,
+      users: mockUsers,
       total: mockUsers.length,
       timestamp: new Date().toISOString(),
     });

@@ -81,6 +81,58 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PUT endpoint to update avatar URL (for Cloudinary uploads)
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { imageUrl, publicId } = body;
+
+    if (!imageUrl) {
+      return NextResponse.json(
+        { error: 'Image URL is required' },
+        { status: 400 }
+      );
+    }
+
+    // Update user avatar in database
+    const updatedUser = await updateUser(session.user.id, {
+      avatar: imageUrl
+    });
+
+    if (!updatedUser) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      avatar: updatedUser.avatar,
+      message: 'Avatar updated successfully'
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error('Avatar update error:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to update avatar',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE endpoint to remove avatar
 export async function DELETE(request: NextRequest) {
   try {

@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CommentList } from './CommentList';
 import { CommentForm } from './CommentForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,9 +38,9 @@ export function CommentSection({ recipeId, initialComments = [] }: CommentSectio
     if (initialComments.length === 0) {
       fetchComments();
     }
-  }, [recipeId, initialComments.length]);
+  }, [recipeId, initialComments.length, fetchComments]);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch(`/api/recipes/${recipeId}/comments`);
@@ -53,7 +53,7 @@ export function CommentSection({ recipeId, initialComments = [] }: CommentSectio
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [recipeId]);
 
   const handleCommentAdded = (newComment: Comment) => {
     setComments(prev => [newComment, ...prev]);

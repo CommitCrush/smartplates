@@ -11,7 +11,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import MealPlan from '@/models/MealPlan';
 import { getWeekStartDate } from '@/types/meal-planning';
-import { connectToDatabase } from '@/lib/db';
+import { connectToDatabase } from '@/lib/mongodb';
 
 // ========================================
 // GET /api/meal-plans
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
-    const weekStart = searchParams.get('weekStart');
+    const weekStart = searchParams.get('weekStart') || searchParams.get('weekStartDate');
     const isTemplate = searchParams.get('template') === 'true';
 
     let query: any = { userId: session.user.id };
@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
     if (isTemplate) {
       query = { ...query, isTemplate: true };
     } else if (weekStart) {
-      const weekStartDate = new Date(weekStart);
-      query = { ...query, weekStartDate: getWeekStartDate(weekStartDate) };
+      const weekStartDate = getWeekStartDate(new Date(weekStart));
+      query = { ...query, weekStartDate: weekStartDate };
     }
 
     const mealPlans = await MealPlan.find(query).sort({ weekStartDate: -1 }).exec();
@@ -81,10 +81,27 @@ export async function POST(request: NextRequest) {
 
     await connectToDatabase();
 
+    // Check if meal plan already exists for this week using getWeekStartDate for consistency
+    const weekStart = getWeekStartDate(new Date(weekStartDate));
+    const existingPlan = await MealPlan.findOne({
+      userId: session.user.id,
+      weekStartDate: weekStart
+    }).exec();
+
+    if (existingPlan) {
+      // Return existing meal plan instead of creating a duplicate
+      console.log(`Returning existing meal plan for week ${weekStart.toISOString()}`);
+      return NextResponse.json({
+        success: true,
+        data: existingPlan,
+        message: 'Existing meal plan found for this week'
+      }, { status: 200 });
+    }
+
     const mealPlanData: any = {
       userId: session.user.id,
-      weekStartDate: new Date(weekStartDate),
-      title,
+      weekStartDate: weekStart,
+      title: title || `Week of ${weekStart.toLocaleDateString()}`,
       isTemplate: isTemplate || false
     };
 
@@ -139,7 +156,25 @@ export async function POST(request: NextRequest) {
     console.error('POST /api/meal-plans error:', error);
     
     // Handle duplicate key error (user already has meal plan for this week)
-    if (error instanceof Error && error.message.includes('duplicate key')) {
+    if (error instanceof Error && (error.message.includes('duplicate key') || error.message.includes('E11000'))) {
+      // Try to find the existing meal plan and return it
+      try {
+        const existingPlan = await MealPlan.findOne({
+          userId: session.user.id,
+          weekStartDate: new Date(weekStartDate)
+        }).exec();
+        
+        if (existingPlan) {
+          return NextResponse.json({
+            success: true,
+            data: existingPlan,
+            message: 'Existing meal plan found'
+          }, { status: 200 });
+        }
+      } catch (findError) {
+        console.error('Error finding existing meal plan:', findError);
+      }
+      
       return NextResponse.json(
         { 
           error: 'Meal plan already exists for this week',

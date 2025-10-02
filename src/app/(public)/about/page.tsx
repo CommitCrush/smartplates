@@ -26,7 +26,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import Layout from '@/components/layout/Layout';
 import Link from 'next/link';
 
 export default function AboutPage() {
@@ -100,8 +99,7 @@ export default function AboutPage() {
   ];
 
   return (
-    <Layout>
-      <div className="min-h-screen">
+    <div className="min-h-screen">
         {/* Hero Section */}
         <section className="bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -369,6 +367,5 @@ export default function AboutPage() {
           </div>
         </section>
       </div>
-    </Layout>
   );
 }

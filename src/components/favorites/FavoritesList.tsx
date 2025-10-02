@@ -7,6 +7,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Heart, Grid, List } from 'lucide-react';
 import { RecipeGrid } from '../recipe/RecipeGrid';
 import { Button } from '@/components/ui/button';
@@ -130,10 +131,13 @@ export function FavoritesList({ userId, className }: FavoritesListProps) {
                       {/* Recipe Image */}
                       <div className="w-20 h-20 rounded overflow-hidden bg-muted flex-shrink-0">
                         {recipe.image && (
-                          <img 
+                          <Image 
                             src={recipe.image} 
                             alt={recipe.title}
+                            width={80}
+                            height={80}
                             className="w-full h-full object-cover"
+                            sizes="80px"
                           />
                         )}
                       </div>

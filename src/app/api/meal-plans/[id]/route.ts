@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import MealPlan from '@/models/MealPlan';
-import { connectToDatabase } from '@/lib/db';
+import { connectToDatabase } from '@/lib/mongodb';
 
 // ========================================
 // GET /api/meal-plans/[id]
@@ -31,12 +31,25 @@ export async function GET(
     }
 
     const params = await context.params;
+    const { id } = params;
+    
     await connectToDatabase();
 
-    const mealPlan = await MealPlan.findOne({
-      _id: params.id,
-      userId: session.user.id
-    }).exec();
+    // Check if id is a valid ObjectId or handle it as a string
+    let mealPlan;
+    try {
+      mealPlan = await MealPlan.findOne({
+        _id: id,
+        userId: session.user.id
+      }).exec();
+    } catch (mongoError) {
+      // If ObjectId is invalid, return 404
+      console.error('Invalid ObjectId:', id, mongoError);
+      return NextResponse.json(
+        { error: 'Meal plan not found' },
+        { status: 404 }
+      );
+    }
 
     if (!mealPlan) {
       return NextResponse.json(

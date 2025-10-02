@@ -148,26 +148,12 @@ export function WeeklyCalendar({
     setWeekDates(getWeekDates(currentWeekStart));
   }, [currentWeekStart]);
 
-  // Load meal plan from MongoDB when user is available and week changes
+  // Use meal plan from parent props instead of creating independently
   useEffect(() => {
-    const loadMealPlan = async () => {
-      if (!user || authLoading) return;
-      
-      setIsLoading(true);
-      try {
-        const weeklyPlan = await MealPlanService.getOrCreateWeeklyPlan(currentWeekStart);
-        setCurrentMealPlan(weeklyPlan);
-        onMealPlanChange?.(weeklyPlan);
-      } catch (error) {
-        console.error('Failed to load meal plan:', error);
-        setSaveStatus('error');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadMealPlan();
-  }, [currentWeekStart, user, authLoading, onMealPlanChange]);
+    if (mealPlan && mealPlan !== currentMealPlan) {
+      setCurrentMealPlan(mealPlan);
+    }
+  }, [mealPlan, currentMealPlan]);
 
   // Navigation handlers
   const goToPreviousWeek = () => {

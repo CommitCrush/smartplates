@@ -2,11 +2,12 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const adminLinks = [
-  { href: "/admin/dashboard/statistics", label: "Statistiken" },
-  { href: "/admin/dashboard/manage-users", label: "User-Management" },
-  { href: "/admin/dashboard/manage-recipes", label: "Rezept-Management" },
-  { href: "/admin/dashboard/manage_cookware_commissions", label: "Kommissionsverwaltung" },
-  { href: "/admin/settings", label: "Einstellungen" },
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/dashboard/statistics", label: "Statistics" },
+  { href: "/admin/dashboard/manage-users", label: "User Management" },
+  { href: "/admin/dashboard/manage-recipes", label: "Recipe Management" },
+  { href: "/admin/dashboard/manage_cookware_commissions", label: "Commission Management" },
+  { href: "/admin/settings", label: "Settings" },
 ];
 
 export function AdminSidebar({ className }: { className?: string }) {

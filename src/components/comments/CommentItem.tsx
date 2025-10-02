@@ -7,6 +7,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -147,7 +148,13 @@ export function CommentItem({
       {/* User Avatar */}
       <Avatar className="h-10 w-10">
         {comment.userAvatar ? (
-          <img src={comment.userAvatar} alt={comment.userName} />
+          <Image 
+            src={comment.userAvatar} 
+            alt={comment.userName}
+            width={40}
+            height={40}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="bg-primary text-primary-foreground text-sm font-medium flex items-center justify-center h-full">
             {comment.userName.charAt(0).toUpperCase()}

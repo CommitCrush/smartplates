@@ -22,80 +22,7 @@ export interface RecipeFilters {
   maxServings?: number;
   offset?: number;
   number?: number;
-}
-
-// Support both server-side and client-side API access
-const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY || process.env.NEXT_PUBLIC_SPOONACULAR_API_KEY;
-
-if (!SPOONACULAR_API_KEY) {
-  console.warn('SPOONACULAR_API_KEY not found in environment variables');
-} else if (process.env.NODE_ENV === 'development') {
-  console.log('DEBUG Spoonacular API configured with key:', SPOONACULAR_API_KEY ? '***' + SPOONACULAR_API_KEY.slice(-4) : 'not found');
-}
-
-/**
- * Interface for Spoonacular API response
- */
-export interface SpoonacularRecipe {
-  id: number;
-  title: string;
-  summary: string;
-  image: string;
-  readyInMinutes: number;
-  servings: number;
-  extendedIngredients: Array<{
-    id: number;
-    name: string;
-    amount: number;
-    unit: string;
-  }>;
-  analyzedInstructions: Array<{
-    steps: Array<{
-      number: number;
-      step: string;
-    }>;
-  }>;
-  cuisines: string[];
-  dishTypes: string[];
-  diets: string[];
-  nutrition?: {
-    nutrients: Array<{
-      name: string;
-      amount: number;
-      unit: string;
-    }>;
-  };
-}
-
-interface SpoonacularSearchResponse {
-  results: SpoonacularRecipe[];
-  totalResults: number;
-}
-
-/**
- * Converts Spoonacular recipe to our Recipe format
- */
-function convertSpoonacularRecipe(spoonacularRecipe: SpoonacularRecipe): Recipe {
-  // ...existing code...
-
-  // Clean HTML from summary
-  const description = spoonacularRecipe.summary.replace(/<[^>]*>/g, '');
-
-  return {
-    id: `spoonacular-${spoonacularRecipe.id}`,
-    title: spoonacularRecipe.title,
-    description: description.substring(0, 300) + '...',
-    summary: spoonacularRecipe.summary || '',
-    image: spoonacularRecipe.image,
-    servings: spoonacularRecipe.servings,
-    readyInMinutes: spoonacularRecipe.readyInMinutes,
-    extendedIngredients: spoonacularRecipe.extendedIngredients || [],
-    analyzedInstructions: spoonacularRecipe.analyzedInstructions || [],
-    cuisines: spoonacularRecipe.cuisines || [],
-    dishTypes: spoonacularRecipe.dishTypes || [],
-    diets: spoonacularRecipe.diets || [],
-    nutrition: spoonacularRecipe.nutrition || undefined
-  };
+  [key: string]: string | number | boolean | undefined; // Index signature
 }
 
 /**
@@ -107,7 +34,7 @@ export async function searchSpoonacularRecipes(
 ): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
     const cacheService = await import('./spoonacularCacheService.server');
-    return await cacheService.searchRecipesInternal(searchTerm, filters);
+    return await cacheService.searchRecipesWithCache(searchTerm, filters);
   } catch (error) {
     console.error('Spoonacular search error:', error);
     return { recipes: [], totalResults: 0, fromCache: false };
@@ -120,7 +47,7 @@ export async function searchSpoonacularRecipes(
 export async function getSpoonacularRecipe(id: string): Promise<Recipe | null> {
   try {
     const cacheService = await import('./spoonacularCacheService.server');
-    const result = await cacheService.getRecipeInternal(id);
+    const result = await cacheService.getRecipeWithCache(id);
     return result.recipe;
   } catch (error) {
     console.error('Spoonacular recipe fetch error:', error);
@@ -136,7 +63,7 @@ export async function searchRecipesByIngredients(
 ): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
     const cacheService = await import('./spoonacularCacheService.server');
-    const result = await cacheService.searchRecipesByIngredientsInternal(ingredients);
+    const result = await cacheService.searchRecipesByIngredientsWithCache(ingredients);
     return { ...result, totalResults: result.recipes.length };
   } catch (error) {
     console.error('Ingredient search error:', error);
@@ -150,35 +77,10 @@ export async function searchRecipesByIngredients(
 export async function getPopularSpoonacularRecipes(): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
     const cacheService = await import('./spoonacularCacheService.server');
-    const result = await cacheService.getPopularRecipesInternal();
+    const result = await cacheService.getPopularRecipesWithCache();
     return { ...result, totalResults: result.recipes.length };
   } catch (error) {
     console.error('Popular recipes error:', error);
     return { recipes: [], totalResults: 0, fromCache: false };
   }
 }
-
-/**
- * Rate limiting helper
- */
-let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 1000 / 150; // 150 requests per minute max
-
-export function rateLimitedRequest<T>(requestFn: () => Promise<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    const delay = Math.max(0, MIN_REQUEST_INTERVAL - timeSinceLastRequest);
-
-    setTimeout(async () => {
-      try {
-        lastRequestTime = Date.now();
-        const result = await requestFn();
-        resolve(result);
-      } catch (error) {
-        reject(error);
-      }
-    }, delay);
-  });
-}
-// Note: Internal functions are now exported from spoonacularCacheService.server.ts

@@ -17,7 +17,10 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-background-secondary border-t border-border">
+    <footer>
+      {/* Top Border - Full Width */}
+      <div className="border-t border-border-footer"></div>
+      
       <div className="max-w-7xl mx-auto px-12 sm:px-6 lg:px-8">
         {/* Main Footer Content - Mobile-First Responsive */}
         <div className="py-6 sm:py-10">
@@ -186,9 +189,14 @@ export default function Footer() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Bottom Footer */}
-        <div className="border-t border-border py-6">
+      {/* Bottom Border - Full Width */}
+      <div className="border-t border-border-footer"></div>
+      
+      {/* Bottom Footer Content */}
+      <div className="max-w-7xl mx-auto px-12 sm:px-6 lg:px-8">
+        <div className="py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex flex-col items-center md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-2 order-2 md:order-1 mt-6 md:mt-0">
               <span className="text-xs md:text-sm text-foreground-muted text-center md:text-left">

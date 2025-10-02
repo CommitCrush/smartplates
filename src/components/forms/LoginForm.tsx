@@ -69,7 +69,7 @@ export function LoginForm({ className, redirectTo = '/user' }: LoginFormProps) {
   };
 
   return (
-    <div className={cn('w-full max-w-md mx-auto bg-background-card p-8 rounded-lg shadow-lg', className)}>
+    <div className={cn('w-full max-w-md mx-auto bg-background-card p-8 rounded-lg shadow-lg border border-border hover:shadow-xl transition-all duration-200', className)}>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">

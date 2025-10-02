@@ -20,24 +20,33 @@ export type RecipeCategory = 'breakfast' | 'lunch' | 'dinner' | 'dessert' | 'sna
 export type DietaryRestriction = 'vegetarian' | 'vegan' | 'gluten-free' | 'dairy-free' | 'nut-free' | 'keto' | 'paleo';
 
 
-// Main Recipe interface - represents a recipe in our database
 export interface Recipe {
   _id?: ObjectId | string;           // MongoDB ObjectId or string
-  id?: string | number;              // Alternative ID field (Spoonacular compatibility)
+  spoonacularId?: number;            // Spoonacular's unique ID
   title: string;                     // Recipe name
   description: string;               // Short description of the recipe
   
   // Recipe details
   summary: string;
   image?: string;
+  sourceUrl?: string;
   readyInMinutes: number;
   servings: number;
-    extendedIngredients: RecipeIngredient[];
-    analyzedInstructions: RecipeInstructionBlock[];
+  extendedIngredients: RecipeIngredient[];
+  analyzedInstructions: RecipeInstructionBlock[];
   cuisines: string[];
   dishTypes: string[];
   diets: string[];
+  occasions?: string[];
   nutrition?: RecipeNutrition;
+
+  // Health and diet flags
+  vegetarian?: boolean;
+  vegan?: boolean;
+  glutenFree?: boolean;
+  dairyFree?: boolean;
+  veryHealthy?: boolean;
+
   // Optionale Felder für User-Interaktion
   rating?: number;
   ratingsCount?: number;
@@ -48,11 +57,10 @@ export interface Recipe {
   updatedAt?: string;
   isPublished?: boolean;
   
-  
-  
   isPending?: boolean;
-    moderationNotes?: string;
-  }
+  moderationNotes?: string;
+  isSpoonacular?: boolean;
+}
   
 
 export interface RecipeIngredient {

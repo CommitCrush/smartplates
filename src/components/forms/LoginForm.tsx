@@ -11,7 +11,7 @@ interface LoginFormProps {
   redirectTo?: string;
 }
 
-export function LoginForm({ className, redirectTo = '/user' }: LoginFormProps) {
+export function LoginForm({ className, redirectTo = '/user/welcome' }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -50,7 +50,7 @@ export function LoginForm({ className, redirectTo = '/user' }: LoginFormProps) {
               redirectPath = '/admin';
               break;
             case 'user':
-              redirectPath = '/user';
+              redirectPath = '/user/welcome';
               break;
             default:
               redirectPath = redirectTo;

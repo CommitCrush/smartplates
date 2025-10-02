@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search, ChefHat, ChevronDown, Plus } from 'lucide-react';
-import { Recipe } from '@/types/recipe';
+import { Search, ChefHat, ChevronDown } from 'lucide-react';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
 import { useAllRecipes } from '@/services/mockRecipeService';
-import Link from 'next/link';
 
 export default function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('');

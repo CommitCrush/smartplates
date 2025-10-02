@@ -8,7 +8,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { 
   PlusCircle, 
@@ -37,9 +37,9 @@ export default function MyAddedRecipesPage() {
     if (status === 'authenticated') {
       loadUserRecipes();
     }
-  }, [status, router]);
+  }, [status, router, loadUserRecipes]);
 
-  const loadUserRecipes = async () => {
+  const loadUserRecipes = useCallback(async () => {
     try {
       setLoading(true);
       // TODO: Replace with actual API call
@@ -114,11 +114,12 @@ export default function MyAddedRecipesPage() {
       
       setLoading(false);
     } catch (error) {
-      console.error('Failed to load user recipes:', error);
-      setError('Failed to load your recipes');
+      console.error('Error loading recipes:', error);
+      alert('Failed to load recipes');
+    } finally {
       setLoading(false);
     }
-  };
+  }, [session]);
 
   const handleDeleteRecipe = async (recipeId: string) => {
     if (!confirm('Are you sure you want to delete this recipe?')) {

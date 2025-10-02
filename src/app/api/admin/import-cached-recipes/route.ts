@@ -4,7 +4,7 @@ import { importCachedRecipesToDB } from '@/services/spoonacularCacheService.serv
 /**
  * Admin-only endpoint to import cached recipes from JSON file to MongoDB
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     console.log('🔄 Starting import of cached recipes to MongoDB...');
     

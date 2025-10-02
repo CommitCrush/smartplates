@@ -127,7 +127,7 @@ export default function SavedMealPlanPage() {
           </div>
           
           <Button asChild>
-            <Link href="/user/my_meal_plan">
+            <Link href="/user/meal-plan/current">
               <Plus className="h-4 w-4 mr-2" />
               Create New Plan
             </Link>
@@ -213,7 +213,7 @@ export default function SavedMealPlanPage() {
                       Start creating meal plans to see them here
                     </CardDescription>
                     <Button asChild>
-                      <Link href="/user/my_meal_plan">
+                      <Link href="/user/meal-plan/current">
                         <Plus className="h-4 w-4 mr-2" />
                         Create Your First Plan
                       </Link>
@@ -305,7 +305,7 @@ function MealPlanCard({ plan, isTemplate, onExport, onCopy, onDelete }: MealPlan
           </Button>
           
           {plan._id && (
-            <Link href={`/user/my_meal_plan/${plan._id}`}>
+            <Link href={`/user/meal-plan/${plan._id}`}>
               <Button variant="outline" size="sm">
                 <Eye className="h-4 w-4" />
               </Button>

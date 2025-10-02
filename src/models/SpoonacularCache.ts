@@ -266,7 +266,7 @@ export interface ISpoonacularIngredientSearchCache extends Document, BaseCacheEn
 
 const spoonacularIngredientSearchCacheSchema = new Schema<ISpoonacularIngredientSearchCache>({
   cacheKey: { type: String, required: true, unique: true, index: true },
-  ingredients: { type: [String], required: true, index: true },
+  ingredients: { type: [String], required: true }, // Removed duplicate index: true, using compound index below
   data: { type: Schema.Types.Mixed, required: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

@@ -49,6 +49,7 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
     bio: '',
     location: ''
   });
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     const getParams = async () => {
@@ -96,6 +97,64 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
     }
   };
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Please select an image file.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'Image must be smaller than 5MB.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response = await fetch('/api/users/profile/avatar', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setProfile(prev => prev ? { ...prev, avatar: result.avatar } : null);
+        toast({
+          title: 'Success',
+          description: 'Profile image updated successfully!',
+        });
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to upload image.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   const handleSaveProfile = async () => {
     try {
       const response = await fetch('/api/users/profile', {
@@ -111,8 +170,8 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
         setProfile(prev => prev ? { ...prev, ...updatedProfile } : null);
         setIsEditing(false);
         toast({
-          title: 'Erfolg',
-          description: 'Profil erfolgreich aktualisiert!',
+          title: 'Success',
+          description: 'Profile updated successfully!',
         });
       } else {
         throw new Error('Profile update failed');
@@ -120,8 +179,8 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
-        title: 'Fehler',
-        description: 'Profil konnte nicht aktualisiert werden.',
+        title: 'Error',
+        description: 'Failed to update profile.',
         variant: 'destructive'
       });
     }
@@ -165,13 +224,43 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              {/* Avatar */}
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={profile.avatar} alt={profile.name} />
-                <AvatarFallback className="text-2xl">
-                  {profile.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              {/* Avatar with Upload Option */}
+              <div className="relative group">
+                <Avatar className="w-24 h-24">
+                  <AvatarImage src={profile.avatar} alt={profile.name} />
+                  <AvatarFallback className="text-2xl">
+                    {profile.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                
+                {/* Upload overlay */}
+                {profile.isOwner && (
+                  <>
+                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                      {isUploadingAvatar ? (
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                      ) : (
+                        <User className="h-6 w-6 text-white" />
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      disabled={isUploadingAvatar}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                      title="Click to upload profile image"
+                    />
+                  </>
+                )}
+                
+                {/* Upload hint */}
+                {profile.isOwner && !isUploadingAvatar && (
+                  <div className="absolute -bottom-6 left-0 right-0 text-xs text-center text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    Click to change
+                  </div>
+                )}
+              </div>
 
               {/* User Info */}
               <div className="flex-1 space-y-4">

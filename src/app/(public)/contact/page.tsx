@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import Layout from '@/components/layout/Layout';
 
 interface ContactFormData {
   name: string;
@@ -135,8 +134,7 @@ export default function ContactPage() {
   ];
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Page Header */}
           <div className="text-center mb-12">
@@ -441,6 +439,5 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }

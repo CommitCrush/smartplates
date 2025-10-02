@@ -11,22 +11,12 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
     const fetchRecipes = async () => {
       setLoading(true);
       try {
-        // Only fetch if there's a meaningful search query or specific options
-        const hasFilters = Object.values(options).some(value => value && value !== 'all');
-        if (!query && !hasFilters) {
-          // No search query and no filters - don't make API call
-          setRecipes([]);
-          setError('');
-          setLoading(false);
-          return;
-        }
-
         const params = new URLSearchParams();
         if (query) params.append('search', query);
         Object.entries(options).forEach(([key, value]) => {
           if (value && value !== 'all') params.append(key, value);
         });
-        
+
         const res = await fetch(`/api/recipes?${params.toString()}`);
         const data = await res.json();
         setRecipes(data.recipes || []);

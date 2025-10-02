@@ -120,8 +120,6 @@ export default function MyAddedRecipesPage() {
       setLoading(false);
     }
   }, [session]);
-    }
-  };
 
   const handleDeleteRecipe = async (recipeId: string) => {
     if (!confirm('Are you sure you want to delete this recipe?')) {

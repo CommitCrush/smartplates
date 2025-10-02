@@ -91,6 +91,7 @@ export async function fetchComplexSearch(
     apiKey: SPOONACULAR_API_KEY,
     query: searchTerm,
     addRecipeInformation: 'true',
+    fillIngredients: 'true', // Ensure we get ingredient details
     number: (filters.number || 12).toString(),
     offset: (filters.offset || 0).toString(),
     ...cleanedFilters,
@@ -105,8 +106,18 @@ export async function fetchComplexSearch(
   }
   const data = await response.json();
   
-  const recipes = await Promise.all(data.results.map(transformSpoonacularRecipe));
-  return { recipes, totalResults: data.totalResults };
+  // The 'results' from complexSearch may not have all details.
+  // We will fetch each recipe individually to ensure we get all data.
+  const detailedRecipes = await Promise.all(
+    data.results.map(async (recipe: { id: number }) => {
+      const detailedRecipe = await fetchRecipeById(recipe.id.toString());
+      return detailedRecipe ? transformSpoonacularRecipe(detailedRecipe) : null;
+    })
+  );
+
+  const validRecipes = detailedRecipes.filter((r): r is Recipe => r !== null);
+
+  return { recipes: validRecipes, totalResults: data.totalResults };
 }
 
 /**

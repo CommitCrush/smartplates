@@ -5,33 +5,61 @@
  * to prevent client-side bundling issues
  */
 
+
 import { 
-  SpoonacularRecipeCache,
+  SpoonacularApiRecipe, 
+  SpoonacularIngredient,
+  SpoonacularFoundRecipe,
+  SpoonacularSearchResultRecipe,
+} from './spoonacularEnhancements.server';
+import {
+  SpoonacularQuotaTracker,
   SpoonacularSearchCache,
+  SpoonacularRecipeCache,
   SpoonacularIngredientSearchCache,
   SpoonacularRandomCache,
   SpoonacularNutritionCache,
-  SpoonacularQuotaTracker,
   generateSearchCacheKey,
   generateIngredientSearchCacheKey,
   generateRandomCacheKey,
   generateRecipeCacheKey,
-  generateNutritionCacheKey,
-  type ISpoonacularRecipeCache,
-  type ISpoonacularSearchCache,
-  type ISpoonacularIngredientSearchCache,
-  type ISpoonacularRandomCache,
-  type ISpoonacularNutritionCache,
-  type ISpoonacularQuotaTracker
+
 } from '@/models/SpoonacularCache';
-import { Recipe } from '@/types/recipe';
-import { connectToDatabase } from '@/lib/db';
+import { Recipe, RecipeInstructionBlock } from '@/types/recipe';
+import { connectToDatabase } from '@/lib/mongodb'; // Use Mongoose connection
 import { 
-  searchSpoonacularRecipes,
-  getSpoonacularRecipe,
-  searchRecipesByIngredients,
-  getPopularSpoonacularRecipes
-} from './spoonacularService';
+  fetchComplexSearch, 
+  fetchRecipeById, 
+  fetchPopularRecipes, 
+  fetchRecipesByIngredients,
+  transformSpoonacularRecipe,
+} from './spoonacularApi.server';
+import { RecipeFilters as SpoonacularApiOptions } from './spoonacularService';
+
+// Define missing types
+export interface CacheStats {
+  totalEntries: number;
+  totalExpired: number;
+  cacheDetails: Array<{
+    name: string;
+    count: number;
+    expired: number;
+  }>;
+  quota: {
+    used: number;
+    limit: number;
+    remaining: number;
+  };
+}
+
+export interface QuotaStatus {
+  date: string;
+  used: number;
+  limit: number;
+  remaining: number;
+  canMakeRequests: boolean;
+  endpoints: Record<string, number>;
+}
 
 // ========================================
 // Configuration
@@ -51,8 +79,12 @@ const CACHE_CONFIG = {
 };
 
 // ========================================
-// Helper Functions
+// Types
 // ========================================
+
+// Types are now imported from spoonacularEnhancements.server.ts or defined in other central locations.
+// This avoids conflicts and ensures consistency.
+
 
 /**
  * Get today's date string for quota tracking
@@ -66,24 +98,23 @@ function getTodayString(): string {
  */
 async function checkQuotaAllowance(): Promise<{ allowed: boolean; remaining: number }> {
   await connectToDatabase();
-  
   const today = getTodayString();
   let quotaTracker = await SpoonacularQuotaTracker.findOne({ date: today });
-  
+
   if (!quotaTracker) {
-    // Create new quota tracker for today
+    // Create new quota tracker for today if it doesn't exist
     quotaTracker = new SpoonacularQuotaTracker({
       date: today,
       requestCount: 0,
       quotaLimit: CACHE_CONFIG.DAILY_QUOTA_LIMIT,
-      remainingQuota: CACHE_CONFIG.DAILY_QUOTA_LIMIT
+      endpoints: {},
     });
     await quotaTracker.save();
   }
-  
-  const remaining = Math.max(0, quotaTracker.quotaLimit - quotaTracker.requestCount);
+
+  const remaining = Math.max(0, (quotaTracker.quotaLimit || CACHE_CONFIG.DAILY_QUOTA_LIMIT) - quotaTracker.requestCount);
   const allowed = remaining > CACHE_CONFIG.QUOTA_BUFFER;
-  
+
   return { allowed, remaining };
 }
 
@@ -92,8 +123,8 @@ async function checkQuotaAllowance(): Promise<{ allowed: boolean; remaining: num
  */
 async function recordApiUsage(endpoint: string): Promise<void> {
   await connectToDatabase();
-  
   const today = getTodayString();
+  
   const update = {
     $inc: { 
       requestCount: 1,
@@ -101,7 +132,6 @@ async function recordApiUsage(endpoint: string): Promise<void> {
     },
     $set: { 
       updatedAt: new Date(),
-      isQuotaExceeded: false
     },
     $setOnInsert: {
       date: today,
@@ -110,10 +140,10 @@ async function recordApiUsage(endpoint: string): Promise<void> {
     }
   };
   
-  await SpoonacularQuotaTracker.findOneAndUpdate(
+  await SpoonacularQuotaTracker.updateOne(
     { date: today },
     update,
-    { upsert: true, new: true }
+    { upsert: true }
   );
 }
 
@@ -124,159 +154,200 @@ async function recordApiUsage(endpoint: string): Promise<void> {
 /**
  * Search recipes with intelligent caching
  */
-export async function searchRecipesWithCacheInternal(
+export async function searchRecipesWithCache(
   query: string,
-  options: any = {}
+  options: SpoonacularApiOptions = {}
 ): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   await connectToDatabase();
-  
   const cacheKey = generateSearchCacheKey(query, options);
-  
+
   // 1. Check cache first
   const cachedResult = await SpoonacularSearchCache.findOne({ cacheKey });
-  
+
   if (cachedResult && cachedResult.expiresAt > new Date()) {
     console.log(`✅ Cache HIT for search: "${query}"`);
-    // Update access tracking
-    await SpoonacularSearchCache.findByIdAndUpdate(cachedResult._id, {
-      $inc: { requestCount: 1 },
-      $set: { lastAccessed: new Date() }
-    });
-    
-    return {
-      recipes: cachedResult.data.results.map((result: any) => ({
+    // Update access tracking without waiting
+    SpoonacularSearchCache.updateOne(
+      { _id: cachedResult._id },
+      {
+        $inc: { requestCount: 1 },
+        $set: { lastAccessed: new Date() },
+      }
+    ).catch(console.error);
+
+    if (cachedResult) {
+            const recipes: Recipe[] = cachedResult.data.results.map((result: SpoonacularSearchResultRecipe) => ({
         id: `spoonacular-${result.id}`,
         title: result.title,
-        description: result.summary?.replace(/<[^>]*>/g, '').substring(0, 200) + '...' || 'Delicious recipe from Spoonacular',
-  image: result.image,
-  servings: result.servings || 4,
-  readyInMinutes: result.readyInMinutes || 30,
-  summary: result.summary || '',
-  extendedIngredients: result.extendedIngredients || [],
-  analyzedInstructions: result.analyzedInstructions || [],
-  cuisines: result.cuisines || [],
-  dishTypes: result.dishTypes || [],
-  diets: result.diets || [],
-  nutrition: result.nutrition || undefined
-      })),
-      totalResults: cachedResult.data.totalResults,
-      fromCache: true
-    };
+        description: result.summary?.replace(/<[^>]*>?/gm, '') || '',
+        image: result.image,
+        servings: result.servings,
+        readyInMinutes: result.readyInMinutes,
+        summary: result.summary || '',
+        extendedIngredients: (result.extendedIngredients || []).map((ing: SpoonacularIngredient) => ({
+          id: `spoonacular-${ing.id}`,
+          name: ing.name,
+          amount: ing.amount,
+          unit: ing.unit,
+          notes: ing.original,
+        })),
+        instructions: result.analyzedInstructions || [],
+        analyzedInstructions: (result.analyzedInstructions as RecipeInstructionBlock[]) || [],
+        cuisines: [],
+        dishTypes: [],
+        diets: [],
+        isSpoonacular: true,
+        sourceUrl: result.sourceUrl,
+        nutrition: result.nutrition || undefined
+      }));
+
+      return {
+        recipes,
+        totalResults: cachedResult.data.totalResults,
+        fromCache: true,
+      };
+    }
   }
-  
+
   // 2. Check quota before API call
   const quotaStatus = await checkQuotaAllowance();
-  
+
   if (!quotaStatus.allowed) {
     console.log(`❌ Quota exceeded (${quotaStatus.remaining} remaining), serving stale cache if available`);
-    
+
     // Try to serve stale cache
     const staleCache = await SpoonacularSearchCache.findOne({ cacheKey });
     if (staleCache) {
       console.log(`🔄 Serving stale cache for: "${query}"`);
-      return {
-  recipes: staleCache.data.results.map((result: any) => ({
-          id: `spoonacular-${result.id}`,
-          title: result.title,
-          description: result.summary || '',
-          summary: result.summary || '',
-          image: result.image,
-          readyInMinutes: result.readyInMinutes || 30,
-          servings: result.servings || 4,
-          extendedIngredients: result.extendedIngredients || [],
-          analyzedInstructions: result.analyzedInstructions || [],
-          cuisines: result.cuisines || [],
-          dishTypes: result.dishTypes || [],
-          diets: result.diets || [],
-          nutrition: result.nutrition || undefined
+      const recipes = staleCache.data.results.map((result: SpoonacularSearchResultRecipe) => ({
+        id: `spoonacular-${result.id}`,
+        title: result.title,
+        description: result.summary || '',
+        summary: result.summary || '',
+        image: result.image,
+        readyInMinutes: result.readyInMinutes || 30,
+        servings: result.servings || 4,
+        extendedIngredients: (result.extendedIngredients || []).map((ing: SpoonacularIngredient) => ({
+          id: `spoonacular-${ing.id}`,
+          name: ing.name,
+          amount: ing.amount,
+          unit: ing.unit,
+          notes: ing.original,
         })),
+        instructions: result.analyzedInstructions || [],
+        analyzedInstructions: (result.analyzedInstructions as RecipeInstructionBlock[]) || [],
+        cuisines: [],
+        dishTypes: [],
+        diets: [],
+        isSpoonacular: true,
+        sourceUrl: result.sourceUrl,
+        nutrition: result.nutrition || undefined
+      }));
+      return {
+        recipes,
         totalResults: staleCache.data.totalResults,
-        fromCache: true
+        fromCache: true,
       };
     }
-    
+
     // No cache available, return empty results
     return { recipes: [], totalResults: 0, fromCache: false };
   }
-  
+
   // 3. Make API call
   try {
     console.log(`🌐 API CALL for search: "${query}"`);
-    const apiResult = await searchSpoonacularRecipes(query, options);
-    
+    const apiResult = await fetchComplexSearch(query, options);
+
     // Record API usage
     await recordApiUsage('complexSearch');
-    
+
     // 4. Cache the result
     const cacheData = {
-      cacheKey,
-      query,
-      filters: options,
-      data: {
-        results: apiResult.recipes.map(recipe => ({
-          id: parseInt(String(recipe.id || recipe._id || '0').replace('spoonacular-', '')),
-          title: recipe.title,
-          summary: recipe.summary || '',
-          image: recipe.image,
-          readyInMinutes: recipe.readyInMinutes,
-          servings: recipe.servings,
-          cuisines: recipe.cuisines || [],
-          dishTypes: recipe.dishTypes || [],
-          diets: recipe.diets || [],
-          extendedIngredients: recipe.extendedIngredients || [],
-          analyzedInstructions: recipe.analyzedInstructions || [],
-          nutrition: recipe.nutrition || undefined
-          // Store minimal data for search results, full data cached separately
-        })),
-        totalResults: apiResult.totalResults,
-        number: options.number || 12,
-        offset: options.offset || 0
-      },
-      expiresAt: new Date(Date.now() + CACHE_CONFIG.SEARCH_TTL)
+      results: apiResult.recipes.map((recipe: Recipe) => ({
+        id: parseInt(String(recipe.id || recipe._id || '0').replace('spoonacular-', '')),
+        title: recipe.title,
+        summary: recipe.summary || '',
+        image: recipe.image,
+        readyInMinutes: recipe.readyInMinutes,
+        servings: recipe.servings,
+        cuisines: recipe.cuisines || [],
+        dishTypes: recipe.dishTypes || [],
+        diets: recipe.diets || [],
+        extendedIngredients: recipe.extendedIngredients || [],
+        analyzedInstructions: recipe.analyzedInstructions || [],
+        nutrition: recipe.nutrition || undefined
+      })),
+      totalResults: apiResult.totalResults,
+      number: options.number || 12,
+      offset: options.offset || 0,
     };
-    
-    await SpoonacularSearchCache.findOneAndUpdate(
-      { cacheKey },
-      cacheData,
-      { upsert: true, new: true }
-    );
-    
+
+    const update = {
+      $set: {
+        cacheKey,
+        query,
+        filters: options,
+        data: cacheData,
+        expiresAt: new Date(Date.now() + CACHE_CONFIG.SEARCH_TTL),
+        lastAccessed: new Date(),
+      },
+      $setOnInsert: {
+        createdAt: new Date(),
+      },
+      $inc: {
+        requestCount: 1
+      }
+    };
+
+    await SpoonacularSearchCache.updateOne({ cacheKey }, update, { upsert: true });
+
     console.log(`💾 Cached search results for: "${query}"`);
-    
+
     return {
       recipes: apiResult.recipes,
       totalResults: apiResult.totalResults,
-      fromCache: false
+      fromCache: false,
     };
-    
+
   } catch (error) {
     console.error('API call failed:', error);
-    
+
     // Try to serve stale cache as fallback
     const staleCache = await SpoonacularSearchCache.findOne({ cacheKey });
     if (staleCache) {
       console.log(`🔄 API failed, serving stale cache for: "${query}"`);
-      return {
-  recipes: staleCache.data.results.map((result: any) => ({
-          id: `spoonacular-${result.id}`,
-          title: result.title,
-          description: result.summary || '',
-          summary: result.summary || '',
-          image: result.image,
-          readyInMinutes: result.readyInMinutes || 30,
-          servings: result.servings || 4,
-          extendedIngredients: result.extendedIngredients || [],
-          analyzedInstructions: result.analyzedInstructions || [],
-          cuisines: result.cuisines || [],
-          dishTypes: result.dishTypes || [],
-          diets: result.diets || [],
-          nutrition: result.nutrition || undefined
+      const recipes = staleCache.data.results.map((result: SpoonacularSearchResultRecipe) => ({
+        id: `spoonacular-${result.id}`,
+        title: result.title,
+        description: result.summary || '',
+        summary: result.summary || '',
+        image: result.image,
+        readyInMinutes: result.readyInMinutes || 30,
+        servings: result.servings || 4,
+        extendedIngredients: (result.extendedIngredients || []).map((ing: SpoonacularIngredient) => ({
+          id: `spoonacular-${ing.id}`,
+          name: ing.name,
+          amount: ing.amount,
+          unit: ing.unit,
+          notes: ing.original,
         })),
+        instructions: result.analyzedInstructions || [],
+        analyzedInstructions: (result.analyzedInstructions as RecipeInstructionBlock[]) || [],
+        cuisines: [],
+        dishTypes: [],
+        diets: [],
+        isSpoonacular: true,
+        sourceUrl: result.sourceUrl,
+        nutrition: result.nutrition || undefined
+      }));
+      return {
+        recipes,
         totalResults: staleCache.data.totalResults,
-        fromCache: true
+        fromCache: true,
       };
     }
-    
+
     throw error;
   }
 }
@@ -284,7 +355,7 @@ export async function searchRecipesWithCacheInternal(
 /**
  * Get recipe with caching
  */
-export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ recipe: Recipe | null; fromCache: boolean }> {
+export async function getRecipeWithCache(recipeId: string): Promise<{ recipe: Recipe | null; fromCache: boolean }> {
   await connectToDatabase();
   
   const numericId = parseInt(recipeId.replace('spoonacular-', ''));
@@ -300,24 +371,9 @@ export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ re
       $set: { lastAccessed: new Date() }
     });
     
-    // Convert cached data to Recipe format
-    const recipe: Recipe = {
-      id: recipeId,
-      title: cachedRecipe.data.title,
-      description: cachedRecipe.data.summary || '',
-      summary: cachedRecipe.data.summary || '',
-      image: cachedRecipe.data.image,
-      servings: cachedRecipe.data.servings,
-      readyInMinutes: cachedRecipe.data.readyInMinutes,
-      extendedIngredients: cachedRecipe.data.extendedIngredients || [],
-      analyzedInstructions: cachedRecipe.data.analyzedInstructions || [],
-      cuisines: cachedRecipe.data.cuisines || [],
-      dishTypes: cachedRecipe.data.dishTypes || [],
-      diets: cachedRecipe.data.diets || [],
-      nutrition: cachedRecipe.data.nutrition || undefined
-    };
-    
-    return { recipe, fromCache: true };
+    // The cached data is in SpoonacularApiRecipe format, so we transform it.
+    const transformedRecipe = transformSpoonacularRecipe(cachedRecipe.data as unknown as SpoonacularApiRecipe);
+    return { recipe: transformedRecipe, fromCache: true };
   }
   
   // Check quota
@@ -327,8 +383,9 @@ export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ re
     const staleCache = await SpoonacularRecipeCache.findOne({ cacheKey });
     if (staleCache) {
       console.log(`🔄 Serving stale cached recipe: ${recipeId}`);
-      // Return stale recipe (same conversion logic)
-      return { recipe: null, fromCache: true }; // Simplified for brevity
+      // Transform the stale recipe
+      const transformedRecipe = transformSpoonacularRecipe(staleCache.data as unknown as SpoonacularApiRecipe);
+      return { recipe: transformedRecipe, fromCache: true };
     }
     return { recipe: null, fromCache: false };
   }
@@ -336,7 +393,7 @@ export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ re
   // API call
   try {
     console.log(`🌐 API CALL for recipe: ${recipeId}`);
-    const apiRecipe = await getSpoonacularRecipe(recipeId);
+    const apiRecipe = await fetchRecipeById(recipeId);
     
     if (!apiRecipe) {
       return { recipe: null, fromCache: false };
@@ -344,33 +401,11 @@ export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ re
     
     await recordApiUsage('recipeInformation');
     
-    // Cache full recipe data
+    // Cache the full, untransformed Spoonacular API recipe data
     const cacheData = {
       cacheKey,
       spoonacularId: numericId,
-      data: {
-        id: numericId,
-        title: apiRecipe.title,
-        description: apiRecipe.summary || '',
-        summary: apiRecipe.summary || '',
-        image: apiRecipe.image,
-        readyInMinutes: apiRecipe.readyInMinutes,
-        servings: apiRecipe.servings,
-        extendedIngredients: Array.isArray(apiRecipe.extendedIngredients) 
-          ? apiRecipe.extendedIngredients.map((ing: any) => ({
-              id: ing.id,
-              name: ing.name,
-              amount: ing.amount,
-              unit: ing.unit,
-              notes: ing.notes || ''
-            }))
-          : [],
-        analyzedInstructions: apiRecipe.analyzedInstructions || [],
-        cuisines: apiRecipe.cuisines || [],
-        dishTypes: apiRecipe.dishTypes || [],
-        diets: apiRecipe.diets || [],
-        nutrition: apiRecipe.nutrition || undefined
-      },
+      data: apiRecipe, // Store the direct API response
       expiresAt: new Date(Date.now() + CACHE_CONFIG.RECIPE_TTL)
     };
     
@@ -382,7 +417,9 @@ export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ re
     
     console.log(`💾 Cached recipe: ${recipeId}`);
     
-  return { recipe: apiRecipe, fromCache: false };
+    // Transform the fresh API recipe before returning
+    const transformedRecipe = transformSpoonacularRecipe(apiRecipe);
+    return { recipe: transformedRecipe, fromCache: false };
     
   } catch (error) {
     console.error('Recipe API call failed:', error);
@@ -393,9 +430,8 @@ export async function getRecipeWithCacheInternal(recipeId: string): Promise<{ re
 /**
  * Search recipes by ingredients with caching
  */
-export async function searchRecipesByIngredientsWithCacheInternal(
-  ingredients: string[],
-  options: any = {}
+export async function searchRecipesByIngredientsWithCache(
+  ingredients: string[]
 ): Promise<{ recipes: Recipe[]; fromCache: boolean }> {
   await connectToDatabase();
   
@@ -411,22 +447,10 @@ export async function searchRecipesByIngredientsWithCacheInternal(
       $set: { lastAccessed: new Date() }
     });
     
-    // Convert cached results to Recipe format (simplified)
-    const recipes: Recipe[] = cachedResult.data.slice(0, 6).map((item: any) => ({
-      id: `spoonacular-${item.id}`,
-      title: item.title,
-      description: item.summary || '',
-      summary: item.summary || '',
-      image: item.image,
-      servings: item.servings || 4,
-      readyInMinutes: item.readyInMinutes || 30,
-      extendedIngredients: item.extendedIngredients || [],
-      analyzedInstructions: item.analyzedInstructions || [],
-      cuisines: item.cuisines || [],
-      dishTypes: item.dishTypes || [],
-      diets: item.diets || [],
-      nutrition: item.nutrition || undefined
-    }));
+    // Convert cached results to Recipe format using the correct type
+    const recipes: Recipe[] = cachedResult.data.slice(0, 6).map((item: SpoonacularFoundRecipe) => (
+      transformFoundRecipeToRecipe(item)
+    ));
     
     return { recipes, fromCache: true };
   }
@@ -437,15 +461,17 @@ export async function searchRecipesByIngredientsWithCacheInternal(
     const staleCache = await SpoonacularIngredientSearchCache.findOne({ cacheKey });
     if (staleCache) {
       console.log(`🔄 Serving stale ingredient search cache`);
-      return { recipes: [], fromCache: true }; // Simplified
+      const recipes: Recipe[] = staleCache.data.slice(0, 6).map((item: SpoonacularFoundRecipe) => (
+        transformFoundRecipeToRecipe(item)
+      ));
+      return { recipes, fromCache: true };
     }
     return { recipes: [], fromCache: false };
   }
   
   try {
     console.log(`🌐 API CALL for ingredient search: ${ingredients.join(', ')}`);
-    const apiResult = await searchRecipesByIngredients(ingredients);
-    const apiRecipes = apiResult.recipes;
+    const apiResult = await fetchRecipesByIngredients(ingredients);
     
     await recordApiUsage('findByIngredients');
     
@@ -453,21 +479,7 @@ export async function searchRecipesByIngredientsWithCacheInternal(
     const cacheData = {
       cacheKey,
       ingredients,
-      data: apiRecipes.map((recipe: any) => ({
-        id: parseInt(String(recipe.id || recipe._id || '0').replace('spoonacular-', '')),
-        title: recipe.title,
-        description: recipe.summary || '',
-        summary: recipe.summary || '',
-        image: recipe.image,
-        servings: recipe.servings || 4,
-        readyInMinutes: recipe.readyInMinutes || 30,
-        extendedIngredients: recipe.extendedIngredients || [],
-        analyzedInstructions: recipe.analyzedInstructions || [],
-        cuisines: recipe.cuisines || [],
-        dishTypes: recipe.dishTypes || [],
-        diets: recipe.diets || [],
-        nutrition: recipe.nutrition || undefined
-      })),
+      data: apiResult, // Cache the raw "found" recipes array
       expiresAt: new Date(Date.now() + CACHE_CONFIG.INGREDIENT_SEARCH_TTL)
     };
     
@@ -479,7 +491,8 @@ export async function searchRecipesByIngredientsWithCacheInternal(
     
     console.log(`💾 Cached ingredient search: ${ingredients.join(', ')}`);
     
-    return { recipes: apiRecipes, fromCache: false };
+    const recipes = apiResult.map(item => transformFoundRecipeToRecipe(item));
+    return { recipes, fromCache: false };
     
   } catch (error) {
     console.error('Ingredient search API call failed:', error);
@@ -490,7 +503,7 @@ export async function searchRecipesByIngredientsWithCacheInternal(
 /**
  * Get popular recipes with caching
  */
-export async function getPopularRecipesWithCacheInternal(
+export async function getPopularRecipesWithCache(
   options: Record<string, unknown> = {}
 ): Promise<{ recipes: Recipe[]; fromCache: boolean }> {
   await connectToDatabase();
@@ -539,7 +552,7 @@ export async function getPopularRecipesWithCacheInternal(
   
   try {
     console.log(`🌐 API CALL for popular recipes`);
-  const apiRecipes = await getPopularSpoonacularRecipes();
+  const apiRecipes = await fetchPopularRecipes();
     
     await recordApiUsage('random');
     
@@ -576,7 +589,7 @@ export async function getPopularRecipesWithCacheInternal(
 /**
  * Get cache statistics
  */
-export async function getCacheStatsInternal(): Promise<unknown> {
+export async function getCacheStats(): Promise<CacheStats> {
   await connectToDatabase();
   
   const [
@@ -593,21 +606,43 @@ export async function getCacheStatsInternal(): Promise<unknown> {
     SpoonacularQuotaTracker.findOne({ date: getTodayString() })
   ]);
   
+  const now = new Date();
+  const [
+    expiredRecipes,
+    expiredSearches,
+    expiredIngredientSearches,
+    expiredRandom
+  ] = await Promise.all([
+      SpoonacularRecipeCache.countDocuments({ expiresAt: { $lt: now } }),
+      SpoonacularSearchCache.countDocuments({ expiresAt: { $lt: now } }),
+      SpoonacularIngredientSearchCache.countDocuments({ expiresAt: { $lt: now } }),
+      SpoonacularRandomCache.countDocuments({ expiresAt: { $lt: now } })
+  ]);
+
+  const totalEntries = recipeCount + searchCount + ingredientSearchCount + randomCount;
+  const totalExpired = expiredRecipes + expiredSearches + expiredIngredientSearches + expiredRandom;
+
   return {
-    totalCachedRecipes: recipeCount,
-    totalSearches: searchCount,
-    totalIngredientSearches: ingredientSearchCount,
-    totalRandomRequests: randomCount,
-    todayQuotaUsage: quotaTracker?.requestCount || 0,
-    quotaLimit: quotaTracker?.quotaLimit || CACHE_CONFIG.DAILY_QUOTA_LIMIT,
-    remainingQuota: Math.max(0, (quotaTracker?.quotaLimit || CACHE_CONFIG.DAILY_QUOTA_LIMIT) - (quotaTracker?.requestCount || 0))
+    totalEntries,
+    totalExpired,
+    cacheDetails: [
+      { name: 'Recipes', count: recipeCount, expired: expiredRecipes },
+      { name: 'Searches', count: searchCount, expired: expiredSearches },
+      { name: 'Ingredient Searches', count: ingredientSearchCount, expired: expiredIngredientSearches },
+      { name: 'Popular Recipes', count: randomCount, expired: expiredRandom }
+    ],
+    quota: {
+      used: quotaTracker?.requestCount || 0,
+      limit: quotaTracker?.quotaLimit || CACHE_CONFIG.DAILY_QUOTA_LIMIT,
+      remaining: Math.max(0, (quotaTracker?.quotaLimit || CACHE_CONFIG.DAILY_QUOTA_LIMIT) - (quotaTracker?.requestCount || 0))
+    }
   };
 }
 
 /**
  * Get quota status
  */
-export async function getQuotaStatusInternal(): Promise<unknown> {
+export async function getQuotaStatus(): Promise<QuotaStatus> {
   await connectToDatabase();
   
   const quotaTracker = await SpoonacularQuotaTracker.findOne({ date: getTodayString() });
@@ -625,12 +660,18 @@ export async function getQuotaStatusInternal(): Promise<unknown> {
 /**
  * Clear expired cache entries
  */
-export async function clearExpiredCacheInternal(): Promise<void> {
+export async function clearExpiredCache(): Promise<void> {
   await connectToDatabase();
   
   const now = new Date();
   
-  await Promise.all([
+  const [
+      recipeResult,
+      searchResult,
+      ingredientResult,
+      randomResult,
+      nutritionResult
+  ] = await Promise.all([
     SpoonacularRecipeCache.deleteMany({ expiresAt: { $lt: now } }),
     SpoonacularSearchCache.deleteMany({ expiresAt: { $lt: now } }),
     SpoonacularIngredientSearchCache.deleteMany({ expiresAt: { $lt: now } }),
@@ -638,7 +679,12 @@ export async function clearExpiredCacheInternal(): Promise<void> {
     SpoonacularNutritionCache.deleteMany({ expiresAt: { $lt: now } })
   ]);
   
-  console.log('🧹 Cleared expired cache entries');
+  console.log('🧹 Cleared expired cache entries:');
+  console.log(`- Recipes: ${recipeResult.deletedCount}`);
+  console.log(`- Searches: ${searchResult.deletedCount}`);
+  console.log(`- Ingredient Searches: ${ingredientResult.deletedCount}`);
+  console.log(`- Random Recipes: ${randomResult.deletedCount}`);
+  console.log(`- Nutrition Data: ${nutritionResult.deletedCount}`);
 }
 
 /**
@@ -710,8 +756,55 @@ export async function importCachedRecipesToDB(): Promise<{ imported: number; ski
   return { imported, skipped, errors };
 }
 
-// Export internal functions for service integration
-export { searchRecipesWithCacheInternal as searchRecipesInternal };
-export { getRecipeWithCacheInternal as getRecipeInternal };
-export { searchRecipesByIngredientsWithCacheInternal as searchRecipesByIngredientsInternal };
-export { getPopularRecipesWithCacheInternal as getPopularRecipesInternal };
+// Export functions for service integration
+export { searchRecipesWithCache as searchRecipesInternal };
+export { getRecipeWithCache as getRecipeInternal };
+export { searchRecipesByIngredientsWithCache as searchRecipesByIngredientsInternal };
+export { getPopularRecipesWithCache as getPopularRecipesInternal };
+
+function transformFoundRecipeToRecipe(item: SpoonacularFoundRecipe): Recipe {
+  // This function transforms the minimal data from a "find by ingredients" search
+  // into a structure that matches our Recipe type as closely as possible.
+  // Some fields will be missing or have default values.
+  return {
+    _id: `spoonacular-${item.id}`,
+    title: item.title,
+    image: item.image,
+    description: `A recipe using some of your ingredients. More details available upon selection.`,
+    summary: `A recipe using some of your ingredients. More details available upon selection.`,
+    readyInMinutes: 0, // Not provided in this API call
+    servings: 0, // Not provided
+    extendedIngredients: [
+      ...(item.usedIngredients || []),
+      ...(item.missedIngredients || [])
+    ].map(ing => ({
+      id: ing.id,
+      name: ing.name,
+      amount: ing.amount,
+      unit: ing.unit,
+    })),
+    analyzedInstructions: [],
+    cuisines: [],
+    dishTypes: [],
+    diets: [],
+    isSpoonacular: true,
+  } as Recipe;
+}
+
+/**
+ * Get API quota status (internal implementation)
+ */
+export async function getQuotaStatusInternal(): Promise<QuotaStatus> {
+  await connectToDatabase();
+  
+  const quotaTracker = await SpoonacularQuotaTracker.findOne({ date: getTodayString() });
+  
+  return {
+    date: getTodayString(),
+    used: quotaTracker?.requestCount || 0,
+    limit: quotaTracker?.quotaLimit || CACHE_CONFIG.DAILY_QUOTA_LIMIT,
+    remaining: Math.max(0, (quotaTracker?.quotaLimit || CACHE_CONFIG.DAILY_QUOTA_LIMIT) - (quotaTracker?.requestCount || 0)),
+    canMakeRequests: Math.max(0, (quotaTracker?.quotaLimit || CACHE_CONFIG.DAILY_QUOTA_LIMIT) - (quotaTracker?.requestCount || 0)) > CACHE_CONFIG.QUOTA_BUFFER,
+    endpoints: quotaTracker?.endpoints || {}
+  };
+}

@@ -53,7 +53,6 @@ export default function Navbar() {
                     role="menuitem"
                     tabIndex={0}
                   >
-                    Dashboard
                   </Link>
                   <Link
                     href="/admin/dashboard/manage-users"

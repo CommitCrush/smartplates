@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/authContext';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -9,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus, Save } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { ProfileEdit } from '@/components/profile/edit';
 
 interface UserSettings {
   dietaryRestrictions: string[];
@@ -224,6 +226,9 @@ export default function SettingsPage() {
             {isSaving ? 'Saving...' : 'Save All Changes'}
           </Button>
         </div>
+
+        {/* User Profile Edit Section */}
+        <ProfileEdit />
 
         {/* Dietary Preferences */}
         <Card>

@@ -1,64 +1,23 @@
 /**
- * Recipe TypeScript Types & Interfaces
- * 
- * Defines the data structure for recipes in SmartPlates.
- * Used for type safety throughout the application.
+ * Barrel for Recipe types
+ * Canonical interfaces live in recipe.d.ts; this file re-exports them
+ * so existing imports from '@/types/recipe' continue to work.
  */
 
+export type {
+  Recipe,
+  RecipeIngredient,
+  RecipeInstructionBlock,
+  RecipeInstruction,
+  RecipeNutrition,
+  CreateRecipeInput,
+  UpdateRecipeInput,
+  RecipeFilter,
+  RecipeCard,
+} from './recipe.d';
 
-// Spoonacular-kompatibles Recipe-Interface
-export interface Recipe {
-  _id?: string;
-  id?: string | number;
-  title: string;
-  description: string;
-  summary: string;
-  image?: string;
-  readyInMinutes: number;
-  servings: number;
-  extendedIngredients: RecipeIngredient[];
-  analyzedInstructions: RecipeInstructionBlock[];
-  cuisines: string[];
-  dishTypes: string[];
-  diets: string[];
-  nutrition?: RecipeNutrition;
-  rating?: number;
-  ratingsCount?: number;
-  likesCount?: number;
-  authorId?: string;
-  authorName?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  isPublished?: boolean;
-  isPending?: boolean;
-  moderationNotes?: string;
-}
-
-export interface RecipeIngredient {
-  id: number | string;
-  name: string;
-  amount: number;
-  unit: string;
-  notes?: string;
-}
-
-export interface RecipeInstructionBlock {
-  name?: string;
-  steps: RecipeInstruction[];
-}
-
-export interface RecipeInstruction {
-  number: number;
-  step: string;
-}
-
-export interface RecipeNutrition {
-  nutrients: Array<{
-    name: string;
-    amount: number;
-    unit: string;
-  }>;
-}
+// Bring Recipe into local scope for interfaces below
+import type { Recipe } from './recipe.d';
 
 export interface RecipeSearchResult {
   recipes: Recipe[];

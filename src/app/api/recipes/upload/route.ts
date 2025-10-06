@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { MongoDBService, ObjectId } from '@/lib/db';
+import { getCollection } from '@/lib/db';
 import { Recipe } from '@/types/recipe';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -142,79 +142,53 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Connect to MongoDB
-    const mongodb = MongoDBService.getInstance();
-    await mongodb.connect();
-    const db = await mongodb.getDatabase();
+    // Map to canonical Recipe fields (spoonacular_recipes collection)
+    const col = await getCollection<Recipe>('spoonacular_recipes');
+    const extendedIngredients = recipeData.ingredients.map((ing, idx) => ({
+      id: idx + 1,
+      name: ing.name.trim(),
+      amount: ing.amount,
+      unit: ing.unit,
+      notes: ing.notes?.trim() || undefined,
+    }));
+    const analyzedInstructions = [
+      {
+        name: 'Steps',
+        steps: recipeData.instructions
+          .sort((a, b) => a.stepNumber - b.stepNumber)
+          .map((inst) => ({ number: inst.stepNumber, step: inst.instruction.trim() })),
+      },
+    ];
 
-    // Create recipe document
-    const recipe: Partial<Recipe> = {
+    const doc: Omit<Recipe, '_id'> = {
       title: recipeData.title.trim(),
       description: recipeData.description.trim(),
-      category: recipeData.category,
-      cuisine: recipeData.cuisine || '',
-      difficulty: recipeData.difficulty,
-      prepTime: recipeData.prepTime,
-      cookTime: recipeData.cookTime,
-      totalTime: recipeData.prepTime + recipeData.cookTime,
+      summary: recipeData.description.trim(),
+      image: uploadedImages[0]?.url || '/placeholder-recipe.svg',
+      sourceUrl: undefined,
+      readyInMinutes: Math.max(5, (recipeData.prepTime || 0) + (recipeData.cookTime || 0)),
       servings: recipeData.servings,
-      
-      // Process ingredients - remove temporary IDs
-      ingredients: recipeData.ingredients.map(ing => ({
-        name: ing.name.trim(),
-        amount: ing.amount,
-        unit: ing.unit,
-        notes: ing.notes?.trim() || undefined,
-      })),
-      
-      // Process instructions - remove temporary IDs and ensure proper numbering
-      instructions: recipeData.instructions
-        .sort((a, b) => a.stepNumber - b.stepNumber)
-        .map((inst, index) => ({
-          stepNumber: index + 1,
-          instruction: inst.instruction.trim(),
-          time: (inst.time && inst.time > 0) ? inst.time : undefined,
-          temperature: (inst.temperature && inst.temperature > 0) ? inst.temperature : undefined,
-        })),
-      
-      // Tags and classification
-      tags: [
-        ...(recipeData.dietaryTags || []), 
-        ...(recipeData.customTags || [])
-      ].filter((tag: string) => tag && tag.trim()),
-      
-      // Media
-      image: uploadedImages.length > 0 ? uploadedImages[0].url : '',
-      images: uploadedImages.map(img => img.url),
-      
-      // Attribution (stored in description field for now)
-      // source: recipeData.isOriginal ? 'user_original' : (recipeData.source?.trim() || 'unknown'),
-      // isOriginal: recipeData.isOriginal, // Not part of Recipe interface
-      
-      // Visibility and sharing
-      isPublic: recipeData.isPublic,
-      
-      // User and metadata
+      extendedIngredients,
+      analyzedInstructions,
+      cuisines: recipeData.cuisine ? [recipeData.cuisine] : [],
+      dishTypes: recipeData.category ? [recipeData.category] : [],
+      diets: recipeData.dietaryTags || [],
+      nutrition: undefined,
+      rating: 0,
+      ratingsCount: 0,
+      likesCount: 0,
       authorId: recipeData.userId,
-      authorName: 'User Recipe', // Will be updated from user data
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      
-      // Initialize interaction counters (remove non-Recipe fields)
-      // likes: 0,
-      // reviews: [],
-      // averageRating: 0,
-      // totalReviews: 0,
-      
-      // Recipe visibility (use isPublished instead of status)
+      authorName: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       isPublished: recipeData.isPublic,
-      
-      // SEO and discovery (remove slug - not part of Recipe interface)
-      // slug: generateSlug(recipeData.title),
+      isPending: false,
+      moderationNotes: '',
+      isSpoonacular: false,
     };
 
-    // Insert recipe into database
-    const result = await db.collection('recipes').insertOne(recipe as any);
+    // Insert recipe into unified collection
+    const result = await col.insertOne(doc as any);
 
     if (!result.insertedId) {
       // Clean up uploaded images if recipe creation failed
@@ -233,15 +207,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the complete recipe with ID
-    const completeRecipe = await db.collection('recipes').findOne({ _id: result.insertedId });
+  const completeRecipe = await col.findOne({ _id: result.insertedId });
 
     return NextResponse.json({
       success: true,
       message: 'Rezept erfolgreich hochgeladen',
-      recipe: {
-        ...completeRecipe,
-        _id: result.insertedId.toString(),
-      },
+      recipe: completeRecipe,
       uploadedImages: uploadedImages.length,
     });
 
@@ -255,23 +226,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-// Helper function to generate URL-friendly slug
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .trim()
-    .replace(/[äöüß]/g, (match) => {
-      const replacements: Record<string, string> = {
-        'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss'
-      };
-      return replacements[match] || match;
-    })
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
 }
 
 export async function GET() {

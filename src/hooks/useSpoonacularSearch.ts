@@ -37,7 +37,7 @@ export function useSpoonacularSearch(): UseSpoonacularSearchResult {
         ...(options.intolerances && { intolerances: options.intolerances }),
       });
 
-      const response = await fetch(`/api/recipes/search-spoonacular?${params}`);
+  const response = await fetch(`/api/recipes?${params}`);
       
       if (!response.ok) {
         throw new Error('Failed to search recipes');

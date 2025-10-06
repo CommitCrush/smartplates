@@ -8,13 +8,14 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@/context/authContext';
+import { slugify } from '@/lib/utils';
 import { Menu, X, ChefHat } from 'lucide-react';
 import UserProfileDropdown from './UserProfileDropdown';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function Navbar() {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -142,7 +143,7 @@ export default function Navbar() {
                   {isAuthenticated && (
                     <>
                       <Link
-                        href="/user/my_meal_plan/current"
+                        href={user && user.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current'}
                         className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                         role="menuitem"
                         tabIndex={0}
@@ -291,7 +292,7 @@ export default function Navbar() {
                   Dashboard
                 </Link>
                 <Link
-                  href="/user/meal-plan/current"
+                  href={user && user.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current'}
                   className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                   onClick={() => setIsMenuOpen(false)}
                   role="menuitem"

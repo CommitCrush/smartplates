@@ -210,10 +210,10 @@ export async function searchRecipesWithCache(
   }
 
   // 2. Check quota before API call
-  const quotaStatus = await checkQuotaAllowance();
+  const quotaStatusSearch = await checkQuotaAllowance();
 
-  if (!quotaStatus.allowed) {
-    console.log(`❌ Quota exceeded (${quotaStatus.remaining} remaining), serving stale cache if available`);
+  if (!quotaStatusSearch.allowed) {
+    console.log(`❌ Quota exceeded (${quotaStatusSearch.remaining} remaining), serving stale cache if available`);
 
     // Try to serve stale cache
     const staleCache = await SpoonacularSearchCache.findOne({ cacheKey });
@@ -362,56 +362,23 @@ export async function getRecipeWithCache(recipeId: string): Promise<{ recipe: Re
   const cacheKey = generateRecipeCacheKey(numericId);
 
   // 1. Try Spoonacular API directly, save fetched data in MongoDB database
-  const quotaStatus = await checkQuotaAllowance();
+  const quotaStatusRecipe = await checkQuotaAllowance();
 
-  if (quotaStatus.allowed) {
+  if (quotaStatusRecipe.allowed) {
     try {
       console.log(`🌐 API CALL FIRST for recipe: ${recipeId}`);
-      const apiRecipe = await getSpoonacularRecipe(recipeId);
+      const apiRecipe = await fetchRecipeById(recipeId);
 
       if (!apiRecipe) {
         // Continue to next fallback
       } else {
         await recordApiUsage('recipeInformation');
 
-        // Save all fetched data in MongoDB database
+        // Cache the full, untransformed Spoonacular API recipe data
         const cacheData = {
           cacheKey,
           spoonacularId: numericId,
-          data: {
-            id: numericId,
-            title: apiRecipe.title,
-            summary: apiRecipe.description,
-            image: apiRecipe.image,
-            readyInMinutes: apiRecipe.totalTime,
-            servings: apiRecipe.servings,
-            extendedIngredients: Array.isArray(apiRecipe.ingredients)
-              ? apiRecipe.ingredients.map((ing: any) => ({
-                  id: parseInt(String(ing.id || '0').replace('spoonacular-ingredient-', '')),
-                  name: ing.name || '',
-                  amount: ing.amount || 1,
-                  unit: ing.unit || '',
-                  original: `${ing.amount || 1} ${ing.unit || ''} ${ing.name || ''}`,
-                  originalName: ing.name || '',
-                  meta: []
-                }))
-              : [],
-            analyzedInstructions: [{
-              name: '',
-              steps: Array.isArray(apiRecipe.instructions)
-                ? apiRecipe.instructions.map((inst: any) => ({
-                    number: inst.stepNumber || 1,
-                    step: inst.instruction || inst,
-                    ingredients: [],
-                    equipment: []
-                  }))
-                : []
-            }],
-            cuisines: [apiRecipe.cuisine],
-            dishTypes: [apiRecipe.category],
-            diets: apiRecipe.dietaryRestrictions,
-            aggregateLikes: apiRecipe.likesCount
-          },
+          data: apiRecipe,
           expiresAt: new Date(Date.now() + CACHE_CONFIG.RECIPE_TTL)
         };
 
@@ -423,14 +390,16 @@ export async function getRecipeWithCache(recipeId: string): Promise<{ recipe: Re
 
         console.log(`💾 Saved API recipe to MongoDB: ${recipeId}`);
 
-        return { recipe: apiRecipe, fromCache: false };
+        // Transform the fresh API recipe before returning
+  const transformedRecipe = await transformSpoonacularRecipe(apiRecipe);
+        return { recipe: transformedRecipe, fromCache: false };
       }
     } catch (error) {
       console.error('Recipe API call failed:', error);
       // Continue to next fallback
     }
   } else {
-    console.log(`❌ Quota exceeded (${quotaStatus.remaining} remaining), skipping API call for recipe: ${recipeId}`);
+    console.log(`❌ Quota exceeded (${quotaStatusRecipe.remaining} remaining), skipping API call for recipe: ${recipeId}`);
   }
 
   // 2. Try MongoDB database Spoonacular cache service
@@ -445,19 +414,19 @@ export async function getRecipeWithCache(recipeId: string): Promise<{ recipe: Re
     });
     
     // The cached data is in SpoonacularApiRecipe format, so we transform it.
-    const transformedRecipe = transformSpoonacularRecipe(cachedRecipe.data as unknown as SpoonacularApiRecipe);
+  const transformedRecipe = await transformSpoonacularRecipe(cachedRecipe.data as unknown as SpoonacularApiRecipe);
     return { recipe: transformedRecipe, fromCache: true };
   }
   
-  // Check quota
-  const quotaStatus = await checkQuotaAllowance();
-  if (!quotaStatus.allowed) {
+  // Check quota (re-check without shadowing previous variable)
+  const quotaStatusAfterCache = await checkQuotaAllowance();
+  if (!quotaStatusAfterCache.allowed) {
     // Try stale cache
     const staleCache = await SpoonacularRecipeCache.findOne({ cacheKey });
     if (staleCache) {
       console.log(`🔄 Serving stale cached recipe: ${recipeId}`);
       // Transform the stale recipe
-      const transformedRecipe = transformSpoonacularRecipe(staleCache.data as unknown as SpoonacularApiRecipe);
+  const transformedRecipe = await transformSpoonacularRecipe(staleCache.data as unknown as SpoonacularApiRecipe);
       return { recipe: transformedRecipe, fromCache: true };
     }
     return { recipe: null, fromCache: false };
@@ -491,7 +460,7 @@ export async function getRecipeWithCache(recipeId: string): Promise<{ recipe: Re
     console.log(`💾 Cached recipe: ${recipeId}`);
     
     // Transform the fresh API recipe before returning
-    const transformedRecipe = transformSpoonacularRecipe(apiRecipe);
+  const transformedRecipe = await transformSpoonacularRecipe(apiRecipe);
     return { recipe: transformedRecipe, fromCache: false };
     
   } catch (error) {
@@ -529,8 +498,8 @@ export async function searchRecipesByIngredientsWithCache(
   }
   
   // Check quota and make API call
-  const quotaStatus = await checkQuotaAllowance();
-  if (!quotaStatus.allowed) {
+  const quotaStatusIngredient = await checkQuotaAllowance();
+  if (!quotaStatusIngredient.allowed) {
     const staleCache = await SpoonacularIngredientSearchCache.findOne({ cacheKey });
     if (staleCache) {
       console.log(`🔄 Serving stale ingredient search cache`);
@@ -606,8 +575,8 @@ export async function getPopularRecipesWithCache(
   }
   
   // Check quota and make API call
-  const quotaStatus = await checkQuotaAllowance();
-  if (!quotaStatus.allowed) {
+  const quotaStatusPopular = await checkQuotaAllowance();
+  if (!quotaStatusPopular.allowed) {
     const staleCache = await SpoonacularRandomCache.findOne({ cacheKey });
     if (staleCache) {
       console.log(`🔄 Serving stale popular recipes cache`);
@@ -620,7 +589,7 @@ export async function getPopularRecipesWithCache(
       });
       return { recipes: recipesWithDescription, fromCache: true };
     }
-    return { recipes: [], fromCache: false };
+  return { recipes: [], fromCache: false };
   }
   
   try {

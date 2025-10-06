@@ -24,6 +24,7 @@ import {
   Users,
   Shield
 } from 'lucide-react';
+import { slugify } from '@/lib/utils';
 
 interface UserProfileDropdownProps {
   className?: string;
@@ -115,13 +116,13 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
     {
       icon: Calendar,
       label: 'Meal Plans',
-      href: '/user/meal-plan/current',
+      href: user?.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current',
       description: 'Your meal planning'
     },
     {
       icon: Star,
       label: 'Saved Plans',
-      href: '/user/meal-plan',
+      href: '/user/my_saved_meal_plan',
       description: 'Your saved meal plans'
     },
     {

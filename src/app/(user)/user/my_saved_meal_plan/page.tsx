@@ -15,7 +15,6 @@ import {
   Calendar, 
   Clock, 
   Copy, 
-  Edit, 
   Eye, 
   Trash2, 
   Plus,
@@ -27,6 +26,7 @@ import { MealPlanService } from '@/services/mealPlanService';
 import type { IMealPlan } from '@/types/meal-planning';
 import { exportMealPlanToPDF } from '@/utils/mealPlanExport';
 import Link from 'next/link';
+import { slugify } from '@/lib/utils';
 
 export default function SavedMealPlanPage() {
   const { data: session } = useSession();
@@ -127,7 +127,7 @@ export default function SavedMealPlanPage() {
           </div>
           
           <Button asChild>
-            <Link href="/user/meal-plan/current">
+            <Link href={session?.user?.name ? `/user/${encodeURIComponent(slugify(session.user.name))}/meal-plan/current` : '/user/meal-plan/current'}>
               <Plus className="h-4 w-4 mr-2" />
               Create New Plan
             </Link>
@@ -213,7 +213,7 @@ export default function SavedMealPlanPage() {
                       Start creating meal plans to see them here
                     </CardDescription>
                     <Button asChild>
-                      <Link href="/user/meal-plan/current">
+                      <Link href={session?.user?.name ? `/user/${encodeURIComponent(slugify(session.user.name))}/meal-plan/current` : '/user/meal-plan/current'}>
                         <Plus className="h-4 w-4 mr-2" />
                         Create Your First Plan
                       </Link>
@@ -241,6 +241,7 @@ interface MealPlanCardProps {
 function MealPlanCard({ plan, isTemplate, onExport, onCopy, onDelete }: MealPlanCardProps) {
   const weekStart = new Date(plan.weekStartDate);
   const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
+  const { data: session } = useSession();
   
   // Count total meals
   const totalMeals = plan.days?.reduce((total, day) => {
@@ -305,7 +306,7 @@ function MealPlanCard({ plan, isTemplate, onExport, onCopy, onDelete }: MealPlan
           </Button>
           
           {plan._id && (
-            <Link href={`/user/meal-plan/${plan._id}`}>
+            <Link href={session?.user?.name ? `/user/${encodeURIComponent(slugify(session.user.name))}/meal-plan/${plan._id}` : `/user/meal-plan/${plan._id}`}>
               <Button variant="outline" size="sm">
                 <Eye className="h-4 w-4" />
               </Button>

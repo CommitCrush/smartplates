@@ -8,12 +8,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { 
   Search, 
   Clock, 
   Users, 
   Filter, 
-  X, 
   Plus,
   Star,
   Utensils 
@@ -85,7 +85,6 @@ export function QuickAddRecipeModal({
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
-  const categories = ['all', 'main course', 'side dish', 'dessert', 'appetizer', 'salad', 'bread', 'breakfast', 'soup', 'beverage', 'sauce', 'marinade', 'fingerfood', 'snack', 'drink'];
   const mealTypeEmoji: Record<string, string> = {
     breakfast: '🍳',
     lunch: '🥪',
@@ -101,7 +100,13 @@ export function QuickAddRecipeModal({
     maxTime: maxCookingTime !== 'all' ? maxCookingTime : '',
     allergy: selectedAllergy !== 'all' ? selectedAllergy : ''
   };
-  const { recipes, loading, error } = useAllRecipes(debouncedSearchQuery, searchOptions);
+  const { recipes, loading } = useAllRecipes(debouncedSearchQuery, searchOptions);
+  type ExtendedRecipe = Recipe & {
+    id?: string | number;
+    difficulty?: string;
+    cookingMinutes?: number;
+    spoonacularScore?: number;
+  };
 
   // Apply client-side filters that aren't handled by server
   useEffect(() => {
@@ -110,7 +115,7 @@ export function QuickAddRecipeModal({
       return;
     }
     
-    let filtered = [...recipes];
+  let filtered: ExtendedRecipe[] = [...(recipes as ExtendedRecipe[])];
     
     // Filter by meal type using dishTypes from Spoonacular (client-side as fallback)
     if (mealType && mealType !== 'snacks') {
@@ -127,10 +132,10 @@ export function QuickAddRecipeModal({
 
     // Filter by difficulty (client-side)
     if (selectedDifficulty !== 'all') {
-      filtered = filtered.filter(recipe => 
-        recipe.difficulty?.toLowerCase() === selectedDifficulty.toLowerCase() ||
-        (!recipe.difficulty && selectedDifficulty === 'easy') // Default to easy if no difficulty specified
-      );
+      filtered = filtered.filter((recipe) => {
+        const diff = recipe.difficulty as string | undefined;
+        return diff?.toLowerCase() === selectedDifficulty.toLowerCase() || (!diff && selectedDifficulty === 'easy');
+      });
     }
     
     // Filter by tags (client-side)
@@ -148,14 +153,17 @@ export function QuickAddRecipeModal({
     
     // Filter for quick & easy (client-side as fallback)
     if (quickAndEasy) {
-      filtered = filtered.filter(recipe => 
-        (recipe.readyInMinutes && recipe.readyInMinutes <= 30) ||
-        (recipe.cookingMinutes && recipe.cookingMinutes <= 30) ||
-        (!recipe.readyInMinutes && !recipe.cookingMinutes)
-      );
+      filtered = filtered.filter((recipe) => {
+        const cooking = recipe.cookingMinutes as number | undefined;
+        return (
+          (recipe.readyInMinutes && recipe.readyInMinutes <= 30) ||
+          (typeof cooking === 'number' && cooking <= 30) ||
+          (!recipe.readyInMinutes && cooking == null)
+        );
+      });
     }
     
-    setFilteredRecipes(filtered);
+  setFilteredRecipes(filtered);
   }, [recipes, selectedAllergy, selectedDifficulty, tagsFilter, quickAndEasy, mealType]);
 
   // Helper: Clear all filters
@@ -172,15 +180,15 @@ export function QuickAddRecipeModal({
   };
 
   // Helper: Suggest top 5 recipes
-  const suggestedRecipes = useMemo(() => {
-    return recipes.slice(0, 5);
+  const suggestedRecipes = useMemo<ExtendedRecipe[]>(() => {
+    return (recipes as ExtendedRecipe[]).slice(0, 5);
   }, [recipes]);
 
   // Helper: Add recipe
-  const handleAddRecipe = (recipe: any) => {
+  const handleAddRecipe = (recipe: ExtendedRecipe) => {
     console.log('Adding recipe to calendar:', recipe.title);
     onAddRecipe(
-      recipe.id || recipe.title, 
+      String(recipe.id ?? recipe.title), 
       recipe.title, 
       recipe.servings || 4,
       recipe.readyInMinutes || recipe.cookingMinutes || 30,
@@ -326,9 +334,9 @@ export function QuickAddRecipeModal({
                 Popular {mealType} recipes
               </h3>
               <div className="flex gap-2 overflow-x-auto pb-2">
-                {suggestedRecipes.map(recipe => (
+                {suggestedRecipes.map((recipe, i) => (
                   <Button
-                    key={recipe.id}
+                    key={`${recipe.id ?? recipe.title ?? i}`}
                     variant="outline"
                     size="sm"
                     onClick={() => handleAddRecipe(recipe)}
@@ -363,7 +371,7 @@ export function QuickAddRecipeModal({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredRecipes.map(recipe => (
+                {filteredRecipes.map((recipe: ExtendedRecipe) => (
                   <div
                     key={recipe.id || recipe.title}
                     className="border border-gray-200 rounded-lg p-4 hover:border-primary/40 hover:shadow-md transition-all group bg-background-card"
@@ -371,9 +379,11 @@ export function QuickAddRecipeModal({
                     {/* Recipe Image */}
                     <div className="w-full h-40 bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
                       {recipe.image ? (
-                        <img
+                        <Image
                           src={recipe.image}
                           alt={recipe.title}
+                          width={600}
+                          height={300}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -403,13 +413,13 @@ export function QuickAddRecipeModal({
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {recipe.diets?.slice(0, 3).map((diet: string) => (
-                        <Badge key={diet} variant="secondary" className="text-xs px-2 py-0">
+                      {recipe.diets?.slice(0, 3).map((diet: string, i: number) => (
+                        <Badge key={`diet-${diet}-${i}`} variant="secondary" className="text-xs px-2 py-0">
                           {diet}
                         </Badge>
                       ))}
-                      {recipe.dishTypes?.slice(0, 2).map((type: string) => (
-                        <Badge key={type} variant="outline" className="text-xs px-2 py-0">
+                      {recipe.dishTypes?.slice(0, 2).map((type: string, i: number) => (
+                        <Badge key={`type-${type}-${i}`} variant="outline" className="text-xs px-2 py-0">
                           {type}
                         </Badge>
                       ))}
@@ -427,10 +437,10 @@ export function QuickAddRecipeModal({
                           <span>{recipe.servings || 4}</span>
                         </div>
                       </div>
-                      {recipe.spoonacularScore && (
+                      {typeof recipe.spoonacularScore === 'number' && (
                         <div className="flex items-center space-x-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>{Math.round(recipe.spoonacularScore / 20)}/5</span>
+                          <span>{Math.round((recipe.spoonacularScore as number) / 20)}/5</span>
                         </div>
                       )}
                     </div>

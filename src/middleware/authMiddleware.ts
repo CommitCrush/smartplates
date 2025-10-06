@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { getCollection, COLLECTIONS, toObjectId } from '@/lib/db';
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: any;
@@ -28,43 +29,33 @@ interface AuthResult {
  */
 export async function authenticateToken(request: NextRequest): Promise<AuthResult> {
   try {
-    // For development: Mock authentication based on URL patterns
-    const url = request.nextUrl.pathname;
-    
-    // Admin routes require admin mock user
-    if (url.includes('/admin')) {
-      return {
-        success: true,
-        user: {
-          id: 'admin-1',
-          email: 'admin@smartplates.dev',
-          name: 'Admin User',
-          role: 'admin',
-          isActive: true
-        }
-      };
+    // Token aus Header oder Cookie extrahieren (hier als Beispiel userId aus Header)
+    const userId = request.headers.get('x-user-id');
+    if (!userId) {
+      // DEV-Fallback: Immer Admin-User erlauben, wenn kein Header gesetzt
+      if (process.env.NODE_ENV !== 'production') {
+        return {
+          success: true,
+          user: {
+            id: 'admin-dev',
+            email: 'admin@dev.local',
+            name: 'Dev Admin',
+            role: 'admin',
+            isActive: true
+          }
+        };
+      }
+      return { success: false, error: 'No user ID provided' };
     }
-    
-    // User routes require regular user
-    if (url.includes('/user') || url.includes('/api/')) {
-      return {
-        success: true,
-        user: {
-          id: 'user-1',
-          email: 'user@smartplates.dev',
-          name: 'Regular User',
-          role: 'user',
-          isActive: true
-        }
-      };
+    const usersCollection = await getCollection(COLLECTIONS.USERS);
+    const user = await usersCollection.findOne({ _id: toObjectId(userId) });
+    if (!user) {
+      return { success: false, error: 'User not found' };
     }
-    
-    // Public routes don't require authentication
-    return {
-      success: false,
-      error: 'No authentication required for public routes'
-    };
-    
+    if (user.isActive === false) {
+      return { success: false, error: 'Account deaktiviert' };
+    }
+    return { success: true, user };
   } catch (error) {
     console.error('Authentication error:', error);
     return {

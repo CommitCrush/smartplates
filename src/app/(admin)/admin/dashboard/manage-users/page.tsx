@@ -127,6 +127,11 @@ export default function ManageUsersPage() {
                         Verified
                       </Badge>
                     )}
+                    {user.isActive === false ? (
+                      <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">Deaktiviert</Badge>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Aktiv</Badge>
+                    )}
                   </div>
                   
                   <div className="flex items-center gap-1 text-muted-foreground mb-2">
@@ -166,27 +171,25 @@ export default function ManageUsersPage() {
                 {/* Actions */}
                 <div className="flex gap-2">
                   <Button 
+                    asChild
                     variant="outline" 
                     size="sm"
-                    onClick={() => {
-                      // In real app, this would navigate to user detail page
-                      alert(`View details for ${user.name}`);
-                    }}
                   >
-                    <Eye className="w-4 h-4 mr-1" />
-                    View
+                    <a href={`/admin/dashboard/manage-users/${user.id}`}>
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </a>
                   </Button>
                   
                   {user.role !== 'admin' && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      asChild
+                      variant="outline"
                       size="sm"
-                      onClick={() => {
-                        // In real app, this would open edit modal
-                        alert(`Edit ${user.name}`);
-                      }}
                     >
-                      Edit
+                      <a href={`/admin/dashboard/manage-users/${user.id}/edit`}>
+                        Edit
+                      </a>
                     </Button>
                   )}
                 </div>

@@ -59,7 +59,8 @@ export async function getSpoonacularRecipe(id: string): Promise<Recipe | null> {
  * Search recipes by ingredients from Spoonacular API (with intelligent caching)
  */
 export async function searchRecipesByIngredients(
-ingredients: string[], p0?: { number: number; }): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
+  ingredients: string[]
+): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
   try {
     const cacheService = await import('./spoonacularCacheService.server');
     const result = await cacheService.searchRecipesByIngredientsWithCache(ingredients);

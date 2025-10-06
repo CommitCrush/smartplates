@@ -35,10 +35,11 @@ export default function CurrentMealPlanPage() {
         const response = await fetch(`/api/meal-plans?weekStartDate=${startOfWeek.toISOString()}&userId=${session.user.id}`);
         
         if (response.ok) {
-          const data = await response.json();
-          if (data.mealPlans && data.mealPlans.length > 0) {
+          const payload = await response.json();
+          const mealPlans = Array.isArray(payload?.data) ? payload.data : (Array.isArray(payload?.mealPlans) ? payload.mealPlans : []);
+          if (mealPlans.length > 0 && mealPlans[0]?._id) {
             // Redirect to existing meal plan
-            router.replace(`/user/my_meal_plan/${data.mealPlans[0]._id}`);
+            router.replace(`/user/my_meal_plan/${mealPlans[0]._id}`);
             return;
           }
         }
@@ -57,8 +58,13 @@ export default function CurrentMealPlanPage() {
         });
 
         if (createResponse.ok) {
-          const newMealPlan = await createResponse.json();
-          router.replace(`/user/my_meal_plan/${newMealPlan._id}`);
+          const payload = await createResponse.json();
+          const newMealPlan = payload?.data || payload; // handle { success, data } or raw
+          if (newMealPlan?._id) {
+            router.replace(`/user/my_meal_plan/${newMealPlan._id}`);
+          } else {
+            throw new Error('Meal plan created but no ID returned');
+          }
         } else {
           throw new Error('Failed to create meal plan');
         }

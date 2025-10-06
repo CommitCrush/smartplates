@@ -12,7 +12,8 @@
     "test:coverage": "jest --coverage",
     "db:check": "bun run tests/check-atlas-connection.ts",
     "db:reset": "bun run tests/reset_database.ts",
-    "demo:testutils2": "bun run tests/demo_testutils2.ts"
+    "demo:testutils2": "bun run tests/demo_testutils2.ts",
+    "backfill:spoonacular": "bun run scripts/backfill-spoonacular-details.ts"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",

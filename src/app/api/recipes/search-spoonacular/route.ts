@@ -18,23 +18,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '12');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    let result;
-
-    // If ingredients are provided, search by ingredients
-    if (ingredients) {
-      const ingredientList = ingredients.split(',').map(i => i.trim());
-      const searchResult = await searchRecipesByIngredients(ingredientList);
-      result = { recipes: searchResult.recipes, totalResults: searchResult.totalResults };
-    } else {
-      // Otherwise, search by query
-      result = await searchSpoonacularRecipes(query, {
-        cuisine: cuisine || undefined,
-        diet: diet || undefined,
-        type: category || undefined,
-        number: limit,
-        offset
-      });
-  let recipes: any[] = [];
+    let recipes: any[] = [];
     let total = 0;
     let source = 'mongodb';
 
@@ -66,23 +50,24 @@ export async function GET(request: NextRequest) {
     // 2. Fallback: Spoonacular API
     if (!recipes || recipes.length === 0) {
       try {
-        let result;
         if (ingredients) {
           const ingredientList = ingredients.split(',').map(i => i.trim());
-          const recipesApi = await searchRecipesByIngredients(ingredientList, { number: limit });
-          result = { recipes: recipesApi, totalResults: recipesApi.length };
+          const byIng = await searchRecipesByIngredients(ingredientList);
+          recipes = byIng.recipes;
+          total = byIng.totalResults;
+          source = 'spoonacular';
         } else {
-          result = await searchSpoonacularRecipes(query, {
+          const result = await searchSpoonacularRecipes(query, {
             cuisine: cuisine || undefined,
             diet: diet || undefined,
             type: category || undefined,
             number: limit,
             offset
           });
+          recipes = result.recipes || [];
+          total = result.totalResults || recipes.length;
+          source = 'spoonacular';
         }
-        recipes = result.recipes || [];
-        total = result.totalResults || recipes.length;
-        source = 'spoonacular';
       } catch (spError) {
         console.warn('Spoonacular API fallback failed:', spError);
       }

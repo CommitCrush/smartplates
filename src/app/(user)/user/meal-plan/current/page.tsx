@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { slugify } from '@/lib/utils';
 
 export default function CurrentMealPlanPage() {
   const router = useRouter();
@@ -37,8 +38,10 @@ export default function CurrentMealPlanPage() {
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data && data.data.length > 0) {
-            // Redirect to existing meal plan with clean URL
-            router.replace(`/user/meal-plan/${data.data[0]._id}`);
+            // Redirect to existing meal plan with clean URL, include username if available
+            const username = session?.user?.name || 'me';
+            const slug = slugify(username);
+            router.replace(`/user/${encodeURIComponent(slug)}/meal-plan/${data.data[0]._id}`);
             return;
           }
         }
@@ -58,7 +61,9 @@ export default function CurrentMealPlanPage() {
         if (createResponse.ok) {
           const data = await createResponse.json();
           if (data.success && data.data) {
-            router.replace(`/user/meal-plan/${data.data._id}`);
+            const username = session?.user?.name || 'me';
+            const slug = slugify(username);
+            router.replace(`/user/${encodeURIComponent(slug)}/meal-plan/${data.data._id}`);
           } else {
             throw new Error('Invalid response from server');
           }
@@ -68,7 +73,9 @@ export default function CurrentMealPlanPage() {
           if (retryResponse.ok) {
             const retryData = await retryResponse.json();
             if (retryData.success && retryData.data && retryData.data.length > 0) {
-              router.replace(`/user/meal-plan/${retryData.data[0]._id}`);
+              const username = session?.user?.name || 'me';
+              const slug = slugify(username);
+              router.replace(`/user/${encodeURIComponent(slug)}/meal-plan/${retryData.data[0]._id}`);
               return;
             }
           }

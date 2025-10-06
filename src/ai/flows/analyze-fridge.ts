@@ -137,7 +137,7 @@ export async function analyzeFridge(input: AnalyzeFridgeInput): Promise<AnalyzeF
 
     // Try OpenAI Vision first
     let ingredients: any[] = [];
-    let rawDetections: any[] = [];
+    const rawDetections: any[] = [];
     try {
       const { ingredients: extracted, raw } = await extractIngredientsFromImage(validatedInput.imageData);
       rawDetections.push({ description: raw, score: 1 });

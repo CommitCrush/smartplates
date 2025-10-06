@@ -80,12 +80,31 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
   const userName = user?.name || 'User';
   const userEmail = user?.email || '';
 
-  const navigationItems = [
+  const navigationItems = isAdmin ? [
     {
       icon: User,
-  label: 'Your Profile',
-  href: '/user/dashboard',
-  description: 'Go to your dashboard'
+      label: 'Profil',
+      href: '/admin/profile',
+      description: 'Verwalte dein Admin-Profil'
+    },
+    {
+      icon: Shield,
+      label: 'Admin Panel',
+      href: '/admin',
+      description: 'Haupt-Dashboard'
+    },
+    {
+      icon: Settings,
+      label: 'Settings',
+      href: '/admin/settings',
+      description: 'Account-Einstellungen'
+    }
+  ] : [
+    {
+      icon: User,
+      label: 'Your Profile',
+      href: '/user/dashboard',
+      description: 'Go to your dashboard'
     },
     {
       icon: ChefHat,
@@ -156,20 +175,37 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
               <span className="text-gray-900 dark:text-white">{item.label}</span>
             </Link>
           ))}
-          <Link
-            href="/user/settings"
-            className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <Settings className="h-4 w-4 text-gray-500" />
-            <span className="text-gray-900 dark:text-white">Settings</span>
-          </Link>
-          {isAdmin && (
+          {isAdmin ? (
+            <>
+              <Link
+                href="/admin/profile"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <User className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-900 dark:text-white">Profil</span>
+              </Link>
+              <Link
+                href="/admin"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Shield className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-900 dark:text-white">Admin Panel</span>
+              </Link>
+              <Link
+                href="/admin/settings"
+                className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Settings className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-900 dark:text-white">Settings</span>
+              </Link>
+            </>
+          ) : (
             <Link
-              href="/admin"
+              href="/user/settings"
               className="flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
-              <Shield className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-900 dark:text-white">Admin Panel</span>
+              <Settings className="h-4 w-4 text-gray-500" />
+              <span className="text-gray-900 dark:text-white">Settings</span>
             </Link>
           )}
           <button
@@ -189,7 +225,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
       {/* Profile Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ml-auto"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -209,7 +245,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-[100]">
           {/* User Info Section */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-start space-x-3">
@@ -241,21 +277,6 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
               </div>
             </div>
             
-            {/* Quick Stats */}
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-              <div className="text-center">
-                <div className="font-semibold text-gray-900 dark:text-white">12</div>
-                <div className="text-xs text-gray-500">Recipes</div>
-              </div>
-              <div className="text-center">
-                <div className="font-semibold text-gray-900 dark:text-white">5</div>
-                <div className="text-xs text-gray-500">Plans</div>
-              </div>
-              <div className="text-center">
-                <div className="font-semibold text-gray-900 dark:text-white">47</div>
-                <div className="text-xs text-gray-500">Likes</div>
-              </div>
-            </div>
           </div>
 
           {/* Navigation Links */}
@@ -280,31 +301,18 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
             ))}
           </div>
 
-          {/* Settings & Admin */}
+          {/* Settings */}
           <div className="border-t border-gray-200 dark:border-gray-700 p-2">
-            <Link
-              href="/user/settings"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
-            >
-              <Settings className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300" />
-              <div className="flex-1">
-                <div className="font-medium text-gray-900 dark:text-white">Settings</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Account preferences</div>
-              </div>
-            </Link>
-            
-            {/* Admin link for admin users */}
-            {isAdmin && (
+            {!isAdmin && (
               <Link
-                href="/admin"
+                href="/user/settings"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
               >
-                <Shield className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300" />
+                <Settings className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300" />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-white">Admin Panel</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">System management</div>
+                  <div className="font-medium text-gray-900 dark:text-white">Settings</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Account preferences</div>
                 </div>
               </Link>
             )}

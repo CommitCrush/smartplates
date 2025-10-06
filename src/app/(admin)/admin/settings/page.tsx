@@ -14,7 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { 
+import { EnhancedRecipeUploadForm, type EnhancedRecipeFormData } from '@/components/forms/EnhancedRecipeUploadForm';
+import {
   Settings,
   Users,
   User,
@@ -33,6 +34,7 @@ import { cn } from '@/lib/utils';
 interface AdminStats {
   totalUsers: number;
   activeUsers: number;
+  onlineUsers: number;
   totalRecipes: number;
   pendingRecipes: number;
   totalReviews: number;
@@ -84,13 +86,13 @@ interface SystemSettings {
 export default function AdminSettingsPage() {
   const { user, status } = useAuth();
   const loading = status === 'loading';
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'recipes' | 'reports' | 'system'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'recipes' | 'upload' | 'reports' | 'system'>('dashboard');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<UserData[]>([]);
   const [recipes, setRecipes] = useState<RecipeData[]>([]);
   const [systemSettings, setSystemSettings] = useState<SystemSettings>({
     siteName: 'SmartPlates',
-    siteDescription: 'Deine intelligente Kochplattform',
+    siteDescription: 'Your intelligent cooking platform',
     maintenanceMode: false,
     allowUserRegistration: true,
     requireEmailVerification: true,
@@ -189,12 +191,12 @@ export default function AdminSettingsPage() {
 
       if (response.ok) {
         setRecipes(prev => prev.filter(r => r._id !== recipeId));
-        setMessage({ type: 'success', text: 'Rezept-Aktion erfolgreich durchgeführt' });
+        setMessage({ type: 'success', text: 'Recipe action completed successfully' });
       } else {
-        throw new Error('Fehler bei der Rezept-Moderation');
+        throw new Error('Error moderating recipe');
       }
     } catch (_error) {
-      setMessage({ type: 'error', text: 'Fehler bei der Rezept-Moderation' });
+      setMessage({ type: 'error', text: 'Error moderating recipe' });
     }
   };
 
@@ -217,15 +219,40 @@ export default function AdminSettingsPage() {
     }
   };
 
+  // Handle recipe upload
+  const handleRecipeUpload = async (recipeData: EnhancedRecipeFormData) => {
+    try {
+      const response = await fetch('/api/recipes/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...recipeData,
+          authorId: user?.id, // Admin's ID
+          isAdminUpload: true, // Mark as admin upload
+        }),
+      });
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: 'Recipe uploaded successfully' });
+        // Refresh recipes list
+        loadAdminData();
+      } else {
+        throw new Error('Error uploading recipe');
+      }
+    } catch (_error) {
+      setMessage({ type: 'error', text: 'Error uploading recipe' });
+    }
+  };
+
   // Filter and search functions
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = (users || []).filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || user.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
-  const filteredRecipes = recipes.filter(recipe => {
+  const filteredRecipes = (recipes || []).filter(recipe => {
     const matchesSearch = recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          recipe.author.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || recipe.status === filterStatus;
@@ -237,7 +264,7 @@ export default function AdminSettingsPage() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Lade Admin-Panel...</p>
+          <p className="text-gray-600">Loading Admin Panel...</p>
         </div>
       </div>
     );
@@ -247,7 +274,8 @@ export default function AdminSettingsPage() {
     { id: 'dashboard', label: 'Dashboard', icon: Activity },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'recipes', label: 'Recipes', icon: BookOpen },
-    { id: 'reports', label: 'Meldungen', icon: Shield },
+    { id: 'upload', label: 'Upload Recipe', icon: BookOpen },
+    { id: 'reports', label: 'Reports', icon: Shield },
     { id: 'system', label: 'System', icon: Settings },
   ] as const;
 
@@ -256,7 +284,7 @@ export default function AdminSettingsPage() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin-Panel</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Panel</h1>
           <p className="text-gray-600">
             Manage users, recipes and system settings
           </p>
@@ -293,13 +321,13 @@ export default function AdminSettingsPage() {
             {activeTab === 'dashboard' && (
               <>
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <Card className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Benutzer</p>
+                        <p className="text-sm font-medium text-muted-foreground">Users</p>
                         <p className="text-2xl font-bold">{stats?.totalUsers || 0}</p>
-                        <p className="text-xs text-green-600">+{stats?.activeUsers || 0} aktiv</p>
+                        <p className="text-xs text-green-600">+{stats?.activeUsers || 0} active</p>
                       </div>
                       <Users className="h-8 w-8 text-blue-500" />
                     </div>
@@ -308,9 +336,22 @@ export default function AdminSettingsPage() {
                   <Card className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Rezepte</p>
+                        <p className="text-sm font-medium text-muted-foreground">Online</p>
+                        <p className="text-2xl font-bold text-green-600">{stats?.onlineUsers || 0}</p>
+                        <p className="text-xs text-muted-foreground">Last 24h</p>
+                      </div>
+                      <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Recipes</p>
                         <p className="text-2xl font-bold">{stats?.totalRecipes || 0}</p>
-                        <p className="text-xs text-orange-600">{stats?.pendingRecipes || 0} ausstehend</p>
+                        <p className="text-xs text-orange-600">{stats?.pendingRecipes || 0} pending</p>
                       </div>
                       <BookOpen className="h-8 w-8 text-green-500" />
                     </div>
@@ -319,7 +360,7 @@ export default function AdminSettingsPage() {
                   <Card className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Bewertungen</p>
+                        <p className="text-sm font-medium text-muted-foreground">Reviews</p>
                         <p className="text-2xl font-bold">{stats?.totalReviews || 0}</p>
                       </div>
                       <Star className="h-8 w-8 text-yellow-500" />
@@ -329,7 +370,7 @@ export default function AdminSettingsPage() {
                   <Card className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Meldungen</p>
+                        <p className="text-sm font-medium text-muted-foreground">Reports</p>
                         <p className="text-2xl font-bold text-red-600">{stats?.reportedContent || 0}</p>
                       </div>
                       <AlertTriangle className="h-8 w-8 text-red-500" />
@@ -339,14 +380,14 @@ export default function AdminSettingsPage() {
 
                 {/* Recent Activity */}
                 <Card className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Systemstatus</h3>
+                  <h3 className="text-lg font-semibold mb-4">System Status</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">Uptime</p>
                       <p className="text-lg font-semibold">{stats?.systemUptime || 'N/A'}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Speicher verwendet</p>
+                      <p className="text-sm text-muted-foreground">Storage Used</p>
                       <p className="text-lg font-semibold">{stats?.storageUsed || 'N/A'}</p>
                     </div>
                     <div className="text-center">
@@ -364,10 +405,10 @@ export default function AdminSettingsPage() {
             {activeTab === 'users' && (
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold">Benutzerverwaltung</h3>
+                  <h3 className="text-lg font-semibold">User Management</h3>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Benutzer suchen..."
+                      placeholder="Search users..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-64"
@@ -377,10 +418,10 @@ export default function AdminSettingsPage() {
                       onChange={(e) => setFilterStatus(e.target.value)}
                       className="px-3 py-2 border border-border rounded-md bg-background"
                     >
-                      <option value="all">Alle Status</option>
-                      <option value="active">Aktiv</option>
-                      <option value="suspended">Gesperrt</option>
-                      <option value="banned">Gebannt</option>
+                      <option value="all">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="suspended">Suspended</option>
+                      <option value="banned">Banned</option>
                     </select>
                   </div>
                 </div>
@@ -389,16 +430,16 @@ export default function AdminSettingsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-2">Benutzer</th>
+                        <th className="text-left p-2">User</th>
                         <th className="text-left p-2">Status</th>
-                        <th className="text-left p-2">Rezepte</th>
-                        <th className="text-left p-2">Beitritt</th>
-                        <th className="text-left p-2">Aktionen</th>
+                        <th className="text-left p-2">Recipes</th>
+                        <th className="text-left p-2">Joined</th>
+                        <th className="text-left p-2">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredUsers.map((userData) => (
-                        <tr key={userData._id} className="border-b hover:bg-muted/50">
+                      {filteredUsers.map((userData, index) => (
+                        <tr key={`${userData._id}-${index}`} className="border-b hover:bg-muted/50">
                           <td className="p-2">
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -419,7 +460,7 @@ export default function AdminSettingsPage() {
                           </td>
                           <td className="p-2">{userData.recipesCount}</td>
                           <td className="p-2">
-                            {new Date(userData.joinDate).toLocaleDateString('de-DE')}
+                            {new Date(userData.joinDate).toLocaleDateString('en-US')}
                           </td>
                           <td className="p-2">
                             <div className="flex gap-1">
@@ -429,7 +470,7 @@ export default function AdminSettingsPage() {
                                   variant="outline"
                                   onClick={() => handleUserStatusChange(userData._id, 'suspended')}
                                 >
-                                  Sperren
+                                  Suspend
                                 </Button>
                               )}
                               {userData.status === 'suspended' && (
@@ -438,7 +479,7 @@ export default function AdminSettingsPage() {
                                   variant="outline"
                                   onClick={() => handleUserStatusChange(userData._id, 'active')}
                                 >
-                                  Entsperren
+                                  Unsuspend
                                 </Button>
                               )}
                               <Button
@@ -446,7 +487,7 @@ export default function AdminSettingsPage() {
                                 variant="destructive"
                                 onClick={() => handleUserStatusChange(userData._id, 'banned')}
                               >
-                                Bannen
+                                Ban
                               </Button>
                             </div>
                           </td>
@@ -462,10 +503,10 @@ export default function AdminSettingsPage() {
             {activeTab === 'recipes' && (
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold">Rezeptverwaltung</h3>
+                  <h3 className="text-lg font-semibold">Recipe Management</h3>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Rezepte suchen..."
+                      placeholder="Search recipes..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-64"
@@ -475,11 +516,11 @@ export default function AdminSettingsPage() {
                       onChange={(e) => setFilterStatus(e.target.value)}
                       className="px-3 py-2 border border-border rounded-md bg-background"
                     >
-                      <option value="all">Alle Status</option>
-                      <option value="published">Veröffentlicht</option>
-                      <option value="pending">Ausstehend</option>
-                      <option value="rejected">Abgelehnt</option>
-                      <option value="private">Privat</option>
+                      <option value="all">All Status</option>
+                      <option value="published">Published</option>
+                      <option value="pending">Pending</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="private">Private</option>
                     </select>
                   </div>
                 </div>
@@ -488,21 +529,21 @@ export default function AdminSettingsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-2">Rezept</th>
-                        <th className="text-left p-2">Autor</th>
+                        <th className="text-left p-2">Recipe</th>
+                        <th className="text-left p-2">Author</th>
                         <th className="text-left p-2">Status</th>
-                        <th className="text-left p-2">Bewertung</th>
-                        <th className="text-left p-2">Aktionen</th>
+                        <th className="text-left p-2">Rating</th>
+                        <th className="text-left p-2">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRecipes.map((recipe) => (
-                        <tr key={recipe._id} className="border-b hover:bg-muted/50">
+                      {filteredRecipes.map((recipe, index) => (
+                        <tr key={`${recipe._id}-${index}`} className="border-b hover:bg-muted/50">
                           <td className="p-2">
                             <div>
                               <p className="font-medium">{recipe.title}</p>
                               <p className="text-sm text-muted-foreground">
-                                {new Date(recipe.createdAt).toLocaleDateString('de-DE')}
+                                {new Date(recipe.createdAt).toLocaleDateString('en-US')}
                               </p>
                             </div>
                           </td>
@@ -567,18 +608,36 @@ export default function AdminSettingsPage() {
               </Card>
             )}
 
+            {/* Upload Recipe Tab */}
+            {activeTab === 'upload' && (
+              <div>
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold">Upload New Recipe</h3>
+                  <p className="text-muted-foreground">
+                    Add a new recipe to the SmartPlates collection. This recipe will be available to all users.
+                  </p>
+                </div>
+                <EnhancedRecipeUploadForm
+                  onSubmit={handleRecipeUpload}
+                  isLoading={_isLoading}
+                  user={user}
+                  submitButtonText="Upload Recipe"
+                />
+              </div>
+            )}
+
             {/* System Settings Tab */}
             {activeTab === 'system' && (
               <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-6">Systemeinstellungen</h3>
-                
+                <h3 className="text-lg font-semibold mb-6">System Settings</h3>
+
                 <div className="space-y-6">
                   {/* Site Settings */}
                   <div className="space-y-4">
-                    <h4 className="font-medium">Website-Einstellungen</h4>
+                    <h4 className="font-medium">Website Settings</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="siteName">Website-Name</Label>
+                        <Label htmlFor="siteName">Website Name</Label>
                         <Input
                           id="siteName"
                           value={systemSettings.siteName}
@@ -586,7 +645,7 @@ export default function AdminSettingsPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="siteDescription">Website-Beschreibung</Label>
+                        <Label htmlFor="siteDescription">Website Description</Label>
                         <Input
                           id="siteDescription"
                           value={systemSettings.siteDescription}
@@ -598,13 +657,13 @@ export default function AdminSettingsPage() {
 
                   {/* Access Settings */}
                   <div className="space-y-4">
-                    <h4 className="font-medium">Zugangseinstellungen</h4>
+                    <h4 className="font-medium">Access Settings</h4>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label>Wartungsmodus</Label>
+                          <Label>Maintenance Mode</Label>
                           <p className="text-sm text-muted-foreground">
-                            Website für Wartungsarbeiten sperren
+                            Lock website for maintenance work
                           </p>
                         </div>
                         <Switch
@@ -615,9 +674,9 @@ export default function AdminSettingsPage() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label>Benutzerregistrierung erlauben</Label>
+                          <Label>Allow User Registration</Label>
                           <p className="text-sm text-muted-foreground">
-                            Neue Benutzer können sich registrieren
+                            New users can register
                           </p>
                         </div>
                         <Switch
@@ -628,9 +687,9 @@ export default function AdminSettingsPage() {
 
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label>E-Mail-Verifizierung erforderlich</Label>
+                          <Label>Email Verification Required</Label>
                           <p className="text-sm text-muted-foreground">
-                            Benutzer müssen ihre E-Mail bestätigen
+                            Users must confirm their email
                           </p>
                         </div>
                         <Switch
@@ -643,10 +702,10 @@ export default function AdminSettingsPage() {
 
                   {/* Content Settings */}
                   <div className="space-y-4">
-                    <h4 className="font-medium">Inhaltseinstellungen</h4>
+                    <h4 className="font-medium">Content Settings</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="maxRecipes">Max. Rezepte pro Benutzer</Label>
+                        <Label htmlFor="maxRecipes">Max Recipes per User</Label>
                         <Input
                           id="maxRecipes"
                           type="number"
@@ -655,7 +714,7 @@ export default function AdminSettingsPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="maxImageSize">Max. Bildgröße (MB)</Label>
+                        <Label htmlFor="maxImageSize">Max Image Size (MB)</Label>
                         <Input
                           id="maxImageSize"
                           type="number"
@@ -668,7 +727,7 @@ export default function AdminSettingsPage() {
 
                   {/* Save Button */}
                   <Button onClick={saveSystemSettings} className="w-full">
-                    Einstellungen speichern
+                    Save Settings
                   </Button>
                 </div>
               </Card>

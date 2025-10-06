@@ -9,12 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { 
-  User, 
-  Mail, 
-  MapPin, 
-  Edit3, 
-  Save, 
+import CloudinaryWidgetUpload from '@/components/ui/CloudinaryWidgetUpload';
+import {
+  User,
+  Mail,
+  MapPin,
+  Edit3,
+  Save,
   X,
   Calendar
 } from 'lucide-react';
@@ -49,7 +50,6 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
     bio: '',
     location: ''
   });
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     const getParams = async () => {
@@ -97,39 +97,16 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
     }
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Error',
-        description: 'Please select an image file.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: 'Error',
-        description: 'Image must be smaller than 5MB.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsUploadingAvatar(true);
-    
+  const handleAvatarUpload = async (uploadResult: { public_id: string; secure_url: string; url: string }) => {
     try {
-      const formData = new FormData();
-      formData.append('avatar', file);
-
+      // Save the uploaded image URL to the user profile in MongoDB
       const response = await fetch('/api/users/profile/avatar', {
-        method: 'POST',
-        body: formData
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: uploadResult.secure_url,
+          publicId: uploadResult.public_id
+        })
       });
 
       if (response.ok) {
@@ -141,17 +118,15 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
         });
       } else {
         const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
+        throw new Error(error.error || 'Failed to save profile image');
       }
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      console.error('Error saving avatar:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to upload image.',
+        description: error instanceof Error ? error.message : 'Failed to save profile image.',
         variant: 'destructive'
       });
-    } finally {
-      setIsUploadingAvatar(false);
     }
   };
 
@@ -225,40 +200,27 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               {/* Avatar with Upload Option */}
-              <div className="relative group">
+              <div className="flex flex-col items-center space-y-4">
                 <Avatar className="w-24 h-24">
-                  <AvatarImage src={profile.avatar} alt={profile.name} />
+                  <AvatarImage src={profile.avatar || '/placeholder-avatar.svg'} alt={profile.name} />
                   <AvatarFallback className="text-2xl">
                     {profile.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                
-                {/* Upload overlay */}
+
+                {/* Upload button */}
                 {profile.isOwner && (
-                  <>
-                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                      {isUploadingAvatar ? (
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                      ) : (
-                        <User className="h-6 w-6 text-white" />
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      disabled={isUploadingAvatar}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                      title="Click to upload profile image"
-                    />
-                  </>
-                )}
-                
-                {/* Upload hint */}
-                {profile.isOwner && !isUploadingAvatar && (
-                  <div className="absolute -bottom-6 left-0 right-0 text-xs text-center text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    Click to change
-                  </div>
+                  <CloudinaryWidgetUpload
+                    onUpload={handleAvatarUpload}
+                    onError={(error) => toast({
+                      title: 'Upload Error',
+                      description: error,
+                      variant: 'destructive'
+                    })}
+                    buttonText="Change Profile Picture"
+                    buttonVariant="outline"
+                    className="text-sm"
+                  />
                 )}
               </div>
 

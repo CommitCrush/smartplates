@@ -37,15 +37,6 @@ async function getUsersHandler(request: Request): Promise<NextResponse> {
       total: mappedUsers.length,
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch users' 
-      },
-      { status: 500 }
-    );
   }
 }
 

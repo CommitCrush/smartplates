@@ -49,22 +49,29 @@ export default function AdminStatisticsWidgets() {
     try {
       setLoading(true);
       setError(null);
-      
-      const mockData: StatisticsData = {
-        totalUsers: 1247,
-        activeUsers: 892,
-        totalRecipes: 3456,
-        publishedRecipes: 2987,
-        totalMealPlans: 1890,
-        activeMealPlans: 567,
-        revenue: 12450.75,
-        monthlyGrowth: 15.7,
-        systemHealth: 'healthy',
-        pendingReviews: 23
+
+      const response = await fetch('/api/admin/statistics');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Transform API data to component format
+      const statisticsData: StatisticsData = {
+        totalUsers: data.totalUsers || 0,
+        activeUsers: data.activeUsers || 0,
+        totalRecipes: data.totalRecipes || 0,
+        publishedRecipes: data.publicRecipes || 0,
+        totalMealPlans: data.totalMealPlans || 0,
+        activeMealPlans: data.activeMealPlans || 0,
+        revenue: 0, // Will be updated when commissions are implemented
+        monthlyGrowth: 0, // Will be calculated from real data
+        systemHealth: data.systemHealth?.database === 'healthy' ? 'healthy' : 'warning',
+        pendingReviews: 0
       };
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setStatistics(mockData);
+
+      setStatistics(statisticsData);
     } catch (error) {
       console.error('Failed to load statistics:', error);
       setError(error instanceof Error ? error.message : 'Failed to load statistics');

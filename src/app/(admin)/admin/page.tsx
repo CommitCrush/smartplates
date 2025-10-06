@@ -1,11 +1,12 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminStatisticsWidgets from '@/components/admin/AdminStatisticsWidgets';
 import { Button } from '@/components/ui/button';
-import { 
-  Users, 
-  ChefHat, 
+import {
+  Users,
+  ChefHat,
   Settings,
   BarChart3,
   UserCog,
@@ -13,33 +14,61 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+interface ActivityEvent {
+  id: string;
+  type: string;
+  message: string;
+  timestamp: string;
+}
+
 export default function AdminPage() {
+  const [recentActivities, setRecentActivities] = useState<ActivityEvent[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRecentActivities();
+  }, []);
+
+  const fetchRecentActivities = async () => {
+    try {
+      const response = await fetch('/api/admin/recent-activity');
+      if (response.ok) {
+        const data = await response.json();
+        setRecentActivities(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch recent activities:', error);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
   const quickActions = [
     {
       title: 'Manage Users',
       description: 'Manage and moderate user accounts',
-      href: '/admin/users',
+      href: '/admin/manage-users',
       icon: Users,
       color: 'text-blue-600'
     },
     {
       title: 'Manage Recipes',
       description: 'Review and moderate recipes',
-      href: '/admin/recipes',
+      href: '/admin/manage-recipes',
       icon: ChefHat,
       color: 'text-green-600'
     },
     {
       title: 'Analytics',
       description: 'Detailed system analytics',
-      href: '/admin/analytics',
+      href: '/admin/statistics',
       icon: BarChart3,
       color: 'text-purple-600'
     },
     {
       title: 'Cookware Commissions',
       description: 'Manage cookware commissions',
-      href: '/admin/commissions',
+      href: '/admin/commission-management',
       icon: Package,
       color: 'text-orange-600'
     },
@@ -53,7 +82,7 @@ export default function AdminPage() {
     {
       title: 'Enhanced API Management',
       description: 'Monitor and optimize Spoonacular API',
-      href: '/admin/spoonacular-enhanced',
+      href: '/admin/api-management',
       icon: UserCog,
       color: 'text-indigo-600'
     }
@@ -127,41 +156,58 @@ export default function AdminPage() {
       {/* Recent Activity */}
       <div className="space-y-6">
         <h2 className="text-xl font-semibold">Recent Activity</h2>
-        
+
         <Card>
           <CardHeader>
-            <CardTitle>System Status</CardTitle>
+            <CardTitle>System Events</CardTitle>
             <CardDescription>
               Latest system events and notifications
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-2 border-b">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">System running normally</span>
-                </div>
-                <span className="text-xs text-muted-foreground">2 minutes ago</span>
+            {activitiesLoading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                      <div className="h-4 bg-gray-300 rounded w-32"></div>
+                    </div>
+                    <div className="h-3 bg-gray-300 rounded w-16"></div>
+                  </div>
+                ))}
               </div>
-              
-              <div className="flex items-center justify-between py-2 border-b">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Database backup completed</span>
-                </div>
-                <span className="text-xs text-muted-foreground">1 hour ago</span>
+            ) : recentActivities.length > 0 ? (
+              <div className="space-y-4">
+                {recentActivities.slice(0, 6).map((activity, index) => (
+                  <div key={activity.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        activity.type === 'user_registration' ? 'bg-green-500' :
+                        activity.type === 'system_backup' ? 'bg-blue-500' :
+                        activity.type === 'recipe_created' ? 'bg-purple-500' :
+                        activity.type === 'user_login' ? 'bg-yellow-500' :
+                        'bg-gray-500'
+                      }`}></div>
+                      <span className="text-sm">{activity.message}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(activity.timestamp).toLocaleString('de-DE', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                ))}
               </div>
-              
-              <div className="flex items-center justify-between py-2 border-b">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm">5 new users registered</span>
-                </div>
-                <span className="text-xs text-muted-foreground">today</span>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-muted-foreground">No recent activities</p>
               </div>
-            </div>
-            
+            )}
+
             <div className="mt-6">
               <Button variant="outline" size="sm" className="w-full">
                 View All Events

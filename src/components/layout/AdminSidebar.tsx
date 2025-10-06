@@ -3,10 +3,10 @@ import { cn } from "@/lib/utils";
 
 const adminLinks = [
   { href: "/admin", label: "Dashboard" },
-  { href: "/admin/dashboard/statistics", label: "Statistics" },
-  { href: "/admin/dashboard/manage-users", label: "User Management" },
-  { href: "/admin/dashboard/manage-recipes", label: "Recipe Management" },
-  { href: "/admin/dashboard/manage_cookware_commissions", label: "Commission Management" },
+  { href: "/admin/statistics", label: "Statistics" },
+  { href: "/admin/manage-users", label: "User Management" },
+  { href: "/admin/manage-recipes", label: "Recipe Management" },
+  { href: "/admin/commission-management", label: "Commission Management" },
   { href: "/admin/settings", label: "Settings" },
 ];
 

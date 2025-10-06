@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import type { Recipe } from '@/types/recipe';
 
-// Holt alle Rezepte (optional mit Filter)
-export function useAllRecipes(query = '', options: Record<string, string> = {}) {
+// Holt alle Rezepte (optional mit Filter + Pagination)
+export function useAllRecipes(
+  query = '',
+  options: Record<string, string> = {}
+) {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -19,19 +23,44 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
 
         const res = await fetch(`/api/recipes?${params.toString()}`);
         const data = await res.json();
-        setRecipes(data.recipes || []);
-        setError((data.recipes && data.recipes.length === 0) ? 'No recipes found' : '');
-      } catch (error) {
-        console.error('Error loading recipes:', error);
-        setError('Error loading recipes');
+
+        const page = options.page ? parseInt(options.page, 10) : 1;
+        const perPage = options.number ? parseInt(options.number, 10) : 30;
+        const batch: Recipe[] = data.recipes || [];
+
+        if (page > 1) {
+          setRecipes((prev) => [...prev, ...batch]);
+        } else {
+          setRecipes(batch);
+        }
+
+        // Basic hasMore heuristic: if the batch returned at least perPage items,
+        // assume there might be another page. Prefer total when available.
+        if (typeof data.total === 'number') {
+          const currentTotal = (page - 1) * perPage + batch.length;
+          setHasMore(currentTotal < data.total);
+        } else {
+          setHasMore(batch.length >= perPage);
+        }
+
+        setError(batch.length === 0 && page === 1 ? 'Keine Rezepte gefunden' : '');
+      } catch {
+        if (options.page && parseInt(options.page, 10) > 1) {
+          // On load-more failure, don't nuke previous items
+          setError('Fehler beim Laden weiterer Rezepte');
+        } else {
+          setError('Fehler beim Laden der Rezepte');
+          setRecipes([]);
+        }
       } finally {
         setLoading(false);
       }
     };
-    fetchRecipes();
-  }, [query, JSON.stringify(options)]);
 
-  return { recipes, error, loading };
+    fetchRecipes();
+  }, [query, options]);
+
+  return { recipes, error, loading, hasMore };
 }
 
 // Holt ein Rezept per ID
@@ -42,9 +71,9 @@ export function useRecipeById(recipeId: string) {
 
   useEffect(() => {
     setLoading(true);
-        fetch(`/api/recipes/${recipeId}`)
-      .then(res => res.json())
-      .then(data => {
+    fetch(`/api/recipes/${recipeId}`)
+      .then((res) => res.json())
+      .then((data) => {
         setRecipe(data.recipe);
         setLoading(false);
       })
@@ -72,7 +101,7 @@ export function useRecipesByMealType(type: string) {
         const res = await fetch(`/api/recipes?${params.toString()}`);
         const data = await res.json();
         setRecipes(data.recipes || []);
-        setError((data.recipes && data.recipes.length === 0) ? 'No recipes found' : '');
+        setError(data.recipes && data.recipes.length === 0 ? 'Keine Rezepte gefunden' : '');
       } catch {
         setError('Error loading recipes');
       } finally {

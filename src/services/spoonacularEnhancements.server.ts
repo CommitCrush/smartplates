@@ -10,109 +10,209 @@
 
 import { connectToDatabase } from '@/lib/db';
 import { SpoonacularRecipeCache, SpoonacularQuotaTracker } from '@/models/SpoonacularCache';
-import { searchRecipesWithCacheInternal } from './spoonacularCacheService.server';
-
-// ========================================
-// Enhanced Configuration
-// ========================================
-
-const ENHANCEMENT_CONFIG = {
-  BATCH_SIZE: 10,                    // Process recipes in batches
-  RETRY_ATTEMPTS: 3,                 // Number of retry attempts
-  RETRY_DELAY_BASE: 1000,           // Base delay for exponential backoff (ms)
-  PERFORMANCE_THRESHOLD: 2000,       // Log slow operations (ms)
-  CACHE_WARMUP_LIMIT: 50,           // Number of popular recipes to cache
-  
-  // Popular search terms to pre-cache
-  POPULAR_SEARCHES: [
-    'chicken recipes',
-    'vegetarian meals',
-    'quick dinner',
-    'healthy breakfast',
-    'pasta dishes',
-    'desserts',
-    'salad recipes',
-    'soup recipes'
-  ]
-};
+import { searchRecipesWithCache } from './spoonacularCacheService.server';
+import { getSpoonacularRecipe } from './spoonacularService';
+import RecipeModel, { IRecipe } from '@/models/Recipe';
+import { Recipe as RecipeType, RecipeIngredient, RecipeInstructionBlock } from '@/types/recipe';
 
 // ========================================
 // Performance Monitoring
 // ========================================
 
-interface PerformanceMetrics {
-  operation: string;
-  duration: number;
-  success: boolean;
-  cacheHit?: boolean;
-  errorType?: string;
-  timestamp: Date;
-}
-
 class PerformanceMonitor {
-  private metrics: PerformanceMetrics[] = [];
-  
+  private records: Array<{
+    operation: string;
+    duration: number;
+    success: boolean;
+    timestamp: number;
+    metadata?: Record<string, unknown>;
+  }> = [];
+
   startTimer(operation: string) {
-    const startTime = Date.now();
+    const start = performance.now();
     return {
-      operation,
-      startTime,
-      end: (success: boolean, extra?: { cacheHit?: boolean; errorType?: string }) => {
-        const duration = Date.now() - startTime;
-        const metric: PerformanceMetrics = {
-          operation,
-          duration,
-          success,
-          timestamp: new Date(),
-          ...extra
-        };
-        
-        this.metrics.push(metric);
-        
-        // Log slow operations
-        if (duration > ENHANCEMENT_CONFIG.PERFORMANCE_THRESHOLD) {
-          console.warn(`🐌 Slow operation detected: ${operation} took ${duration}ms`);
-        }
-        
-        return metric;
-      }
+      end: (success: boolean, metadata?: Record<string, unknown>) => {
+        const duration = performance.now() - start;
+        this.records.push({ operation, duration, success, timestamp: Date.now(), metadata });
+      },
     };
   }
-  
-  getStats(operation?: string): {
-    avgDuration: number;
-    successRate: number;
-    cacheHitRate?: number;
-    totalOperations: number;
-  } {
-    const filteredMetrics = operation 
-      ? this.metrics.filter(m => m.operation === operation)
-      : this.metrics;
-    
-    if (filteredMetrics.length === 0) {
-      return { avgDuration: 0, successRate: 0, totalOperations: 0 };
+
+  getStats() {
+    const totalRequests = this.records.length;
+    if (totalRequests === 0) {
+      return {
+        totalRequests: 0,
+        successfulRequests: 0,
+        failedRequests: 0,
+        avgDuration: 0,
+        successRate: 0,
+        cacheHitRate: 0,
+      };
     }
+
+    const successfulRequests = this.records.filter(r => r.success).length;
+    const totalDuration = this.records.reduce((sum, r) => sum + r.duration, 0);
     
-    const totalDuration = filteredMetrics.reduce((sum, m) => sum + m.duration, 0);
-    const successCount = filteredMetrics.filter(m => m.success).length;
-    const cacheHits = filteredMetrics.filter(m => m.cacheHit === true).length;
-    const cacheRequests = filteredMetrics.filter(m => m.cacheHit !== undefined).length;
-    
+    const cacheHits = this.records.filter(r => r.operation.startsWith('cache:') && r.success).length;
+    const cacheChecks = this.records.filter(r => r.operation.startsWith('cache:')).length;
+
     return {
-      avgDuration: Math.round(totalDuration / filteredMetrics.length),
-      successRate: Math.round((successCount / filteredMetrics.length) * 100),
-      cacheHitRate: cacheRequests > 0 ? Math.round((cacheHits / cacheRequests) * 100) : undefined,
-      totalOperations: filteredMetrics.length
+      totalRequests,
+      successfulRequests,
+      failedRequests: totalRequests - successfulRequests,
+      avgDuration: totalDuration / totalRequests,
+      successRate: (successfulRequests / totalRequests) * 100,
+      cacheHitRate: cacheChecks > 0 ? (cacheHits / cacheChecks) * 100 : 0,
     };
   }
-  
-  clearOldMetrics() {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    this.metrics = this.metrics.filter(m => m.timestamp > oneHourAgo);
+
+  clearOldMetrics(maxAgeMs = 60 * 60 * 1000) { // 1 hour
+    const cutoff = Date.now() - maxAgeMs;
+    this.records = this.records.filter(r => r.timestamp > cutoff);
   }
 }
 
 export const performanceMonitor = new PerformanceMonitor();
+
+// ========================================
+// Configuration
+// ========================================
+
+const ENHANCEMENT_CONFIG = {
+  RETRY_ATTEMPTS: 3,
+  RETRY_DELAY_BASE: 1000, // 1 second
+  BATCH_SIZE: 10,
+  POPULAR_SEARCHES: ['chicken', 'pasta', 'salad', 'vegan', 'dessert'],
+  PERFORMANCE_THRESHOLD: 1500, // 1.5 seconds
+};
+
+// ========================================
+// Local Spoonacular Type Definitions
+// ========================================
+
+export interface SpoonacularApiRecipe {
+  id: number;
+  title: string;
+  image: string;
+  imageType: string;
+  servings: number;
+  readyInMinutes: number;
+  sourceUrl: string;
+  sourceName: string;
+  creditsText: string;
+  instructions: string;
+  summary: string;
+  vegetarian: boolean;
+  vegan: boolean;
+  glutenFree: boolean;
+  dairyFree: boolean;
+  veryHealthy: boolean;
+  cheap: boolean;
+  veryPopular: boolean;
+  sustainable: boolean;
+  lowFodmap: boolean;
+  weightWatcherSmartPoints: number;
+  gaps: string;
+  preparationMinutes: number;
+  cookingMinutes: number;
+  aggregateLikes: number;
+  healthScore: number;
+  pricePerServing: number;
+  occasions: string[];
+  diets: string[];
+  cuisines: string[];
+  dishTypes: string[];
+  extendedIngredients: SpoonacularIngredient[];
+  analyzedInstructions: SpoonacularInstruction[];
+  nutrition?: {
+    nutrients: Array<{
+      name: string;
+      amount: number;
+      unit: string;
+    }>;
+  };
+}
+
+export interface SpoonacularIngredient {
+  id: number;
+  aisle: string;
+  image: string;
+  consistency: string;
+  name: string;
+  nameClean: string;
+  original: string;
+  originalName: string;
+  amount: number;
+  unit: string;
+  meta: string[];
+  measures: {
+    us: {
+      amount: number;
+      unitShort: string;
+      unitLong: string;
+    };
+    metric: {
+      amount: number;
+      unitShort: string;
+      unitLong: string;
+    };
+  };
+}
+
+export interface SpoonacularInstruction {
+  name: string;
+  steps: SpoonacularStep[];
+}
+
+export interface SpoonacularStep {
+  number: number;
+  step: string;
+  ingredients: { id: number; name: string; localizedName: string; image: string }[];
+  equipment: { id: number; name: string; localizedName: string; image: string }[];
+}
+
+export interface SpoonacularFoundRecipe {
+  id: number;
+  title: string;
+  image: string;
+  imageType?: string;
+  usedIngredientCount: number;
+  missedIngredientCount: number;
+  missedIngredients: SpoonacularIngredient[];
+  usedIngredients: SpoonacularIngredient[];
+  unusedIngredients: SpoonacularIngredient[];
+  likes: number;
+}
+
+/**
+ * Represents the structure of a recipe as returned from a Spoonacular search.
+ * This is a summary and differs from the full SpoonacularApiRecipe.
+ */
+export interface SpoonacularSearchResultRecipe {
+  id: number;
+  title: string;
+  image: string;
+  servings: number;
+  readyInMinutes: number;
+  sourceUrl: string;
+  summary?: string;
+  extendedIngredients?: SpoonacularIngredient[];
+  analyzedInstructions?: unknown[];
+  nutrition?: {
+    nutrients: Array<{
+      name: string;
+      amount: number;
+      unit: string;
+    }>;
+  };
+}
+
+/**
+ * ========================================
+ * Batch Processing & Retry Logic
+ * ========================================
+ */
 
 // ========================================
 // Retry Logic with Exponential Backoff
@@ -203,7 +303,7 @@ export async function warmupPopularRecipesCache(): Promise<{ warmed: number; err
     for (const searchTerm of ENHANCEMENT_CONFIG.POPULAR_SEARCHES) {
       try {
         const result = await withRetry(
-          () => searchRecipesWithCacheInternal(searchTerm, { limit: 5 }),
+          () => searchRecipesWithCache(searchTerm, { limit: 5 }),
           `warmup:${searchTerm}`
         );
         
@@ -430,3 +530,105 @@ export async function performHealthCheck(): Promise<{
 setInterval(() => {
   performanceMonitor.clearOldMetrics();
 }, 60 * 60 * 1000);
+
+// ========================================
+// Recipe Fetching and Saving
+// ========================================
+
+/**
+ * Fetches a recipe from Spoonacular by its ID, transforms it into the local Recipe format,
+ * and saves it to the 'recipes' collection in the database.
+ *
+ * @param spoonacularId The ID of the recipe from the Spoonacular API.
+ * @returns The saved recipe document from the database, or null if not found.
+ */
+export async function fetchAndSaveRecipe(spoonacularId: number): Promise<RecipeType | null> {
+  await connectToDatabase();
+
+  // 1. Fetch recipe from Spoonacular API
+  console.log(`🌐 Fetching recipe ${spoonacularId} from Spoonacular...`);
+  const apiRecipe = (await getSpoonacularRecipe(
+    String(spoonacularId)
+  )) as SpoonacularApiRecipe | null;
+
+  if (!apiRecipe) {
+    console.error(`❌ Recipe with ID ${spoonacularId} not found via Spoonacular API.`);
+    return null;
+  }
+
+  // 2. Transform the API data into our Recipe schema
+  const recipeData: Partial<IRecipe> = {
+    spoonacularId: apiRecipe.id,
+    title: apiRecipe.title,
+    summary: apiRecipe.summary,
+    image: apiRecipe.image,
+    servings: apiRecipe.servings,
+    readyInMinutes: apiRecipe.readyInMinutes,
+    sourceUrl: apiRecipe.sourceUrl,
+    
+    extendedIngredients: (apiRecipe.extendedIngredients || []).map(
+      (ing): RecipeIngredient => ({
+        id: ing.id,
+        name: ing.name,
+        amount: ing.amount,
+        unit: ing.unit,
+        notes: ing.original || '',
+      })
+    ),
+    
+    analyzedInstructions: (apiRecipe.analyzedInstructions || []).map(
+      (instruction): RecipeInstructionBlock => ({
+        name: instruction.name,
+        steps: (instruction.steps || []).map((step) => ({
+          number: step.number,
+          step: step.step,
+        })),
+      })
+    ),
+    
+    vegetarian: apiRecipe.vegetarian,
+    vegan: apiRecipe.vegan,
+    glutenFree: apiRecipe.glutenFree,
+    dairyFree: apiRecipe.dairyFree,
+    veryHealthy: apiRecipe.veryHealthy,
+    
+    cuisines: apiRecipe.cuisines,
+    dishTypes: apiRecipe.dishTypes,
+    diets: apiRecipe.diets,
+    occasions: apiRecipe.occasions,
+    description: apiRecipe.summary, // Using summary as description
+  };
+
+  // 3. Save to the database
+  // Use findOneAndUpdate with upsert to avoid duplicates and update existing ones.
+  try {
+    const savedRecipe = await RecipeModel.findOneAndUpdate(
+      { spoonacularId: apiRecipe.id }, // Condition to find the recipe
+      { $set: recipeData },            // Data to update or insert
+      { 
+        upsert: true,                  // Create if it doesn't exist
+        new: true,                     // Return the new/updated document
+        setDefaultsOnInsert: true      // Apply schema defaults on creation
+      }
+    );
+
+    if (!savedRecipe) {
+      console.error(`❌ Error saving recipe ${apiRecipe.id} to database: returned null`);
+      return null;
+    }
+
+    console.log(`💾 Successfully saved recipe "${savedRecipe.title}" (ID: ${savedRecipe.spoonacularId}) to the database.`);
+    
+    const recipeObject = savedRecipe.toObject();
+    
+    // Convert the ObjectId to a string for the _id field
+    return {
+      ...recipeObject,
+      _id: recipeObject._id.toString(),
+    };
+
+  } catch (error) {
+    console.error(`❌ Error saving recipe ${apiRecipe.id} to database:`, error);
+    throw error;
+  }
+}

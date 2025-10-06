@@ -5,7 +5,9 @@
  * to minimize API calls and preserve quota limits
  */
 
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Model, Document, Schema, Query } from 'mongoose';
+
+import { SpoonacularFoundRecipe } from '../services/spoonacularEnhancements.server';
 
 // ========================================
 // Cache Entry Base Interface
@@ -13,7 +15,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 interface BaseCacheEntry {
   cacheKey: string;
-  data: any;
+  data: unknown;
   createdAt: Date;
   updatedAt: Date;
   expiresAt: Date;
@@ -182,7 +184,7 @@ export interface ISpoonacularSearchCache extends Document, BaseCacheEntry {
       healthScore: number;
       spoonacularScore: number;
       pricePerServing: number;
-      analyzedInstructions: any[];
+      analyzedInstructions: unknown[];
       cheap: boolean;
       creditsText: string;
       cuisines: string[];
@@ -227,41 +229,7 @@ const spoonacularSearchCacheSchema = new Schema<ISpoonacularSearchCache>({
 
 export interface ISpoonacularIngredientSearchCache extends Document, BaseCacheEntry {
   ingredients: string[];
-  data: Array<{
-    id: number;
-    title: string;
-    image: string;
-    usedIngredientCount: number;
-    missedIngredientCount: number;
-    missedIngredients: Array<{
-      id: number;
-      amount: number;
-      unit: string;
-      unitLong: string;
-      unitShort: string;
-      aisle: string;
-      name: string;
-      original: string;
-      originalName: string;
-      meta: string[];
-      image: string;
-    }>;
-    usedIngredients: Array<{
-      id: number;
-      amount: number;
-      unit: string;
-      unitLong: string;
-      unitShort: string;
-      aisle: string;
-      name: string;
-      original: string;
-      originalName: string;
-      meta: string[];
-      image: string;
-    }>;
-    unusedIngredients: any[];
-    likes: number;
-  }>;
+  data: SpoonacularFoundRecipe[];
 }
 
 const spoonacularIngredientSearchCacheSchema = new Schema<ISpoonacularIngredientSearchCache>({
@@ -283,7 +251,7 @@ export interface ISpoonacularRandomCache extends Document, BaseCacheEntry {
   tags: string[];
   number: number;
   data: {
-    recipes: any[]; // Full recipe objects from random endpoint
+    recipes: ISpoonacularRecipeCache['data'][]; // Full recipe objects from random endpoint
   };
 }
 
@@ -407,64 +375,65 @@ const spoonacularQuotaTrackerSchema = new Schema<ISpoonacularQuotaTracker>({
 // ========================================
 // Pre-save Middleware
 // ========================================
+type MongooseNextFunction = (err?: Error) => void;
 
 // Update timestamps on save for all cache schemas
-spoonacularRecipeCacheSchema.pre('save', function(this: any, next: any) {
+spoonacularRecipeCacheSchema.pre<ISpoonacularRecipeCache>('save', function(this: ISpoonacularRecipeCache, next: MongooseNextFunction) {
   this.updatedAt = new Date();
   next();
 });
 
-spoonacularRecipeCacheSchema.pre('findOneAndUpdate', function(this: any, next: any) {
+spoonacularRecipeCacheSchema.pre<Query<ISpoonacularRecipeCache, ISpoonacularRecipeCache>>('findOneAndUpdate', function(this: Query<ISpoonacularRecipeCache, ISpoonacularRecipeCache>, next: MongooseNextFunction) {
   this.set({ updatedAt: new Date() });
   next();
 });
 
-spoonacularSearchCacheSchema.pre('save', function(this: any, next: any) {
+spoonacularSearchCacheSchema.pre<ISpoonacularSearchCache>('save', function(this: ISpoonacularSearchCache, next: MongooseNextFunction) {
   this.updatedAt = new Date();
   next();
 });
 
-spoonacularSearchCacheSchema.pre('findOneAndUpdate', function(this: any, next: any) {
+spoonacularSearchCacheSchema.pre<Query<ISpoonacularSearchCache, ISpoonacularSearchCache>>('findOneAndUpdate', function(this: Query<ISpoonacularSearchCache, ISpoonacularSearchCache>, next: MongooseNextFunction) {
   this.set({ updatedAt: new Date() });
   next();
 });
 
-spoonacularIngredientSearchCacheSchema.pre('save', function(this: any, next: any) {
+spoonacularIngredientSearchCacheSchema.pre<ISpoonacularIngredientSearchCache>('save', function(this: ISpoonacularIngredientSearchCache, next: MongooseNextFunction) {
   this.updatedAt = new Date();
   next();
 });
 
-spoonacularIngredientSearchCacheSchema.pre('findOneAndUpdate', function(this: any, next: any) {
+spoonacularIngredientSearchCacheSchema.pre<Query<ISpoonacularIngredientSearchCache, ISpoonacularIngredientSearchCache>>('findOneAndUpdate', function(this: Query<ISpoonacularIngredientSearchCache, ISpoonacularIngredientSearchCache>, next: MongooseNextFunction) {
   this.set({ updatedAt: new Date() });
   next();
 });
 
-spoonacularRandomCacheSchema.pre('save', function(this: any, next: any) {
+spoonacularRandomCacheSchema.pre<ISpoonacularRandomCache>('save', function(this: ISpoonacularRandomCache, next: MongooseNextFunction) {
   this.updatedAt = new Date();
   next();
 });
 
-spoonacularRandomCacheSchema.pre('findOneAndUpdate', function(this: any, next: any) {
+spoonacularRandomCacheSchema.pre<Query<ISpoonacularRandomCache, ISpoonacularRandomCache>>('findOneAndUpdate', function(this: Query<ISpoonacularRandomCache, ISpoonacularRandomCache>, next: MongooseNextFunction) {
   this.set({ updatedAt: new Date() });
   next();
 });
 
-spoonacularNutritionCacheSchema.pre('save', function(this: any, next: any) {
+spoonacularNutritionCacheSchema.pre<ISpoonacularNutritionCache>('save', function(this: ISpoonacularNutritionCache, next: MongooseNextFunction) {
   this.updatedAt = new Date();
   next();
 });
 
-spoonacularNutritionCacheSchema.pre('findOneAndUpdate', function(this: any, next: any) {
+spoonacularNutritionCacheSchema.pre<Query<ISpoonacularNutritionCache, ISpoonacularNutritionCache>>('findOneAndUpdate', function(this: Query<ISpoonacularNutritionCache, ISpoonacularNutritionCache>, next: MongooseNextFunction) {
   this.set({ updatedAt: new Date() });
   next();
 });
 
-spoonacularQuotaTrackerSchema.pre('save', function(this: any, next: any) {
+spoonacularQuotaTrackerSchema.pre<ISpoonacularQuotaTracker>('save', function(this: ISpoonacularQuotaTracker, next: MongooseNextFunction) {
   this.updatedAt = new Date();
   next();
 });
 
-spoonacularQuotaTrackerSchema.pre('findOneAndUpdate', function(this: any, next: any) {
+spoonacularQuotaTrackerSchema.pre<Query<ISpoonacularQuotaTracker, ISpoonacularQuotaTracker>>('findOneAndUpdate', function(this: Query<ISpoonacularQuotaTracker, ISpoonacularQuotaTracker>, next: MongooseNextFunction) {
   this.set({ updatedAt: new Date() });
   next();
 });
@@ -520,7 +489,7 @@ export const SpoonacularQuotaTracker: Model<ISpoonacularQuotaTracker> =
 /**
  * Generate cache key for search requests
  */
-export function generateSearchCacheKey(query: string, filters: any = {}): string {
+export function generateSearchCacheKey(query: string, filters: Record<string, unknown> = {}): string {
   const filterStr = Object.keys(filters)
     .sort()
     .map(key => `${key}=${filters[key]}`)
@@ -556,7 +525,7 @@ export function generateNutritionCacheKey(recipeId: number): string {
   return `nutrition:${recipeId}`;
 }
 
-export default {
+const spoonacularCacheExports = {
   SpoonacularRecipeCache,
   SpoonacularSearchCache,
   SpoonacularIngredientSearchCache,
@@ -569,3 +538,5 @@ export default {
   generateRecipeCacheKey,
   generateNutritionCacheKey
 };
+
+export default spoonacularCacheExports;

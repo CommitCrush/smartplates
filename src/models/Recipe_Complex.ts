@@ -7,7 +7,7 @@
 
 import { ObjectId } from 'mongodb';
 import { getCollection, COLLECTIONS, toObjectId } from '@/lib/db';
-import { Recipe, CreateRecipeInput, UpdateRecipeInput, RecipeFilter, RecipeCard } from '@/types/recipe';
+import type { Recipe, CreateRecipeInput, UpdateRecipeInput, RecipeFilter, RecipeCard } from '@/types/recipe.d.tsx';
 
 /**
  * Creates a new recipe in the database
@@ -19,45 +19,33 @@ export async function createRecipe(recipeData: CreateRecipeInput): Promise<Recip
   try {
     const recipesCollection = await getCollection<Recipe>(COLLECTIONS.RECIPES);
     
-    // Calculate total time
-    const totalTime = recipeData.prepTime + recipeData.cookTime;
-    
-    // Generate IDs for ingredients and instructions
-    const ingredientsWithIds = recipeData.ingredients.map((ingredient, index) => ({
-      id: `ing_${Date.now()}_${index}`,
-      ...ingredient
-    }));
-    
-    const instructionsWithIds = recipeData.instructions.map((instruction, index) => ({
-      id: `inst_${Date.now()}_${index}`,
-      ...instruction
-    }));
-    
-    // Create recipe object with default values and timestamps
+    // Calculate total time (Spoonacular: readyInMinutes)
+    const readyInMinutes = (recipeData.prepTime ?? 0) + (recipeData.cookTime ?? 0);
+
+    // Use Spoonacular-compliant fields
     const newRecipe: Omit<Recipe, '_id'> = {
       title: recipeData.title,
       description: recipeData.description,
-      ingredients: ingredientsWithIds,
-      instructions: instructionsWithIds,
-      difficulty: recipeData.difficulty,
-      mealType: recipeData.mealType,
-      servings: recipeData.servings,
-      prepTime: recipeData.prepTime,
-      cookTime: recipeData.cookTime,
-      totalTime: totalTime,
+      summary: recipeData.description, // Use description as summary if not provided
       image: recipeData.image,
-      images: recipeData.images || [],
-      video: recipeData.video,
-      categoryId: toObjectId(recipeData.categoryId),
-      tags: recipeData.tags,
-      authorId: toObjectId(recipeData.authorId),
-      isPublic: recipeData.isPublic !== false,  // Default to true
-      rating: 0,                                // Default rating
-      ratingCount: 0,                          // Default rating count
+      readyInMinutes,
+      servings: recipeData.servings,
+      extendedIngredients: recipeData.extendedIngredients,
+      analyzedInstructions: recipeData.analyzedInstructions,
+      cuisines: [],
+      dishTypes: [],
+      diets: [],
       nutrition: recipeData.nutrition,
-      notes: recipeData.notes,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      rating: 0,
+      ratingsCount: 0,
+      likesCount: 0,
+      authorId: recipeData.authorId?.toString(),
+      authorName: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isPublished: recipeData.isPublic !== false,
+      isPending: false,
+      moderationNotes: '',
     };
     
     // Insert recipe into database
@@ -94,11 +82,17 @@ export async function createRecipe(recipeData: CreateRecipeInput): Promise<Recip
 export async function findRecipeById(recipeId: string | ObjectId): Promise<Recipe | null> {
   try {
     const recipesCollection = await getCollection<Recipe>(COLLECTIONS.RECIPES);
-    
-    const recipe = await recipesCollection.findOne({
-      _id: toObjectId(recipeId)
-    });
-    
+    // Only convert to ObjectId if recipeId is a valid string and not already an ObjectId
+    // Always use ObjectId for _id filter
+    let id: ObjectId;
+    if (typeof recipeId === 'string') {
+      if (!ObjectId.isValid(recipeId)) return null;
+      id = new ObjectId(recipeId);
+    } else {
+      id = recipeId;
+    }
+    // Cast _id filter to any to resolve MongoDB/TS type mismatch
+    const recipe = await recipesCollection.findOne({ _id: id });
     return recipe;
     
   } catch (error) {
@@ -118,31 +112,36 @@ export async function updateRecipe(recipeId: string | ObjectId, updateData: Upda
   try {
     const recipesCollection = await getCollection<Recipe>(COLLECTIONS.RECIPES);
     
-    // Calculate total time if prep or cook time changed
-    const updateWithCalculations: UpdateRecipeInput & { totalTime?: number } = { ...updateData };
+    // Calculate readyInMinutes if prep or cook time changed
+    const updateWithCalculations: UpdateRecipeInput & { readyInMinutes?: number } = { ...updateData };
     if (updateData.prepTime !== undefined || updateData.cookTime !== undefined) {
-      // We need to get current recipe to calculate new total time
       const currentRecipe = await findRecipeById(recipeId);
       if (currentRecipe) {
-        const prepTime = updateData.prepTime ?? currentRecipe.prepTime;
-        const cookTime = updateData.cookTime ?? currentRecipe.cookTime;
-        updateWithCalculations.totalTime = prepTime + cookTime;
+        const prepTime = updateData.prepTime ?? 0;
+        const cookTime = updateData.cookTime ?? 0;
+        updateWithCalculations.readyInMinutes = prepTime + cookTime;
       }
     }
-    
+
     // Add updatedAt timestamp
     const updateWithTimestamp = {
       ...updateWithCalculations,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     };
-    
+
     // Update recipe and return the updated document
+    let id: ObjectId;
+    if (typeof recipeId === 'string') {
+      if (!ObjectId.isValid(recipeId)) return null;
+      id = new ObjectId(recipeId);
+    } else {
+      id = recipeId;
+    }
     const result = await recipesCollection.findOneAndUpdate(
-      { _id: toObjectId(recipeId) },
+      { _id: id },
       { $set: updateWithTimestamp },
       { returnDocument: 'after' }
     );
-    
     return result || null;
     
   } catch (error) {
@@ -160,31 +159,34 @@ export async function updateRecipe(recipeId: string | ObjectId, updateData: Upda
 export async function deleteRecipe(recipeId: string | ObjectId): Promise<boolean> {
   try {
     const recipesCollection = await getCollection<Recipe>(COLLECTIONS.RECIPES);
-    
     // Get recipe first to know the author
     const recipe = await findRecipeById(recipeId);
     if (!recipe) {
       return false;
     }
-    
+    // Only convert to ObjectId if recipeId is a valid string and not already an ObjectId
+    let id: ObjectId;
+    if (typeof recipeId === 'string') {
+      if (!ObjectId.isValid(recipeId)) return false;
+      id = new ObjectId(recipeId);
+    } else {
+      id = recipeId;
+    }
     // Delete the recipe
-    const result = await recipesCollection.deleteOne({
-      _id: toObjectId(recipeId)
-    });
-    
+    const result = await recipesCollection.deleteOne({ _id: id } as Record<string, unknown>);
     // Remove from author's createdRecipes array
-    if (result.deletedCount > 0) {
+    if (result.deletedCount > 0 && recipe.authorId && ObjectId.isValid(recipe.authorId)) {
       const usersCollection = await getCollection(COLLECTIONS.USERS);
+      const authorIdObj = new ObjectId(recipe.authorId);
       await usersCollection.updateOne(
-        { _id: toObjectId(recipe.authorId) },
-        { 
+        { _id: authorIdObj },
+        {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          $pull: { createdRecipes: toObjectId(recipeId) } as any,
+          $pull: { createdRecipes: id } as any,
           $set: { updatedAt: new Date() }
         }
       );
     }
-    
     return result.deletedCount > 0;
     
   } catch (error) {
@@ -348,7 +350,6 @@ export async function getRecipeCards(filter: RecipeFilter = {}, limit: number = 
 export async function getRecipesByCategory(categoryId: string | ObjectId, limit: number = 20): Promise<Recipe[]> {
   return getRecipes({ categoryId }, limit);
 }
-
 /**
  * Gets recipes by user (author)
  * 
@@ -370,3 +371,4 @@ export async function getRecipesByUser(userId: string | ObjectId, limit: number 
 export async function searchRecipes(searchTerm: string, limit: number = 20): Promise<Recipe[]> {
   return getRecipes({ searchTerm }, limit);
 }
+

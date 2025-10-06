@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Search, ChefHat, ChevronDown } from 'lucide-react';
@@ -18,7 +18,16 @@ export default function RecipePage() {
   const [dietDropdownOpen, setDietDropdownOpen] = useState(false);
   const [selectedAllergy, setSelectedAllergy] = useState('');
   const [allergyDropdownOpen, setAllergyDropdownOpen] = useState(false);
+  const [maxReadyTime, setMaxReadyTime] = useState<string | undefined>();
+  const [page, setPage] = useState(1);
+
+  // Refs for closing dropdowns on outside click
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const difficultyDropdownRef = useRef<HTMLDivElement>(null);
+  const dietDropdownRef = useRef<HTMLDivElement>(null);
   const allergyDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Filter option lists
   const allergies = [
     { value: '', label: 'Allergies (None)' },
     { value: 'dairy', label: 'Dairy' },
@@ -32,9 +41,7 @@ export default function RecipePage() {
     { value: 'tree nut', label: 'Tree Nut' },
     { value: 'wheat', label: 'Wheat' },
   ];
-  const categoryDropdownRef = useRef<HTMLDivElement>(null);
-  const difficultyDropdownRef = useRef<HTMLDivElement>(null);
-  const dietDropdownRef = useRef<HTMLDivElement>(null);
+
   const diets = [
     { value: '', label: 'All Diets' },
     { value: 'vegetarian', label: 'Vegetarian' },
@@ -49,8 +56,8 @@ export default function RecipePage() {
   const categories = [
     { value: '', label: 'All Categories' },
     { value: 'breakfast', label: 'Breakfast' },
-    { value: 'lunch', label: 'Lunch' },
-    { value: 'dinner', label: 'Dinner' },
+    { value: 'main course', label: 'Lunch' },
+    { value: 'main course', label: 'Dinner' },
     { value: 'dessert', label: 'Dessert' },
     { value: 'snack', label: 'Snack' },
   ];
@@ -62,14 +69,31 @@ export default function RecipePage() {
     { value: 'hard', label: 'Hard' },
   ];
 
-  // Use Spoonacular API for all recipes
-  const { recipes, error, loading } = useAllRecipes(searchQuery, {
-    type: selectedCategory,
-    diet: selectedDiet,
-    intolerances: selectedAllergy,
-    number: showMore ? '60' : '30',
-    // Spoonacular API does not support difficulty, so we filter client-side
-  });
+  useEffect(() => {
+    if (selectedDifficulty === 'easy') {
+      setMaxReadyTime('20');
+    } else if (selectedDifficulty === 'medium') {
+      setMaxReadyTime('45');
+    } else {
+      setMaxReadyTime(undefined);
+    }
+    // Reset pagination when difficulty changes
+    setPage(1);
+  }, [selectedDifficulty]);
+
+  const fetchOptions = useMemo(
+    () => ({
+      type: selectedCategory,
+      diet: selectedDiet,
+      intolerances: selectedAllergy,
+      ...(maxReadyTime && { maxReadyTime }),
+      number: showMore ? '60' : '30',
+      page: String(page),
+    }),
+    [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, showMore, page]
+  );
+
+  const { recipes, error, loading, hasMore } = useAllRecipes(searchQuery, fetchOptions);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -145,6 +169,7 @@ export default function RecipePage() {
                       key={category.value}
                       onClick={() => {
                         setSelectedCategory(category.value);
+                        setPage(1);
                         setCategoryDropdownOpen(false);
                       }}
                       className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
@@ -172,6 +197,7 @@ export default function RecipePage() {
                       key={diet.value}
                       onClick={() => {
                         setSelectedDiet(diet.value);
+                        setPage(1);
                         setDietDropdownOpen(false);
                       }}
                       className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
@@ -199,6 +225,7 @@ export default function RecipePage() {
                       key={allergy.value}
                       onClick={() => {
                         setSelectedAllergy(allergy.value);
+                        setPage(1);
                         setAllergyDropdownOpen(false);
                       }}
                       className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
@@ -273,16 +300,16 @@ export default function RecipePage() {
               {recipes
                 .filter((recipe) => {
                   if (!selectedDifficulty) return true;
-                  if (selectedDifficulty === 'easy') return (recipe.totalTime || 0) <= 15;
-                  if (selectedDifficulty === 'medium') return (recipe.totalTime || 0) > 15 && (recipe.totalTime || 0) <= 30;
-                  if (selectedDifficulty === 'hard') return (recipe.totalTime || 0) > 30;
+                  // 'easy' and 'medium' are now filtered by the API via maxReadyTime.
+                  // We only need to handle 'hard' client-side.
+                  if (selectedDifficulty === 'hard') return (recipe.readyInMinutes || 0) > 45;
                   return true;
                 })
                 .map((recipe) => (
                   <RecipeCard key={recipe.id} recipe={recipe} />
                 ))}
             </div>
-            {!showMore && recipes.length >= 30 && (
+            {(hasMore ?? (!showMore && recipes.length >= 30)) && (
               <div className="flex justify-center mt-8">
                 <Button
                   onClick={() => {
@@ -292,6 +319,7 @@ export default function RecipePage() {
                       return;
                     }
                     setShowMore(true);
+                    setPage((p) => p + 1);
                   }}
                   variant="outline"
                   size="lg"
@@ -321,6 +349,10 @@ export default function RecipePage() {
                   setSearchQuery('');
                   setSelectedCategory('');
                   setSelectedDifficulty('');
+                  setSelectedDiet('');
+                  setSelectedAllergy('');
+                  setPage(1);
+                  setShowMore(false);
                 }}
               >
                 Clear Filters

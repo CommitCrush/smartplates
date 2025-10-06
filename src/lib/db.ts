@@ -28,6 +28,7 @@ export async function connectToDatabase(): Promise<Db> {
   try {
     // Return existing connection if available
     if (database && client) {
+      console.log('[DB] Using existing MongoDB connection');
       // Verify connection is still alive
       await database.admin().ping();
       return database;
@@ -35,9 +36,11 @@ export async function connectToDatabase(): Promise<Db> {
 
     // Validate environment configuration
     if (!MONGODB_URI) {
+      console.error('[DB] MONGODB_URL environment variable is not defined');
       throw new Error('MONGODB_URL environment variable is not defined');
     }
 
+    console.log(`[DB] Creating new MongoClient for URI: ${MONGODB_URI}`);
     // Create new MongoDB client with optimized settings
     client = new MongoClient(MONGODB_URI, {
       maxPoolSize: 10, // Maintain up to 10 socket connections
@@ -52,9 +55,11 @@ export async function connectToDatabase(): Promise<Db> {
 
     // Connect to MongoDB with retry logic
     await client.connect();
+    console.log('[DB] MongoClient connected');
     
     // Test the connection
     await client.db('admin').command({ ping: 1 });
+    console.log('[DB] Ping to admin DB successful');
     
     // Get database instance
     database = client.db(DATABASE_NAME);
@@ -88,7 +93,12 @@ export async function connectToDatabase(): Promise<Db> {
 export async function getCollection<T extends Document = Document>(collectionName: string): Promise<Collection<T>> {
   try {
     const db = await connectToDatabase();
-    return db.collection<T>(collectionName);
+    console.log(`[DB] Getting collection: ${collectionName}`);
+    const collection = db.collection<T>(collectionName);
+    if (!collection) {
+      console.error(`[DB] Collection not found: ${collectionName}`);
+    }
+    return collection;
   } catch (error) {
     console.error(`❌ Failed to get collection ${collectionName}:`, error);
     throw error;

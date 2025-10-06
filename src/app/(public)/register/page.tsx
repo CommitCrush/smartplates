@@ -1,4 +1,7 @@
+
+import Link from 'next/link';
 import { RegisterForm } from '@/components/forms/registerForm';
+import { Button } from '@/components/ui/button';
 
 export default function RegisterPage() {
   return (
@@ -13,6 +16,13 @@ export default function RegisterPage() {
           </p>
         </div>
         <RegisterForm />
+        <div className="pt-4">
+          <Link href="/login" passHref legacyBehavior>
+            <Button className="w-full mt-2" variant="default">
+              Bereits registriert? Zum Login
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );

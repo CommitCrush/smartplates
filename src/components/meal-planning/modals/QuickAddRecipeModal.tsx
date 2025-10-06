@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useAllRecipes } from '@/services/mockRecipeService'; // Now uses Spoonacular API
+// Removed mockRecipeService; use unified /api/recipes endpoint
 import { Recipe } from '@/types/recipe';
 import {
   Dialog,
@@ -92,21 +92,33 @@ export function QuickAddRecipeModal({
     snacks: '🍪',
   };
 
-  // Use mockRecipeService to get recipes with search
-  const searchOptions = {
-    category: selectedCategory !== 'all' ? selectedCategory : '',
-    diet: selectedDiet !== 'all' ? selectedDiet : '',
-    difficulty: selectedDifficulty !== 'all' ? selectedDifficulty : '',
-    maxTime: maxCookingTime !== 'all' ? maxCookingTime : '',
-    allergy: selectedAllergy !== 'all' ? selectedAllergy : ''
-  };
-  const { recipes, loading } = useAllRecipes(debouncedSearchQuery, searchOptions);
-  type ExtendedRecipe = Recipe & {
-    id?: string | number;
-    difficulty?: string;
-    cookingMinutes?: number;
-    spoonacularScore?: number;
-  };
+  // Fetch from unified recipes API (Mongo-first with server fallback)
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (debouncedSearchQuery) params.set('search', debouncedSearchQuery);
+        if (selectedCategory !== 'all') params.set('type', selectedCategory);
+        if (selectedDiet !== 'all') params.set('diet', selectedDiet);
+        if (selectedAllergy !== 'all') params.set('intolerances', selectedAllergy);
+        if (maxCookingTime !== 'all') params.set('maxReadyTime', String(maxCookingTime));
+        params.set('limit', '24');
+        const res = await fetch(`/api/recipes?${params.toString()}`);
+        if (!res.ok) throw new Error(`Failed: ${res.status}`);
+        const data = await res.json();
+        setRecipes(Array.isArray(data.recipes) ? data.recipes : []);
+      } catch {
+        setRecipes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecipes();
+  }, [debouncedSearchQuery, selectedCategory, selectedDiet, selectedAllergy, maxCookingTime]);
+  type ExtendedRecipe = Recipe & { _id?: string; difficulty?: string; cookingMinutes?: number; spoonacularScore?: number };
 
   // Apply client-side filters that aren't handled by server
   useEffect(() => {
@@ -188,8 +200,8 @@ export function QuickAddRecipeModal({
   const handleAddRecipe = (recipe: ExtendedRecipe) => {
     console.log('Adding recipe to calendar:', recipe.title);
     onAddRecipe(
-      String(recipe.id ?? recipe.title), 
-      recipe.title, 
+      String(recipe._id || ''),
+      recipe.title,
       recipe.servings || 4,
       recipe.readyInMinutes || recipe.cookingMinutes || 30,
       recipe.image
@@ -371,9 +383,9 @@ export function QuickAddRecipeModal({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredRecipes.map((recipe: ExtendedRecipe) => (
+                          {(filteredRecipes as unknown as ExtendedRecipe[]).map((recipe) => (
                   <div
-                    key={recipe.id || recipe.title}
+                              key={String(recipe._id || recipe.title)}
                     className="border border-gray-200 rounded-lg p-4 hover:border-primary/40 hover:shadow-md transition-all group bg-background-card"
                   >
                     {/* Recipe Image */}

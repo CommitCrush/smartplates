@@ -51,6 +51,8 @@ export interface MealSlot {
   image?: string; // Recipe image URL
   recipe?: Recipe; // Full recipe data when populated
   ingredients?: RecipeIngredient[]; // Direct ingredients list
+  tags?: string[]; // Optional tags used in UI
+  planId?: string; // Optional plan reference used in UI
 }
 
 /**

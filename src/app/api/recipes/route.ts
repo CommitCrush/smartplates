@@ -8,8 +8,9 @@ export {};
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Recipe } from '@/types/recipe';
-import type { CreateRecipeInput } from '@/types/recipe.d';
-import { createRecipe } from '@/models/Recipe_Complex';
+import { searchRecipesMongo, createUserRecipe, updateRecipe } from '@/services/recipeService';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 
 /**
@@ -28,117 +29,39 @@ export async function GET(request: NextRequest) {
       intolerances: searchParams.get('intolerances') || undefined,
       maxReadyTime: searchParams.get('maxReadyTime') ? parseInt(searchParams.get('maxReadyTime') as string, 10) : undefined,
     } as const;
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || searchParams.get('number') || '30', 10);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || searchParams.get('number') || '30', 10);
+  const authorId = searchParams.get('authorId') || undefined;
 
     console.log('Parsed Filters:', filters, 'page:', page, 'limit:', limit);
 
-    let recipes: Recipe[] = [];
-    let total = 0;
-    let source: 'mongodb' | 'mongodb-relaxed' | 'spoonacular' | 'fallback-needed' = 'mongodb';
+  let recipes: Recipe[] = [];
+  let total = 0;
+  let source: 'mongodb' | 'mongodb-relaxed' | 'spoonacular' | 'fallback-needed' = 'mongodb';
     let notice: string | undefined;
 
     // Build MongoDB query for cached recipes (collection: spoonacular_recipes)
-    const { getCollection } = await import('@/lib/db');
-    const spoonacularCollection = await getCollection<Recipe>('spoonacular_recipes');
+  const { getCollection } = await import('@/lib/db');
+  const spoonacularCollection = await getCollection<Recipe>('spoonacular_recipes');
 
     // Ensure indexes and dedupe once per process
     const { ensureUniqueIndexAndDedupe } = await import('@/lib/dedupe');
     await ensureUniqueIndexAndDedupe(spoonacularCollection as any);
 
-    const mongoQuery: any = {};
-    if (filters.query) {
-      mongoQuery.$or = [
-        { title: { $regex: filters.query, $options: 'i' } },
-        { description: { $regex: filters.query, $options: 'i' } },
-      ];
-    }
-    if (filters.type) {
-      // dishTypes is an array; equality or $in both work, use $in for clarity
-      mongoQuery.dishTypes = { $in: [filters.type] };
-    }
-    if (filters.diet) {
-      // diets is an array of strings
-      mongoQuery.diets = { $in: [filters.diet] };
-    }
-    if (typeof filters.maxReadyTime === 'number') {
-      mongoQuery.readyInMinutes = { $lte: filters.maxReadyTime };
-    }
-    if (filters.intolerances) {
-      // Exclude recipes whose extendedIngredients contain the intolerance keyword(s)
-      const intoleranceKey = filters.intolerances.toLowerCase();
-      const regexMap: Record<string, RegExp> = {
-        egg: /\begg(s)?\b/i,
-        gluten: /(gluten|wheat|flour|barley|rye)/i,
-        dairy: /(milk|cheese|butter|cream|yogurt|lactose)/i,
-        peanut: /peanut/i,
-        seafood: /(fish|shrimp|prawn|crab|lobster|tuna|salmon)/i,
-        sesame: /sesame/i,
-        soy: /(soy|soya|tofu|soybean)/i,
-        sulfite: /(sulfite|sulphite)/i,
-        'tree nut': /(almond|walnut|hazelnut|cashew|pecan|pistachio|macadamia)/i,
-        wheat: /(wheat|flour)/i,
-      };
-      const rx = regexMap[intoleranceKey] || new RegExp(intoleranceKey.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
-      mongoQuery.extendedIngredients = { $not: { $elemMatch: { name: rx } } };
-    }
-
-    // Query MongoDB cache
-    const mongoRecipes = await spoonacularCollection
-      .find(mongoQuery)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .toArray();
-
+    // Primary: use central recipeService (Mongo-first)
+    const { recipes: mongoRecipes, total: mongoTotal } = await searchRecipesMongo(
+      { query: filters.query, type: filters.type, diet: filters.diet, intolerances: filters.intolerances || undefined, maxReadyTime: filters.maxReadyTime, authorId },
+      { page, limit }
+    );
     recipes = mongoRecipes;
-    total = await spoonacularCollection.countDocuments(mongoQuery);
+    total = mongoTotal;
     source = 'mongodb';
 
     // If no cached results, try relaxed Mongo-only fallbacks before external API
     if (!recipes || recipes.length === 0) {
-      const relaxedAttempts: Array<{ label: string; query: any }> = [];
 
-      // a) ignore intolerances
-      if (mongoQuery.extendedIngredients) {
-        const q: any = { ...mongoQuery };
-        delete q.extendedIngredients;
-        relaxedAttempts.push({ label: 'without intolerances', query: q });
-      }
-      // b) ignore diet
-      if (mongoQuery.diets) {
-        const q: any = { ...mongoQuery };
-        delete q.diets;
-        relaxedAttempts.push({ label: 'without diet', query: q });
-      }
-      // c) ignore type
-      if (mongoQuery.dishTypes) {
-        const q: any = { ...mongoQuery };
-        delete q.dishTypes;
-        relaxedAttempts.push({ label: 'without type', query: q });
-      }
-      // d) drop free-text query
-      if (mongoQuery.$or) {
-        const q: any = { ...mongoQuery };
-        delete q.$or;
-        relaxedAttempts.push({ label: 'without search term', query: q });
-      }
-      // e) last resort: no filters (just show something)
-      relaxedAttempts.push({ label: 'unfiltered fallback', query: {} });
 
-      for (const attempt of relaxedAttempts) {
-        const alt = await spoonacularCollection
-          .find(attempt.query)
-          .skip((page - 1) * limit)
-          .limit(limit)
-          .toArray();
-        if (alt.length > 0) {
-          recipes = alt;
-          total = await spoonacularCollection.countDocuments(attempt.query);
-          source = 'mongodb-relaxed';
-          notice = `Keine exakte Übereinstimmung gefunden – zeige Ergebnisse ${attempt.label}.`;
-          break;
-        }
-      }
+        // Service-based relaxed attempts are handled below
     }
 
     // Fallback to Spoonacular if explicitly enabled and still nothing in cache
@@ -174,7 +97,8 @@ export async function GET(request: NextRequest) {
         console.warn('⚠️ Spoonacular API fallback failed:', spError);
         recipes = recipes || [];
         total = recipes.length;
-        source = source === 'mongodb-relaxed' ? source : 'fallback-needed';
+  // Mark that an external fallback would be needed but is unavailable
+  source = 'fallback-needed';
         if (!notice) notice = 'Externer API-Fallback nicht verfügbar (Limit erreicht).';
       }
     }
@@ -191,7 +115,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const recipeData: CreateRecipeInput = await request.json();
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const recipeData = await request.json();
 
     // Basic validation
     if (!recipeData.title?.trim()) {
@@ -208,7 +137,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!recipeData.category) {
+    if (!recipeData.category && !recipeData.categoryId) {
       return NextResponse.json(
         { error: 'Category is required' },
         { status: 400 }
@@ -236,15 +165,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create recipe in database
-    const newRecipe = await createRecipe(recipeData);
+    // Map incoming structure to createUserRecipe when needed
+    const userRecipe = await createUserRecipe({
+      userId: session.user.id,
+      title: recipeData.title,
+      description: recipeData.description,
+      servings: recipeData.servings,
+      image: recipeData.image,
+      readyInMinutes: (recipeData.prepTime ?? 0) + (recipeData.cookTime ?? 0),
+      ingredients: (recipeData.extendedIngredients || []).map((ing: any) => ({
+        name: ing.name,
+        amount: ing.amount ?? ing.originalAmount ?? 0,
+        unit: ing.unit ?? ing.measure ?? '',
+        notes: ing.notes,
+      })),
+      instructions: (recipeData.analyzedInstructions?.[0]?.steps || []).map((s: any, idx: number) => ({
+        stepNumber: s.number ?? idx + 1,
+        instruction: s.step ?? String(s),
+        time: s.length?.number,
+        temperature: undefined,
+      })),
+      category: recipeData.category,
+      cuisine: recipeData.cuisine,
+      dietaryTags: recipeData.tags || recipeData.dietaryRestrictions,
+      isPublic: recipeData.isPublic ?? true,
+    });
 
-    return NextResponse.json(newRecipe, { status: 201 });
+    return NextResponse.json(userRecipe, { status: 201 });
   } catch (error) {
     console.error('Error creating recipe:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * PATCH /api/recipes - Update recipe by id
+ * Body: { id: string, updates: Partial<Recipe> }
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const { id, updates } = await request.json();
+    if (!id || !updates || typeof updates !== 'object') {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+
+    // Authorization will be enforced in [id]/route.ts for per-id updates; here we allow update if owner matches
+    const current = await (await import('@/services/recipeService')).findRecipeById(id);
+    if (!current) return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
+    const isOwner = current.authorId && current.authorId === session.user.id;
+    const isAdmin = (session.user as any).role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const updated = await updateRecipe(id, updates);
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('Error updating recipe:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

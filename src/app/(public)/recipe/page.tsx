@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Search, ChefHat, ChevronDown } from 'lucide-react';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
-import { useAllRecipes } from '@/services/mockRecipeService';
+import { useAllRecipes } from '@/hooks/useRecipes';
 
 export default function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -305,9 +305,11 @@ export default function RecipePage() {
                   if (selectedDifficulty === 'hard') return (recipe.readyInMinutes || 0) > 45;
                   return true;
                 })
-                .map((recipe) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} />
-                ))}
+                .map((recipe) => {
+                  const objId = (recipe as unknown as { _id?: string | null })._id;
+                  const safeKey = (typeof objId === 'string' && objId) || (recipe.spoonacularId ? String(recipe.spoonacularId) : recipe.title);
+                  return <RecipeCard key={safeKey} recipe={recipe} />;
+                })}
             </div>
             {(hasMore ?? (!showMore && recipes.length >= 30)) && (
               <div className="flex justify-center mt-8">

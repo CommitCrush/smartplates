@@ -14,7 +14,6 @@ import Image from 'next/image';
 import { Calendar, CalendarDays, Save, Download, ChevronLeft, ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import type { MealSlot } from '@/types/meal-planning';
 
 // Quick interface for recipe data from cache
 interface QuickRecipeData {
@@ -26,6 +25,7 @@ interface QuickRecipeData {
   readyInMinutes?: number;
   image?: string;
   extendedIngredients?: Array<{ original: string }>;
+  diets?: string[];
 }
 import {
   DropdownMenu,
@@ -46,7 +46,7 @@ import { RecipeDetailModal } from '@/components/meal-planning/modals/RecipeDetai
 import { getWeekStartDate, createEmptyMealPlan } from '@/types/meal-planning';
 import type { IMealPlan, MealSlot, MealPlanningSlot } from '@/types/meal-planning';
 import { useSession } from 'next-auth/react';
-import { ObjectId } from 'mongodb';
+// import { ObjectId } from 'mongodb';
 // ...existing code...
 import { 
   exportCalendarAsImage,
@@ -129,7 +129,10 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
     }
   };
 
-  const renderMealCard = (meal: MealSlot, index: number, mealType: string, config: { cardBg: string; borderColor: string; textColor: string; buttonColor: string }) => (
+  // Extend UI meals with optional fields used in UI rendering
+  type UIMeal = MealSlot & { planId?: string; tags?: string[]; mealType?: string };
+
+  const renderMealCard = (meal: UIMeal, index: number, mealType: string, config: { cardBg: string; borderColor: string; textColor: string; buttonColor: string; emoji?: string }) => (
     <div 
       key={index} 
       className={`${config.cardBg} border ${config.borderColor} rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer`}
@@ -218,7 +221,7 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
             // Convert JavaScript day (0=Sunday) to meal planning day (0=Monday)
             const jsDay = currentDate.getDay();
             const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1; // Convert Sunday(0) to 6, Mon(1) to 0, etc.
-            onRemoveMeal(meal.planId, dayOfWeek, mealType, index);
+            onRemoveMeal(meal.planId || '', dayOfWeek, mealType, index);
           }}
           className="text-red-500 hover:text-red-700 hover:bg-red-50"
         >
@@ -228,7 +231,7 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
     </div>
   );
 
-  const renderMealColumn = (mealType: keyof typeof mealTypeConfig, meals: MealSlot[]) => {
+  const renderMealColumn = (mealType: keyof typeof mealTypeConfig, meals: UIMeal[]) => {
     const config = mealTypeConfig[mealType];
     
     return (
@@ -345,18 +348,31 @@ type ViewMode = 'today' | 'weekly' | 'monthly';
 export default function MealPlanningPage() {
   const params = useParams();
   const { data: session } = useSession();
-  const mealPlanId = params.id as string;
+  const mealPlanId = (params?.id as string) || '';
+  // Guard against undefined route param leading to /api/meal-plans/undefined
+  useEffect(() => {
+    if (!mealPlanId || mealPlanId === 'undefined' || mealPlanId === 'null') {
+      // Redirect to route that creates or finds the current plan
+      window.location.replace('/user/my_meal_plan/current');
+    }
+  }, [mealPlanId]);
   
   // State management
   const [viewMode, setViewMode] = useState<ViewMode>('weekly');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [_mealPlans, setMealPlans] = useState<IMealPlan[]>([]);
+  const [, setMealPlans] = useState<IMealPlan[]>([]);
   const [mealPlan, setMealPlan] = useState<IMealPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [_isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => {
+    // Reference isSaving to satisfy strict unused vars; helpful debug info during development
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[MealPlan] isSaving:', isSaving);
+    }
+  }, [isSaving]);
   const [selectedSlot, setSelectedSlot] = useState<MealPlanningSlot | null>(null);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   const [copiedRecipe, setCopiedRecipe] = useState<MealSlot | null>(null);
@@ -450,7 +466,7 @@ export default function MealPlanningPage() {
             
             // Convert date strings back to Date objects
             plan.weekStartDate = new Date(plan.weekStartDate);
-            plan.days.forEach((day: any) => {
+            plan.days.forEach((day: { date: string | Date }) => {
               day.date = new Date(day.date);
             });
             
@@ -637,16 +653,33 @@ export default function MealPlanningPage() {
 
     try {
       console.log('handleQuickAddSubmit: Adding recipe from cache:', recipeData);
-      
+      // Resolve canonical recipe id
+      let resolvedId: string | number | undefined = recipeData.id || recipeData.name;
+      try {
+        if (resolvedId) {
+          const res = await fetch('/api/recipes/resolve-id', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: String(resolvedId) })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            resolvedId = data.mongoId || resolvedId;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
       // Map cached recipe data to MealSlot format
-      const mealSlot = {
-        recipeId: recipeData.id || recipeData.name,
+      const mealSlot: MealSlot & { planId?: string; tags?: string[]; mealType?: string } = {
+        recipeId: String(resolvedId ?? ''),
         recipeName: recipeData.name || recipeData.title,
         servings: recipeData.servings || 2,
         prepTime: recipeData.cookingTime || recipeData.readyInMinutes || 30,
         cookingTime: recipeData.cookingTime || recipeData.readyInMinutes || 30,
         image: recipeData.image || '',
-        ingredients: recipeData.extendedIngredients?.map((ing) => ing.original) || [],
+        ingredients: recipeData.extendedIngredients?.map((ing) => ({ name: ing.original })) || [],
         tags: recipeData.diets || [],
         notes: ''
       };

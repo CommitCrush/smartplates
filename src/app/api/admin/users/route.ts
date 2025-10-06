@@ -37,6 +37,15 @@ async function getUsersHandler(request: Request): Promise<NextResponse> {
       total: mappedUsers.length,
       timestamp: new Date().toISOString(),
     });
+  } catch (error) {
+    // Fehler sauber als JSON zurückgeben
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 

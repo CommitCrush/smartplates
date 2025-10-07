@@ -1,6 +1,7 @@
 import { ObjectId, type Filter, type UpdateFilter } from 'mongodb';
 import { Recipe, RecipeIngredient, RecipeInstructionBlock } from '@/types/recipe';
 import { getCollection } from '@/lib/db';
+import RecipeModel from '@/models/Recipe';
 
 const COLLECTION_NAME = 'spoonacular_recipes';
 
@@ -174,16 +175,25 @@ export async function deleteRecipe(id: string) {
 	return res.deletedCount === 1;
 }
 
-export async function listRecipesByUser(userId: string, pagination: Pagination = {}) {
-	const page = Math.max(1, pagination.page || 1);
-	const limit = Math.min(100, Math.max(1, pagination.limit || 30));
-	const col = await getCollection<Recipe>(COLLECTION_NAME);
-		const query: Filter<Recipe> = { authorId: userId } as unknown as Filter<Recipe>;
-	const [items, total] = await Promise.all([
-		col.find(query).sort({ updatedAt: -1 }).skip((page - 1) * limit).limit(limit).toArray(),
-		col.countDocuments(query),
-	]);
-	return { recipes: items, total };
+export async function listRecipesByUser(
+  userId: string,
+  opts: { page?: number; limit?: number; dishTypes?: string[] } = {}
+) {
+  const page = Math.max(1, opts.page ?? 1);
+  const limit = Math.min(100, Math.max(1, opts.limit ?? 30));
+  const skip = (page - 1) * limit;
+
+  const filter: Record<string, unknown> = { userId };
+  if (opts.dishTypes && opts.dishTypes.length > 0) {
+    filter.dishTypes = { $in: opts.dishTypes.map((d) => d.toLowerCase()) };
+  }
+
+  const [recipes, total] = await Promise.all([
+    RecipeModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    RecipeModel.countDocuments(filter),
+  ]);
+
+  return { recipes, total, page, limit };
 }
 
 // Back-compat helper for previous placeholder usage

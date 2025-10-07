@@ -276,8 +276,8 @@ export default function RecipePage() {
 
   {/* Loading State */}
   {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(9)].map((_, i) => (
               <Card key={i} className="animate-pulse">
                 <div className="h-48 bg-neutral-200 dark:bg-neutral-700 rounded-t-lg"></div>
                 <div className="p-6">
@@ -304,11 +304,7 @@ export default function RecipePage() {
         {/* Recipe Grid */}
         {!loading && !error && (
           <>
-            <div className={`grid gap-6 ${
-              isAuthenticated 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-10' // 10x3 for users
-                : 'grid-cols-1 md:grid-cols-3 xl:grid-cols-5' // 5x3 for viewers
-            }`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[calc(10*theme(spacing.80))] overflow-y-auto">
               {recipes
                 .filter((recipe) => {
                   if (!selectedDifficulty) return true;
@@ -317,6 +313,7 @@ export default function RecipePage() {
                   if (selectedDifficulty === 'hard') return (recipe.readyInMinutes || 0) > 45;
                   return true;
                 })
+                .slice(0, 30) // Limit to 30 recipes (3 columns × 10 rows)
                 .map((recipe) => {
                   const objId = (recipe as unknown as { _id?: string | null })._id;
                   const safeKey = (typeof objId === 'string' && objId) || (recipe.spoonacularId ? String(recipe.spoonacularId) : recipe.title);

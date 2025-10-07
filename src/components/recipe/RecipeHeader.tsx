@@ -10,7 +10,6 @@ import React from 'react';
 import Image from 'next/image';
 import { Clock, Users } from 'lucide-react';
 import { Recipe } from '@/types/recipe';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface RecipeHeaderProps {
@@ -47,7 +46,7 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
                 <Clock className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Total Time</p>
-                  <p className="font-semibold">{recipe.totalTime} minutes</p>
+                  <p className="font-semibold">{recipe.readyInMinutes} minutes</p>
                 </div>
               </div>
 
@@ -59,31 +58,17 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
                 </div>
               </div>
             </div>
-
-            {/* Tags */}
-            {recipe.tags && recipe.tags.length > 0 && (
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Tags</p>
-                <div className="flex flex-wrap gap-2">
-                  {recipe.tags.map((tag) => (
-                    <Badge key={tag} variant="outline">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Prep and Cook Time Details */}
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Prep Time</p>
-              <p className="font-semibold">{recipe.prepTime}min</p>
+              <p className="font-semibold">{recipe.preparationMinutes}min</p>
             </div>
             <div className="text-center">
               <p className="text-sm text-muted-foreground">Cook Time</p>
-              <p className="font-semibold">{recipe.cookTime}min</p>
+              <p className="font-semibold">{recipe.cookingMinutes}min</p>
             </div>
           </div>
         </CardContent>

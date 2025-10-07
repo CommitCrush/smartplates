@@ -31,6 +31,8 @@ export interface Recipe {
   image?: string;
   sourceUrl?: string;
   readyInMinutes: number;
+  preparationMinutes?: number;
+  cookingMinutes?: number;
   servings: number;
   extendedIngredients: RecipeIngredient[];
   analyzedInstructions: RecipeInstructionBlock[];

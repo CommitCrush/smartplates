@@ -8,14 +8,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Clock, Check } from 'lucide-react';
-import { RecipeStep } from '@/types/recipe';
+import { Check } from 'lucide-react';
+import { RecipeInstruction } from '@/types/recipe';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface RecipeInstructionsProps {
-  instructions: RecipeStep[];
+  instructions: RecipeInstruction[];
 }
 
 export function RecipeInstructions({ instructions }: RecipeInstructionsProps) {
@@ -30,6 +30,19 @@ export function RecipeInstructions({ instructions }: RecipeInstructionsProps) {
   };
 
   const isStepCompleted = (stepNumber: number) => completedSteps.includes(stepNumber);
+
+  if (!instructions || instructions.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Instructions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">No instructions available for this recipe.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -46,10 +59,10 @@ export function RecipeInstructions({ instructions }: RecipeInstructionsProps) {
         <div className="space-y-6">
           {instructions.map((step, index) => (
             <div 
-              key={step.stepNumber || index} 
+              key={step.number || index} 
               className={cn(
                 "flex gap-4 p-4 rounded-lg border transition-all",
-                isStepCompleted(step.stepNumber || index + 1)
+                isStepCompleted(step.number || index + 1)
                   ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
                   : "bg-background border-border"
               )}
@@ -59,19 +72,19 @@ export function RecipeInstructions({ instructions }: RecipeInstructionsProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => toggleStepComplete(step.stepNumber || index + 1)}
+                  onClick={() => toggleStepComplete(step.number || index + 1)}
                   className={cn(
                     "h-8 w-8 rounded-full p-0",
-                    isStepCompleted(step.stepNumber || index + 1)
+                    isStepCompleted(step.number || index + 1)
                       ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
                       : "hover:bg-primary hover:text-primary-foreground"
                   )}
                 >
-                  {isStepCompleted(step.stepNumber || index + 1) ? (
+                  {isStepCompleted(step.number || index + 1) ? (
                     <Check className="h-4 w-4" />
                   ) : (
                     <span className="text-sm font-medium">
-                      {step.stepNumber || index + 1}
+                      {step.number || index + 1}
                     </span>
                   )}
                 </Button>
@@ -81,28 +94,15 @@ export function RecipeInstructions({ instructions }: RecipeInstructionsProps) {
               <div className="flex-1 space-y-2">
                 <div className="flex items-start justify-between">
                   <h4 className="font-medium">
-                    Step {step.stepNumber || index + 1}
+                    Step {step.number || index + 1}
                   </h4>
-                  
-                  {/* Step timing info */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {(step as any).duration && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>{(step as any).duration} min</span>
-                      </div>
-                    )}
-                    {(step as any).temperature && (
-                      <span>{(step as any).temperature}°C</span>
-                    )}
-                  </div>
                 </div>
 
                 <p className={cn(
                   "text-foreground leading-relaxed",
-                  isStepCompleted(step.stepNumber || index + 1) && "line-through opacity-70"
+                  isStepCompleted(step.number || index + 1) && "line-through opacity-70"
                 )}>
-                  {(step as any).instruction}
+                  {step.step}
                 </p>
               </div>
             </div>

@@ -22,6 +22,8 @@ const RecipeSchema: Schema<IRecipe> = new Schema({
   summary: { type: String, required: true },
   image: { type: String, default: '/placeholder-recipe.svg' },
   readyInMinutes: { type: Number, required: true, min: 0 },
+  preparationMinutes: { type: Number, required: false, min: 0 },
+  cookingMinutes: { type: Number, required: false, min: 0 },
   servings: { type: Number, required: true, min: 1 },
   
   extendedIngredients: [{

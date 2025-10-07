@@ -1,8 +1,16 @@
 /**
- * Backfill-Skript: extendedIngredients, analyzedInstructions, cuisines
+ * Backfill-Skript: extendedIngredients, analyzedInstructions, cuisines, cookingMinutes, preparationMinutes
  *
  * Zweck: Für bereits gespeicherte Spoonacular-Rezepte in MongoDB die fehlenden
  * Felder aus der Spoonacular API nachladen und in der Collection `spoonacular_recipes` speichern.
+ *
+ * Ergänzte Felder:
+ * - extendedIngredients (Zutatenliste mit Mengen)
+ * - analyzedInstructions (Schritt-für-Schritt Anweisungen)
+ * - cuisines, dishTypes, diets
+ * - cookingMinutes (Kochzeit)
+ * - preparationMinutes (Vorbereitungszeit)
+ * - nutrition, summary, image
  *
  * Sicherheiten:
  * - Respektiert Tages-Quota über vorhandene Quota-Checks (optional: SPOONACULAR_ENABLED)
@@ -33,7 +41,8 @@ function needsBackfill(r: Recipe): boolean {
     ? r.analyzedInstructions.some((blk) => !blk || !Array.isArray(blk.steps) || blk.steps.length === 0)
     : false;
   const missingCuisines = !r.cuisines || r.cuisines.length === 0;
-  return missingIngredients || partialIngredients || missingInstructions || emptyInstructionBlocks || missingCuisines;
+  const missingTimeFields = !r.cookingMinutes || !r.preparationMinutes;
+  return missingIngredients || partialIngredients || missingInstructions || emptyInstructionBlocks || missingCuisines || missingTimeFields;
 }
 
 function sleep(ms: number) {
@@ -73,6 +82,11 @@ async function main() {
       // fehlende Cuisines
       { cuisines: { $exists: false } },
       { cuisines: { $size: 0 } },
+      // fehlende Zeit-Felder
+      { cookingMinutes: { $exists: false } },
+      { cookingMinutes: null },
+      { preparationMinutes: { $exists: false } },
+      { preparationMinutes: null },
     ],
   } as unknown) as Filter<Recipe>;
 
@@ -134,6 +148,8 @@ async function main() {
           servings: fullRecipe.servings,
           image: fullRecipe.image || undefined,
           nutrition: fullRecipe.nutrition,
+          cookingMinutes: fullRecipe.cookingMinutes,
+          preparationMinutes: fullRecipe.preparationMinutes,
         };
 
         const filter: Filter<Recipe> = r._id
@@ -147,7 +163,14 @@ async function main() {
           { upsert: false }
         );
 
-        if (res.modifiedCount > 0) updated++;
+        if (res.modifiedCount > 0) {
+          updated++;
+          console.log(`✅ Updated recipe "${r.title}" with time data:`, {
+            cookingMinutes: update.cookingMinutes || 'N/A',
+            preparationMinutes: update.preparationMinutes || 'N/A',
+            readyInMinutes: update.readyInMinutes || 'N/A'
+          });
+        }
       } catch (e) {
         const err = e as Error;
         const msg = err?.message || String(e);

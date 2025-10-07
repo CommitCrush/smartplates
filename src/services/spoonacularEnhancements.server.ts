@@ -564,6 +564,8 @@ export async function fetchAndSaveRecipe(spoonacularId: number): Promise<RecipeT
     image: apiRecipe.image,
     servings: apiRecipe.servings,
     readyInMinutes: apiRecipe.readyInMinutes,
+    preparationMinutes: apiRecipe.preparationMinutes,
+    cookingMinutes: apiRecipe.cookingMinutes,
     sourceUrl: apiRecipe.sourceUrl,
     
     extendedIngredients: (apiRecipe.extendedIngredients || []).map(

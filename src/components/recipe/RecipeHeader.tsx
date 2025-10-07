@@ -60,17 +60,23 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
             </div>
           </div>
 
-          {/* Prep and Cook Time Details */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Prep Time</p>
-              <p className="font-semibold">{recipe.preparationMinutes}min</p>
+          {/* Prep and Cook Time Details - Only show if at least one time is available */}
+          {(recipe.preparationMinutes || recipe.cookingMinutes) && (
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+              {recipe.preparationMinutes && (
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Prep Time</p>
+                  <p className="font-semibold">{recipe.preparationMinutes} min</p>
+                </div>
+              )}
+              {recipe.cookingMinutes && (
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Cook Time</p>
+                  <p className="font-semibold">{recipe.cookingMinutes} min</p>
+                </div>
+              )}
             </div>
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Cook Time</p>
-              <p className="font-semibold">{recipe.cookingMinutes}min</p>
-            </div>
-          </div>
+          )}
         </CardContent>
       </div>
     </Card>

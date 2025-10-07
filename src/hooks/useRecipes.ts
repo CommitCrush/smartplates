@@ -27,16 +27,12 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
         const perPage = options.number ? parseInt(options.number, 10) : 30;
         const batch: Recipe[] = data.recipes || [];
 
-        if (page > 1) {
-          setRecipes((prev) => [...prev, ...batch]);
-        } else {
-          setRecipes(batch);
-        }
+        // For pagination, always replace recipes instead of accumulating
+        setRecipes(batch);
 
         if (typeof data.total === 'number') {
           setTotal(data.total);
-          const currentTotal = (page - 1) * perPage + batch.length;
-          setHasMore(currentTotal < data.total);
+          setHasMore(page * perPage < data.total);
         } else {
           setTotal(batch.length);
           setHasMore(batch.length >= perPage);

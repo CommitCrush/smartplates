@@ -31,7 +31,7 @@ export type SearchFilters = {
 	authorId?: string;
 };
 
-export async function searchRecipesMongo(filters: SearchFilters = {}, pagination: Pagination = {}) {
+export async function searchRecipesMongo(filters: SearchFilters = {}, pagination: Pagination = {}, randomize: boolean = false) {
 	const page = Math.max(1, pagination.page || 1);
 	const limit = Math.min(100, Math.max(1, pagination.limit || 30));
 	const col = await getCollection<Recipe>(COLLECTION_NAME);
@@ -83,7 +83,12 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 	}
 
 	const [items, total] = await Promise.all([
-		col.find(query).skip((page - 1) * limit).limit(limit).toArray(),
+		randomize 
+			? col.aggregate([
+				{ $match: query },
+				{ $sample: { size: limit } }
+			]).toArray()
+			: col.find(query).skip((page - 1) * limit).limit(limit).toArray(),
 		col.countDocuments(query),
 	]);
 

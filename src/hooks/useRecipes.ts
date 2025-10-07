@@ -8,6 +8,7 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -33,9 +34,11 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
         }
 
         if (typeof data.total === 'number') {
+          setTotal(data.total);
           const currentTotal = (page - 1) * perPage + batch.length;
           setHasMore(currentTotal < data.total);
         } else {
+          setTotal(batch.length);
           setHasMore(batch.length >= perPage);
         }
 
@@ -55,7 +58,7 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
     fetchRecipes();
   }, [query, options]);
 
-  return { recipes, error, loading, hasMore };
+  return { recipes, error, loading, hasMore, total };
 }
 
 export function useRecipeById(recipeId: string) {

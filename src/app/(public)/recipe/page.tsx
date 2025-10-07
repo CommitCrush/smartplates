@@ -5,7 +5,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Search, ChefHat, ChevronDown } from 'lucide-react';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
+import { Pagination } from '@/components/ui/pagination';
 import { useAllRecipes } from '@/hooks/useRecipes';
+import { useAuth } from '@/context/authContext';
+import { useRouter } from 'next/navigation';
 
 export default function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,6 +23,10 @@ export default function RecipePage() {
   const [allergyDropdownOpen, setAllergyDropdownOpen] = useState(false);
   const [maxReadyTime, setMaxReadyTime] = useState<string | undefined>();
   const [page, setPage] = useState(1);
+
+  // Auth and routing
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
 
   // Refs for closing dropdowns on outside click
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
@@ -87,13 +94,14 @@ export default function RecipePage() {
       diet: selectedDiet,
       intolerances: selectedAllergy,
       ...(maxReadyTime && { maxReadyTime }),
-      number: showMore ? '60' : '30',
+      number: isAuthenticated ? '30' : '15', // 30 for users, 15 for viewers
       page: String(page),
+      randomize: 'true', // Add random sorting
     }),
-    [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, showMore, page]
+    [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, page, isAuthenticated]
   );
 
-  const { recipes, error, loading, hasMore } = useAllRecipes(searchQuery, fetchOptions);
+  const { recipes, error, loading, hasMore, total } = useAllRecipes(searchQuery, fetchOptions);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -296,7 +304,11 @@ export default function RecipePage() {
         {/* Recipe Grid */}
         {!loading && !error && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className={`grid gap-6 ${
+              isAuthenticated 
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-10' // 10x3 for users
+                : 'grid-cols-1 md:grid-cols-3 xl:grid-cols-5' // 5x3 for viewers
+            }`}>
               {recipes
                 .filter((recipe) => {
                   if (!selectedDifficulty) return true;
@@ -311,22 +323,29 @@ export default function RecipePage() {
                   return <RecipeCard key={safeKey} recipe={recipe} />;
                 })}
             </div>
-            {(hasMore ?? (!showMore && recipes.length >= 30)) && (
+            
+            {/* Pagination for authenticated users */}
+            {isAuthenticated && recipes.length > 0 && (
+              <div className="flex justify-center mt-8">
+                <Pagination
+                  currentPage={page}
+                  totalPages={Math.ceil((total || recipes.length) / 30)}
+                  onPageChange={setPage}
+                />
+              </div>
+            )}
+            
+            {/* Load More button for viewers */}
+            {!isAuthenticated && (hasMore ?? (!showMore && recipes.length >= 15)) && (
               <div className="flex justify-center mt-8">
                 <Button
                   onClick={() => {
-                    // Require login to load more
-                    if (!window.localStorage.getItem('userLoggedIn')) {
-                      alert('Bitte registrieren oder einloggen, um mehr Rezepte zu sehen.');
-                      return;
-                    }
-                    setShowMore(true);
-                    setPage((p) => p + 1);
+                    router.push('/register');
                   }}
                   variant="outline"
                   size="lg"
                 >
-                  Mehr Rezepte anzeigen
+                  Registrieren für mehr Rezepte
                 </Button>
               </div>
             )}

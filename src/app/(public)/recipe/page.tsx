@@ -96,7 +96,7 @@ export default function RecipePage() {
       ...(maxReadyTime && { maxReadyTime }),
       number: isAuthenticated ? '30' : '15', // 30 for users, 15 for viewers
       page: String(page),
-      randomize: 'true', // Add random sorting
+      // Remove randomize for consistent pagination
     }),
     [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, page, isAuthenticated]
   );

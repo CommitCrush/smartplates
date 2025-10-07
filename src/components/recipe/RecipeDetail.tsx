@@ -28,8 +28,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
         {/* Ingredients */}
         <div className="lg:col-span-1">
           <RecipeIngredients 
-            ingredients={Array.isArray(recipe.extendedIngredients) ? recipe.extendedIngredients : []} 
-            servings={recipe.servings} 
+            recipe={recipe}
           />
         </div>
 

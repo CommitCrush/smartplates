@@ -70,6 +70,8 @@ export interface RecipeIngredient {
   name: string;
   amount: number;
   unit: string;
+  original?: string;          // Spoonacular original text
+  originalName?: string;      // Spoonacular original name
   notes?: string;
 }
 

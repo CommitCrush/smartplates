@@ -54,7 +54,21 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 		query.dishTypes = { $in: [filters.type] };
 	}
 	if (filters.diet) {
-		query.diets = { $in: [filters.diet] };
+		// Map frontend diet names to database diet names
+		const dietMapping: Record<string, string[]> = {
+			'vegetarian': ['lacto ovo vegetarian', 'vegetarian'],
+			'vegan': ['vegan'],
+			'gluten free': ['gluten free'],
+			'ketogenic': ['ketogenic'],
+			'paleo': ['paleolithic'],
+			'primal': ['primal'],
+			'whole30': ['whole 30'],
+			'pescatarian': ['pescatarian'],
+			'dairy free': ['dairy free']
+		};
+		
+		const mappedDiets = dietMapping[filters.diet.toLowerCase()] || [filters.diet];
+		query.diets = { $in: mappedDiets };
 	}
 	if (typeof filters.maxReadyTime === 'number') {
 		query.readyInMinutes = { $lte: filters.maxReadyTime };

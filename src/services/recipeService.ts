@@ -88,7 +88,11 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 				{ $match: query },
 				{ $sample: { size: limit } }
 			]).toArray()
-			: col.find(query).skip((page - 1) * limit).limit(limit).toArray(),
+			: col.find(query)
+				.sort({ createdAt: -1, _id: 1 }) // Consistent sorting for pagination
+				.skip((page - 1) * limit)
+				.limit(limit)
+				.toArray(),
 		col.countDocuments(query),
 	]);
 

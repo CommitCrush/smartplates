@@ -78,9 +78,9 @@ export default function RecipePage() {
 
   useEffect(() => {
     if (selectedDifficulty === 'easy') {
-      setMaxReadyTime('20');
+      setMaxReadyTime('15'); // Easy: bis 15 Minuten
     } else if (selectedDifficulty === 'medium') {
-      setMaxReadyTime('45');
+      setMaxReadyTime('30'); // Medium: bis 30 Minuten (wird client-seitig auf 15-30 gefiltert)
     } else {
       setMaxReadyTime(undefined);
     }
@@ -308,9 +308,18 @@ export default function RecipePage() {
               {recipes
                 .filter((recipe) => {
                   if (!selectedDifficulty) return true;
-                  // 'easy' and 'medium' are now filtered by the API via maxReadyTime.
-                  // We only need to handle 'hard' client-side.
-                  if (selectedDifficulty === 'hard') return (recipe.readyInMinutes || 0) > 45;
+                  
+                  const cookTime = recipe.readyInMinutes || 0;
+                  
+                  // Easy: bis 15 Minuten (bereits durch API gefiltert)
+                  if (selectedDifficulty === 'easy') return true;
+                  
+                  // Medium: 15 bis 30 Minuten (client-seitig filtern)
+                  if (selectedDifficulty === 'medium') return cookTime >= 15 && cookTime <= 30;
+                  
+                  // Hard: ab 30 Minuten
+                  if (selectedDifficulty === 'hard') return cookTime > 30;
+                  
                   return true;
                 })
                 .slice(0, 30) // Limit to 30 recipes (3 columns × 10 rows)

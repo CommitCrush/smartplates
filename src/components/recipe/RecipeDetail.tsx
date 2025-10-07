@@ -13,15 +13,12 @@ import { RecipeHeader } from './RecipeHeader';
 import { RecipeIngredients } from './RecipeIngredients';
 import { RecipeInstructions } from './RecipeInstructions';
 import { RecipeNutrition } from './RecipeNutrition';
-import { Card } from '@/components/ui/card';
 
 interface RecipeDetailProps {
   recipe: Recipe;
-  isEditable?: boolean;
-  showUserActions?: boolean;
 }
 
-export function RecipeDetail({ recipe, isEditable = false, showUserActions = false }: RecipeDetailProps) {
+export function RecipeDetail({ recipe }: RecipeDetailProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Recipe Header */}
@@ -31,7 +28,7 @@ export function RecipeDetail({ recipe, isEditable = false, showUserActions = fal
         {/* Ingredients */}
         <div className="lg:col-span-1">
           <RecipeIngredients 
-            ingredients={Array.isArray(recipe.ingredients) ? recipe.ingredients : []} 
+            ingredients={Array.isArray(recipe.extendedIngredients) ? recipe.extendedIngredients : []} 
             servings={recipe.servings} 
           />
         </div>
@@ -39,7 +36,7 @@ export function RecipeDetail({ recipe, isEditable = false, showUserActions = fal
         {/* Instructions */}
         <div className="lg:col-span-2">
           <RecipeInstructions 
-            instructions={Array.isArray(recipe.instructions) ? recipe.instructions : []} 
+            instructions={recipe.analyzedInstructions?.[0]?.steps || []} 
           />
         </div>
       </div>
@@ -47,14 +44,6 @@ export function RecipeDetail({ recipe, isEditable = false, showUserActions = fal
       {/* Nutrition Information */}
       {recipe.nutrition && (
         <RecipeNutrition nutrition={recipe.nutrition} />
-      )}
-
-      {/* Additional Notes */}
-      {recipe.notes && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-3">Chef&apos;s Notes</h3>
-          <p className="text-muted-foreground whitespace-pre-wrap">{recipe.notes}</p>
-        </Card>
       )}
     </div>
   );

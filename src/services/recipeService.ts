@@ -5,6 +5,21 @@ import RecipeModel from '@/models/Recipe';
 
 const COLLECTION_NAME = 'spoonacular_recipes';
 
+// Hilfsfunktion zur Validierung vollständiger Rezepte
+function isRecipeComplete(recipe: Partial<Recipe>): boolean {
+	return !!(
+		recipe.title &&
+		recipe.analyzedInstructions &&
+		recipe.analyzedInstructions.length > 0 &&
+		recipe.analyzedInstructions.some(block => 
+			block.steps && block.steps.length > 0 && 
+			block.steps.some(step => step.step && step.step.trim().length > 0)
+		) &&
+		recipe.extendedIngredients &&
+		recipe.extendedIngredients.length > 0
+	);
+}
+
 export type Pagination = { page?: number; limit?: number };
 
 export type SearchFilters = {
@@ -21,7 +36,14 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 	const limit = Math.min(100, Math.max(1, pagination.limit || 30));
 	const col = await getCollection<Recipe>(COLLECTION_NAME);
 
-			const query: Filter<Recipe> = {};
+	const query: Filter<Recipe> = {
+		// Nur Rezepte mit vollständigen analyzedInstructions
+		'analyzedInstructions.0': { $exists: true },
+		'analyzedInstructions.0.steps.0': { $exists: true },
+		'analyzedInstructions.0.steps.0.step': { $exists: true, $ne: '', $not: { $regex: /^\s*$/ } },
+		// Nur Rezepte mit Zutaten
+		'extendedIngredients.0': { $exists: true }
+	};
 	if (filters.query) {
 		query.$or = [
 			{ title: { $regex: filters.query, $options: 'i' } },
@@ -108,6 +130,15 @@ export type CreateUserRecipeInput = {
 };
 
 export async function createUserRecipe(input: CreateUserRecipeInput): Promise<Recipe> {
+	// Validierung der Eingabedaten
+	if (!input.title || !input.instructions || input.instructions.length === 0) {
+		throw new Error('Rezept muss Titel und Anweisungen haben');
+	}
+
+	if (!input.ingredients || input.ingredients.length === 0) {
+		throw new Error('Rezept muss mindestens eine Zutat haben');
+	}
+
 	const col = await getCollection<Recipe>(COLLECTION_NAME);
 
 	const extendedIngredients: RecipeIngredient[] = input.ingredients.map((ing, idx) => ({
@@ -122,12 +153,18 @@ export async function createUserRecipe(input: CreateUserRecipeInput): Promise<Re
 		{
 			name: 'Steps',
 			steps: input.instructions
+				.filter(inst => inst.instruction && inst.instruction.trim().length > 0)
 				.sort((a, b) => a.stepNumber - b.stepNumber)
-				.map((inst) => ({ number: inst.stepNumber, step: inst.instruction })),
+				.map((inst) => ({ number: inst.stepNumber, step: inst.instruction.trim() })),
 		},
 	];
 
-		const doc: Omit<Recipe, '_id'> & { id?: string } = {
+	// Prüfung auf vollständige Anweisungen
+	if (analyzedInstructions[0].steps.length === 0) {
+		throw new Error('Rezept muss mindestens eine gültige Anweisung haben');
+	}
+
+	const doc: Omit<Recipe, '_id'> & { id?: string } = {
 		title: input.title,
 		description: input.description,
 		summary: input.description,
@@ -152,7 +189,12 @@ export async function createUserRecipe(input: CreateUserRecipeInput): Promise<Re
 		isSpoonacular: false,
 	};
 
-			const res = await col.insertOne(doc as unknown as Omit<Recipe, '_id'>);
+	// Finale Vollständigkeitsprüfung
+	if (!isRecipeComplete(doc)) {
+		throw new Error('Rezept ist unvollständig und kann nicht gespeichert werden');
+	}
+
+	const res = await col.insertOne(doc as unknown as Omit<Recipe, '_id'>);
 	return { ...doc, _id: res.insertedId } as Recipe;
 }
 
@@ -183,7 +225,15 @@ export async function listRecipesByUser(
   const limit = Math.min(100, Math.max(1, opts.limit ?? 30));
   const skip = (page - 1) * limit;
 
-  const filter: Record<string, unknown> = { userId };
+  const filter: Record<string, unknown> = { 
+    userId,
+    // Nur vollständige Rezepte
+    'analyzedInstructions.0': { $exists: true },
+    'analyzedInstructions.0.steps.0': { $exists: true },
+    'analyzedInstructions.0.steps.0.step': { $exists: true, $ne: '', $not: { $regex: /^\s*$/ } },
+    'extendedIngredients.0': { $exists: true }
+  };
+
   if (opts.dishTypes && opts.dishTypes.length > 0) {
     filter.dishTypes = { $in: opts.dishTypes.map((d) => d.toLowerCase()) };
   }
@@ -196,14 +246,47 @@ export async function listRecipesByUser(
   return { recipes, total, page, limit };
 }
 
-// Back-compat helper for previous placeholder usage
+// Neue Funktion: Bereinigung unvollständiger Rezepte
+export async function cleanupIncompleteRecipes(): Promise<{ deletedCount: number }> {
+	const col = await getCollection<Recipe>(COLLECTION_NAME);
+	
+	const incompleteFilter = {
+		$or: [
+			{ analyzedInstructions: { $exists: false } },
+			{ analyzedInstructions: { $size: 0 } },
+			{ 'analyzedInstructions.0.steps': { $exists: false } },
+			{ 'analyzedInstructions.0.steps': { $size: 0 } },
+			{ 'analyzedInstructions.0.steps.0.step': { $exists: false } },
+			{ 'analyzedInstructions.0.steps.0.step': '' },
+			{ 'analyzedInstructions.0.steps.0.step': { $regex: /^\s*$/ } },
+			{ extendedIngredients: { $exists: false } },
+			{ extendedIngredients: { $size: 0 } },
+			{ title: { $exists: false } },
+			{ title: '' }
+		]
+	};
+
+	const result = await col.deleteMany(incompleteFilter);
+	
+	console.log(`🗑️ Gelöscht: ${result.deletedCount} unvollständige Rezepte`);
+	return { deletedCount: result.deletedCount };
+}
+
+// Back-compat helper erweitert mit Vollständigkeitsprüfung
 export async function saveRecipeToDb(recipe: Recipe, userId: string) {
+	// Vollständigkeitsprüfung vor dem Speichern
+	if (!isRecipeComplete(recipe)) {
+		console.warn('⚠️ Unvollständiges Rezept wird nicht gespeichert:', recipe.title);
+		throw new Error('Rezept ist unvollständig und kann nicht gespeichert werden');
+	}
+
 	const col = await getCollection<Recipe>(COLLECTION_NAME);
 	const doc: Recipe & { id?: string } = {
 		...recipe,
 		authorId: userId,
 		isSpoonacular: recipe.isSpoonacular ?? true,
 	};
-			const res = await col.insertOne(doc as unknown as Omit<Recipe, '_id'>);
+	
+	const res = await col.insertOne(doc as unknown as Omit<Recipe, '_id'>);
 	return { ...doc, _id: res.insertedId } as Recipe;
 }

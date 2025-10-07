@@ -8,7 +8,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Clock, Users, ChefHat, Tag } from 'lucide-react';
+import { Clock, Users } from 'lucide-react';
 import { Recipe } from '@/types/recipe';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,10 +36,9 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
         {/* Recipe Info */}
         <CardContent className="p-6 flex flex-col justify-between">
           <div className="space-y-4">
-            {/* Title and Description */}
+            {/* Title */}
             <div>
               <h1 className="text-3xl font-bold mb-2">{recipe.title}</h1>
-              <p className="text-muted-foreground text-lg">{recipe.description}</p>
             </div>
 
             {/* Recipe Metadata */}
@@ -57,26 +56,6 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
                 <div>
                   <p className="text-sm text-muted-foreground">Servings</p>
                   <p className="font-semibold">{recipe.servings}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <ChefHat className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Difficulty</p>
-                  <Badge variant="outline" className="font-semibold">
-                    {recipe.difficulty}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Tag className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Meal Type</p>
-                  <Badge variant="secondary" className="font-semibold">
-                    {recipe.mealType}
-                  </Badge>
                 </div>
               </div>
             </div>

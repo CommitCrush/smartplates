@@ -31,6 +31,13 @@ export default function RecipeFilterDropdown({ filters, onChange }: { filters: a
     { value: 'wheat', label: 'Wheat' },
   ];
 
+  const difficulties = [
+    { value: '', label: 'All levels' },
+    { value: 'easy', label: 'Easy' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'hard', label: 'Hard' },
+  ];
+
   return (
     <div className="flex gap-4 flex-wrap">
       <div>
@@ -49,6 +56,12 @@ export default function RecipeFilterDropdown({ filters, onChange }: { filters: a
         <label className="block mb-1">Allergy 🚫</label>
         <select className="border rounded px-2 py-1" value={filters.allergy} onChange={e => onChange({ ...filters, allergy: e.target.value })}>
           {allergies.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="block mb-1">Difficulty 🎯</label>
+        <select className="border rounded px-2 py-1" value={filters.difficulty} onChange={e => onChange({ ...filters, difficulty: e.target.value })}>
+          {difficulties.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
         </select>
       </div>
     </div>

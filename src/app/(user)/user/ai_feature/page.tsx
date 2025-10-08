@@ -12,7 +12,7 @@ export default function AiRecipePage() {
   const [image, setImage] = useState<File | null>(null);
   const [recognizedIngredients, setRecognizedIngredients] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<any[]>([]);
-  const [filters, setFilters] = useState<{ category?: string; diet?: string; allergy?: string }>({});
+  const [filters, setFilters] = useState<{ category?: string; diet?: string; allergy?: string; difficulty?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -68,23 +68,23 @@ export default function AiRecipePage() {
 
   // Handle recipe search (manual or confirmed ingredients)
   const handleSearchRecipes = async () => {
-  setRecipes([]);
-  setError(null);
-  setDebugResponse(null);
+    setRecipes([]);
+    setError(null);
+    setDebugResponse(null);
     const searchIngredients = [...ingredients, ...recognizedIngredients].join(',');
     const params = new URLSearchParams();
     if (searchIngredients) params.append('search', searchIngredients);
-    if (filters.category) params.append('category', filters.category);
-    if (filters.diet) params.append('dietaryRestrictions', filters.diet);
+    if (filters.category) params.append('type', filters.category);
+    if (filters.diet) params.append('diet', filters.diet);
     if (filters.allergy) params.append('intolerances', filters.allergy);
+    if (filters.difficulty) params.append('difficulty', filters.difficulty);
     try {
-      const res = await fetch(`/api/recipes?${params.toString()}`);
+      const res = await fetch(`/api/ai/search-recipes?${params.toString()}`);
       const data = await res.json();
       setDebugResponse({ status: res.status, data });
       if (!res.ok || data.error) {
         let errorMsg = 'No recipes found.';
         if (data.error) errorMsg = data.error;
-        else if (res.status === 402) errorMsg = 'Recipe search failed: Spoonacular API quota/payment required.';
         else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
         setError(errorMsg);
         setRecipes([]);
@@ -109,6 +109,7 @@ export default function AiRecipePage() {
     if (newFilters.category) params.append('category', newFilters.category);
     if (newFilters.diet) params.append('dietaryRestrictions', newFilters.diet);
     if (newFilters.allergy) params.append('intolerances', newFilters.allergy);
+    if (newFilters.difficulty) params.append('difficulty', newFilters.difficulty);
     fetch(`/api/recipes?${params.toString()}`)
       .then(async res => {
         const data = await res.json();
@@ -116,7 +117,6 @@ export default function AiRecipePage() {
         if (!res.ok || data.error) {
           let errorMsg = 'No recipes found.';
           if (data.error) errorMsg = data.error;
-          else if (res.status === 402) errorMsg = 'Recipe search failed: Spoonacular API quota/payment required.';
           else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
           setError(errorMsg);
           setRecipes([]);
@@ -143,13 +143,6 @@ export default function AiRecipePage() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#23293a] via-[#181e2a] to-[#232b3e] flex flex-col items-center justify-start">
-      {/* Debug Panel */}
-      {debugResponse && (
-        <div className="w-full max-w-4xl mx-auto my-4 p-4 bg-gray-900 rounded-xl border border-gray-700 text-gray-200 text-xs overflow-auto">
-          <div className="font-bold text-lime-400 mb-2">Debug Response</div>
-          <pre className="whitespace-pre-wrap break-words">{JSON.stringify(debugResponse, null, 2)}</pre>
-        </div>
-      )}
       {/* Hero Section */}
       <div className="w-full flex justify-center items-center pt-10 pb-2 px-0">
         <div className="flex flex-row items-stretch justify-center w-full max-w-5xl gap-0 h-[340px]">

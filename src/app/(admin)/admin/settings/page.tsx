@@ -608,23 +608,7 @@ export default function AdminSettingsPage() {
               </Card>
             )}
 
-            {/* Upload Recipe Tab */}
-            {activeTab === 'upload' && (
-              <div>
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold">Upload New Recipe</h3>
-                  <p className="text-muted-foreground">
-                    Add a new recipe to the SmartPlates collection. This recipe will be available to all users.
-                  </p>
-                </div>
-                <EnhancedRecipeUploadForm
-                  onSubmit={handleRecipeUpload}
-                  isLoading={_isLoading}
-                  user={user}
-                  submitButtonText="Upload Recipe"
-                />
-              </div>
-            )}
+            {/* Upload Recipe Tab entfernt, Funktion ist jetzt eigene Seite */}
 
             {/* System Settings Tab */}
             {activeTab === 'system' && (

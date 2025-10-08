@@ -62,22 +62,14 @@ export function RecipeDetailModal({ meal, open, onOpenChange, dayName, mealType 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden p-0">
-        <DialogHeader className="p-6 pb-4">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="flex-shrink-0 p-6 pb-4">
           <DialogTitle className="text-2xl font-bold">
             {recipe?.title || meal.recipeName || 'Recipe Details'}
           </DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </DialogHeader>
 
-        <div className="overflow-y-auto flex-1 px-6 pb-6">
+        <div className="flex-1 px-6 pb-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

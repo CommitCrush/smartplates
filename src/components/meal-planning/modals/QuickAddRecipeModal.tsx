@@ -70,12 +70,10 @@ export function QuickAddRecipeModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [maxCookingTime, setMaxCookingTime] = useState<string>('all');
   const [selectedDiet, setSelectedDiet] = useState<string>('all');
   const [selectedAllergy, setSelectedAllergy] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
-  const [tagsFilter, setTagsFilter] = useState<string>('');
-  const [quickAndEasy, setQuickAndEasy] = useState<boolean>(false);
+  const [maxReadyTime, setMaxReadyTime] = useState<string | undefined>();
 
   // Debounce search query
   useEffect(() => {
@@ -85,6 +83,17 @@ export function QuickAddRecipeModal({
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Set maxReadyTime based on difficulty
+  useEffect(() => {
+    if (selectedDifficulty === 'easy') {
+      setMaxReadyTime('15'); // Easy: up to 15 minutes
+    } else if (selectedDifficulty === 'medium') {
+      setMaxReadyTime('30'); // Medium: up to 30 minutes
+    } else {
+      setMaxReadyTime(undefined);
+    }
+  }, [selectedDifficulty]);
   const mealTypeEmoji: Record<string, string> = {
     breakfast: '🍳',
     lunch: '🥪',
@@ -104,8 +113,8 @@ export function QuickAddRecipeModal({
         if (selectedCategory !== 'all') params.set('type', selectedCategory);
         if (selectedDiet !== 'all') params.set('diet', selectedDiet);
         if (selectedAllergy !== 'all') params.set('intolerances', selectedAllergy);
-        if (maxCookingTime !== 'all') params.set('maxReadyTime', String(maxCookingTime));
-        params.set('limit', '24');
+        if (maxReadyTime) params.set('maxReadyTime', maxReadyTime);
+        params.set('number', '24');
         const res = await fetch(`/api/recipes?${params.toString()}`);
         if (!res.ok) throw new Error(`Failed: ${res.status}`);
         const data = await res.json();
@@ -117,7 +126,7 @@ export function QuickAddRecipeModal({
       }
     };
     fetchRecipes();
-  }, [debouncedSearchQuery, selectedCategory, selectedDiet, selectedAllergy, maxCookingTime]);
+  }, [debouncedSearchQuery, selectedCategory, selectedDiet, selectedAllergy, maxReadyTime]);
   type ExtendedRecipe = Recipe & { _id?: string; difficulty?: string; cookingMinutes?: number; spoonacularScore?: number };
 
   // Apply client-side filters that aren't handled by server
@@ -126,13 +135,13 @@ export function QuickAddRecipeModal({
       setFilteredRecipes([]);
       return;
     }
-    
-  let filtered: ExtendedRecipe[] = [...(recipes as ExtendedRecipe[])];
-    
+
+    let filtered: ExtendedRecipe[] = [...(recipes as ExtendedRecipe[])];
+
     // Filter by meal type using dishTypes from Spoonacular (client-side as fallback)
     if (mealType && mealType !== 'snacks') {
-      filtered = filtered.filter(recipe => 
-        recipe.dishTypes?.some((type: string) => 
+      filtered = filtered.filter(recipe =>
+        recipe.dishTypes?.some((type: string) =>
           type.toLowerCase().includes(mealType) ||
           (mealType === 'breakfast' && (type.toLowerCase().includes('morning meal') || type.toLowerCase().includes('brunch'))) ||
           (mealType === 'lunch' && (type.toLowerCase().includes('main course') || type.toLowerCase().includes('lunch'))) ||
@@ -141,60 +150,55 @@ export function QuickAddRecipeModal({
       );
     }
 
-
-    // Filter by difficulty (client-side)
+    // Filter by difficulty (client-side for medium and hard)
     if (selectedDifficulty !== 'all') {
       filtered = filtered.filter((recipe) => {
-        const diff = recipe.difficulty as string | undefined;
-        return diff?.toLowerCase() === selectedDifficulty.toLowerCase() || (!diff && selectedDifficulty === 'easy');
+        const cookTime = recipe.readyInMinutes || 0;
+
+        // Easy: already filtered by API (up to 15 minutes)
+        if (selectedDifficulty === 'easy') return true;
+
+        // Medium: 15 to 30 minutes
+        if (selectedDifficulty === 'medium') return cookTime >= 15 && cookTime <= 30;
+
+        // Hard: over 30 minutes
+        if (selectedDifficulty === 'hard') return cookTime > 30;
+
+        return true;
       });
     }
-    
-    // Filter by tags (client-side)
-    if (tagsFilter.trim()) {
-      const tags = tagsFilter.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean);
-      filtered = filtered.filter(recipe => 
-        tags.some(tag => 
-          recipe.title?.toLowerCase().includes(tag) ||
-          recipe.summary?.toLowerCase().includes(tag) ||
-          recipe.dishTypes?.some((type: string) => type.toLowerCase().includes(tag)) ||
-          recipe.diets?.some((diet: string) => diet.toLowerCase().includes(tag))
-        )
-      );
-    }
-    
-    // Filter for quick & easy (client-side as fallback)
-    if (quickAndEasy) {
-      filtered = filtered.filter((recipe) => {
-        const cooking = recipe.cookingMinutes as number | undefined;
-        return (
-          (recipe.readyInMinutes && recipe.readyInMinutes <= 30) ||
-          (typeof cooking === 'number' && cooking <= 30) ||
-          (!recipe.readyInMinutes && cooking == null)
-        );
-      });
-    }
-    
-  setFilteredRecipes(filtered);
-  }, [recipes, selectedAllergy, selectedDifficulty, tagsFilter, quickAndEasy, mealType]);
+
+    setFilteredRecipes(filtered);
+  }, [recipes, selectedDifficulty, mealType]);
 
   // Helper: Clear all filters
   const clearFilters = () => {
     setSearchQuery('');
     setDebouncedSearchQuery('');
     setSelectedCategory('all');
-    setMaxCookingTime('all');
     setSelectedDiet('all');
     setSelectedAllergy('all');
     setSelectedDifficulty('all');
-    setTagsFilter('');
-    setQuickAndEasy(false);
   };
 
   // Helper: Suggest top 5 recipes
   const suggestedRecipes = useMemo<ExtendedRecipe[]>(() => {
     return (recipes as ExtendedRecipe[]).slice(0, 5);
   }, [recipes]);
+
+  // Helper: Handle Spoonacular images with direct loading
+  function getImageConfig(url?: string) {
+    if (!url || typeof url !== 'string') {
+      return { src: '/placeholder-recipe.svg', useNextImage: true };
+    }
+
+    // For Spoonacular URLs: use direct loading to avoid 429 errors
+    if (url.includes('spoonacular.com') || url.includes('img.spoonacular.com')) {
+      return { src: url, useNextImage: false };
+    }
+
+    return { src: url, useNextImage: true };
+  }
 
   // Helper: Add recipe
   const handleAddRecipe = (recipe: ExtendedRecipe) => {
@@ -245,7 +249,7 @@ export function QuickAddRecipeModal({
                 <SelectContent className="bg-white border-gray-200">
                   <SelectItem value="all" className="hover:bg-gray-50">All Categories</SelectItem>
                   <SelectItem value="breakfast" className="hover:bg-gray-50">Breakfast</SelectItem>
-                  <SelectItem value="lunch" className="hover:bg-gray-50">Lunch</SelectItem>
+                  <SelectItem value="main course" className="hover:bg-gray-50">Lunch</SelectItem>
                   <SelectItem value="dinner" className="hover:bg-gray-50">Dinner</SelectItem>
                   <SelectItem value="dessert" className="hover:bg-gray-50">Dessert</SelectItem>
                   <SelectItem value="snack" className="hover:bg-gray-50">Snack</SelectItem>
@@ -261,19 +265,6 @@ export function QuickAddRecipeModal({
                   <SelectItem value="easy" className="hover:bg-gray-50">Easy</SelectItem>
                   <SelectItem value="medium" className="hover:bg-gray-50">Medium</SelectItem>
                   <SelectItem value="hard" className="hover:bg-gray-50">Hard</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={maxCookingTime} onValueChange={setMaxCookingTime}>
-                <SelectTrigger className="w-40 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="Max Time" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="all" className="hover:bg-gray-50">Any Time</SelectItem>
-                  <SelectItem value="15" className="hover:bg-gray-50">Under 15 min</SelectItem>
-                  <SelectItem value="30" className="hover:bg-gray-50">Under 30 min</SelectItem>
-                  <SelectItem value="60" className="hover:bg-gray-50">Under 1 hour</SelectItem>
-                  <SelectItem value="120" className="hover:bg-gray-50">Under 2 hours</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -317,30 +308,10 @@ export function QuickAddRecipeModal({
                 Clear
               </Button>
             </div>
-
-            {/* Additional Filters Row */}
-            <div className="flex flex-wrap gap-3 items-center">
-              <Input
-                placeholder="Tags (comma separated)"
-                value={tagsFilter}
-                onChange={(e) => setTagsFilter(e.target.value)}
-                className="w-48 bg-white border-gray-300 hover:border-gray-400 focus:border-primary"
-              />
-              
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={quickAndEasy}
-                  onChange={(e) => setQuickAndEasy(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                Quick & Easy
-              </label>
-            </div>
           </div>
 
           {/* Quick Suggestions */}
-          {suggestedRecipes.length > 0 && !searchQuery && selectedCategory === 'all' && selectedDiet === 'all' && !tagsFilter.trim() && !quickAndEasy && (
+          {suggestedRecipes.length > 0 && !searchQuery && selectedCategory === 'all' && selectedDiet === 'all' && (
             <div className="flex-shrink-0">
               <h3 className="text-sm font-medium text-gray-700 mb-2">
                 Popular {mealType} recipes
@@ -348,7 +319,7 @@ export function QuickAddRecipeModal({
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {suggestedRecipes.map((recipe, i) => (
                   <Button
-                    key={`${recipe.id ?? recipe.title ?? i}`}
+                    key={`${recipe._id ?? recipe.title ?? i}`}
                     variant="outline"
                     size="sm"
                     onClick={() => handleAddRecipe(recipe)}
@@ -390,15 +361,25 @@ export function QuickAddRecipeModal({
                   >
                     {/* Recipe Image */}
                     <div className="w-full h-40 bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      {recipe.image ? (
-                        <Image
-                          src={recipe.image}
-                          alt={recipe.title}
-                          width={600}
-                          height={300}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
+                      {recipe.image ? (() => {
+                        const imageConfig = getImageConfig(recipe.image);
+                        return imageConfig.useNextImage ? (
+                          <Image
+                            src={imageConfig.src}
+                            alt={recipe.title}
+                            width={600}
+                            height={300}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src={imageConfig.src}
+                            alt={recipe.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        );
+                      })() : (
                         <div className="text-4xl opacity-30">🍽️</div>
                       )}
                     </div>

@@ -143,8 +143,8 @@ export default function RecipePage() {
         </div>
 
 
-        {/* Search and Filters */}
-        <div className="bg-background-card border border-border rounded-lg p-6 mb-8">
+  {/* Search and Filters - sticky */}
+  <div className="bg-background-card border border-border rounded-lg p-6 mb-8 sticky top-16 z-30 shadow-lg">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
@@ -304,7 +304,7 @@ export default function RecipePage() {
         {/* Recipe Grid */}
         {!loading && !error && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[calc(10*theme(spacing.80))] overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {recipes
                 .filter((recipe) => {
                   if (!selectedDifficulty) return true;

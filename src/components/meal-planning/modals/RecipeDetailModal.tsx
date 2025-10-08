@@ -45,7 +45,7 @@ const createMockRecipe = (meal: MealSlot): Recipe => ({
   _id: meal.recipeId || '1',
   title: meal.recipeName || 'Delicious Recipe',
   description: meal.notes || 'A wonderful meal that\'s perfect for any occasion.',
-  image: meal.image || '/images/placeholder-recipe.jpg',
+  image: meal.image || '/placeholder-recipe.svg',
   difficulty: 'medium' as const,
   servings: meal.servings || 4,
   prepTime: 15,
@@ -234,11 +234,16 @@ export function RecipeDetailModal({
                   {/* Image */}
                   <div className="relative aspect-[4/3] rounded-lg overflow-hidden">
                     <Image
-                      src={recipe.image || meal.image || '/images/placeholder-recipe.jpg'}
+                      src={recipe.image || meal.image || '/placeholder-recipe.svg'}
                       alt={recipe.title}
                       fill
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, 50vw"
+                      unoptimized={(recipe.image || meal.image || '').includes('spoonacular.com')}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/placeholder-recipe.svg';
+                      }}
                     />
                     {recipe.rating && (
                       <div className="absolute top-3 right-3">

@@ -9,14 +9,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { 
-  Search, 
-  Clock, 
-  Users, 
-  Filter, 
+import {
+  Search,
+  Clock,
+  Users,
+  Filter,
   Plus,
   Star,
-  Utensils 
+  Utensils
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 // Removed mockRecipeService; use unified /api/recipes endpoint
 import { Recipe } from '@/types/recipe';
+import { useAllRecipes } from '@/hooks/useRecipes';
+import { useAuth } from '@/context/authContext';
 import {
   Dialog,
   DialogContent,
@@ -66,23 +68,13 @@ export function QuickAddRecipeModal({
   dayName = 'today',
   className
 }: QuickAddRecipeModalProps) {
-  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
+  const { isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedDiet, setSelectedDiet] = useState<string>('all');
   const [selectedAllergy, setSelectedAllergy] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
   const [maxReadyTime, setMaxReadyTime] = useState<string | undefined>();
-
-  // Debounce search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
 
   // Set maxReadyTime based on difficulty
   useEffect(() => {
@@ -94,6 +86,7 @@ export function QuickAddRecipeModal({
       setMaxReadyTime(undefined);
     }
   }, [selectedDifficulty]);
+
   const mealTypeEmoji: Record<string, string> = {
     breakfast: '🍳',
     lunch: '🥪',
@@ -101,39 +94,25 @@ export function QuickAddRecipeModal({
     snacks: '🍪',
   };
 
-  // Fetch from unified recipes API (Mongo-first with server fallback)
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  useEffect(() => {
-    const fetchRecipes = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        if (debouncedSearchQuery) params.set('search', debouncedSearchQuery);
-        if (selectedCategory !== 'all') params.set('type', selectedCategory);
-        if (selectedDiet !== 'all') params.set('diet', selectedDiet);
-        if (selectedAllergy !== 'all') params.set('intolerances', selectedAllergy);
-        if (maxReadyTime) params.set('maxReadyTime', maxReadyTime);
-        params.set('number', '24');
-        const res = await fetch(`/api/recipes?${params.toString()}`);
-        if (!res.ok) throw new Error(`Failed: ${res.status}`);
-        const data = await res.json();
-        setRecipes(Array.isArray(data.recipes) ? data.recipes : []);
-      } catch {
-        setRecipes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRecipes();
-  }, [debouncedSearchQuery, selectedCategory, selectedDiet, selectedAllergy, maxReadyTime]);
+  const fetchOptions = useMemo(
+    () => ({
+      ...(selectedCategory && selectedCategory !== 'all' && { type: selectedCategory }),
+      ...(selectedDiet && selectedDiet !== 'all' && { diet: selectedDiet }),
+      ...(selectedAllergy && selectedAllergy !== 'all' && { intolerances: selectedAllergy }),
+      ...(maxReadyTime && { maxReadyTime }),
+      number: '24',
+      page: '1',
+    }),
+    [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime]
+  );
+
+  const { recipes, error, loading } = useAllRecipes(searchQuery, fetchOptions);
   type ExtendedRecipe = Recipe & { _id?: string; difficulty?: string; cookingMinutes?: number; spoonacularScore?: number };
 
   // Apply client-side filters that aren't handled by server
-  useEffect(() => {
+  const filteredRecipes = useMemo(() => {
     if (!recipes || recipes.length === 0) {
-      setFilteredRecipes([]);
-      return;
+      return [];
     }
 
     let filtered: ExtendedRecipe[] = [...(recipes as ExtendedRecipe[])];
@@ -151,7 +130,7 @@ export function QuickAddRecipeModal({
     }
 
     // Filter by difficulty (client-side for medium and hard)
-    if (selectedDifficulty !== 'all') {
+    if (selectedDifficulty && selectedDifficulty !== 'all') {
       filtered = filtered.filter((recipe) => {
         const cookTime = recipe.readyInMinutes || 0;
 
@@ -168,13 +147,12 @@ export function QuickAddRecipeModal({
       });
     }
 
-    setFilteredRecipes(filtered);
+    return filtered;
   }, [recipes, selectedDifficulty, mealType]);
 
   // Helper: Clear all filters
   const clearFilters = () => {
     setSearchQuery('');
-    setDebouncedSearchQuery('');
     setSelectedCategory('all');
     setSelectedDiet('all');
     setSelectedAllergy('all');
@@ -183,8 +161,8 @@ export function QuickAddRecipeModal({
 
   // Helper: Suggest top 5 recipes
   const suggestedRecipes = useMemo<ExtendedRecipe[]>(() => {
-    return (recipes as ExtendedRecipe[]).slice(0, 5);
-  }, [recipes]);
+    return (filteredRecipes as ExtendedRecipe[]).slice(0, 5);
+  }, [filteredRecipes]);
 
   // Helper: Handle Spoonacular images with direct loading
   function getImageConfig(url?: string) {
@@ -311,7 +289,7 @@ export function QuickAddRecipeModal({
           </div>
 
           {/* Quick Suggestions */}
-          {suggestedRecipes.length > 0 && !searchQuery && selectedCategory === 'all' && selectedDiet === 'all' && (
+          {suggestedRecipes.length > 0 && !searchQuery && selectedCategory === 'all' && selectedDiet === 'all' && selectedAllergy === 'all' && selectedDifficulty === 'all' && (
             <div className="flex-shrink-0">
               <h3 className="text-sm font-medium text-gray-700 mb-2">
                 Popular {mealType} recipes

@@ -66,31 +66,27 @@ export function MealSlotComponent({
   className
 }: MealSlotComponentProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isDragStarted, setIsDragStarted] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
 
-  // Drag & Drop functionality
+    // Drag & Drop functionality - TEMPORARILY DISABLED FOR TESTING
   const [{ isDragging }, drag] = useDrag({
     type: 'meal',
-    item: (): DragItem => {
-      console.log('🏗️ Drag starting:', meal.recipeName, { mealType, dayIndex, mealIndex });
-      return {
-        type: 'meal',
-        meal,
-        mealType,
-        dayIndex,
-        mealIndex
-      };
-    },
+    item: { meal, mealType, dayIndex, mealIndex },
+    canDrag: false, // DISABLE DRAG FOR TESTING
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
     end: (item, monitor) => {
-      const dropResult = monitor.getDropResult();
-      console.log('🏁 Drag ended:', { item, dropResult, didDrop: monitor.didDrop() });
+      if (monitor.didDrop()) {
+        console.log('�️ Drag ending:', item, { result: monitor.getDropResult() });
+      }
     }
   });
 
   const [{ isOver }, drop] = useDrop({
     accept: 'meal',
+    canDrop: () => false, // DISABLE DROP FOR TESTING
     drop: (item: DragItem) => {
       // Handle meal reordering logic here
       console.log('Dropped meal:', item, 'onto:', { mealType, dayIndex, mealIndex });
@@ -122,13 +118,12 @@ export function MealSlotComponent({
   return (
     <div>
       {/* Recipe Card - EVERYTHING INSIDE HERE INCLUDING TITLE */}
-      <div
+            <div
         ref={ref}
         className={cn(
-          'relative group',
-          'bg-white border border-gray-200 rounded-lg p-3',
+          'relative bg-white rounded-lg shadow-sm border border-gray-200 p-3',
           'hover:border-gray-300 hover:shadow-sm transition-all duration-200',
-          onShowRecipe ? 'cursor-pointer hover:bg-gray-50' : 'cursor-move',
+          onShowRecipe ? 'cursor-pointer hover:bg-blue-50' : 'cursor-default',
           isDragging && 'opacity-50 rotate-2 scale-105',
           isOver && 'ring-2 ring-primary ring-opacity-50',
           isToday && 'border-primary border-opacity-30',
@@ -137,11 +132,24 @@ export function MealSlotComponent({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={(e) => {
+          console.log('🍽️ MealSlot: Direct onClick called', { 
+            meal: meal.recipeName, 
+            hasOnShowRecipe: !!onShowRecipe,
+            target: e.target 
+          });
+          
           // Don't trigger recipe modal if clicking on action buttons
           if ((e.target as HTMLElement).closest('button, [role="menuitem"]')) {
+            console.log('🍽️ MealSlot: Click ignored - clicked on action button');
             return;
           }
-          onShowRecipe?.(meal);
+          
+          if (onShowRecipe) {
+            console.log('🍽️ MealSlot: Calling onShowRecipe');
+            onShowRecipe(meal);
+          } else {
+            console.log('🍽️ MealSlot: No onShowRecipe function provided');
+          }
         }}
       >
         {/* Recipe Title - INSIDE the card */}
@@ -157,7 +165,7 @@ export function MealSlotComponent({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 relative z-20"
                 >
                   <MoreVertical className="h-3 w-3" />
                 </Button>

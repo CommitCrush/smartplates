@@ -194,9 +194,9 @@ export function RecipeDetailModal({
                 <DialogTitle className="text-2xl font-bold mb-2">
                   {recipe?.title || meal.recipeName || 'Recipe Details'}
                 </DialogTitle>
-                <DialogDescription className="text-base">
+                {/* <DialogDescription className="text-base">
                   {recipe?.description || meal.notes || 'Planned meal details'}
-                </DialogDescription>
+                </DialogDescription> */}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -310,20 +310,6 @@ export function RecipeDetailModal({
                               Scaled from {originalServings} serving{originalServings !== 1 ? 's' : ''}
                             </div>
                           )}
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-4 text-center">
-                          <ChefHat className="w-6 h-6 mx-auto mb-2 text-primary" />
-                          <div className="text-sm font-medium">Difficulty</div>
-                          <div className="text-sm font-semibold capitalize">{recipe.difficulty}</div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-4 text-center">
-                          <Utensils className="w-6 h-6 mx-auto mb-2 text-primary" />
-                          <div className="text-sm font-medium">Category</div>
-                          <div className="text-sm font-semibold">{recipe.category || 'Main Course'}</div>
                         </CardContent>
                       </Card>
                     </div>

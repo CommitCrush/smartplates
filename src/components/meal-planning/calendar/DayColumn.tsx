@@ -33,7 +33,7 @@ interface DayColumnProps {
     targetDayIndex: number,
     targetMealType: string
   ) => void;
-  onShowRecipe?: (meal: MealSlot) => void;
+  onShowRecipe?: (meal: MealSlot, dayIndex: number, mealType: string) => void;
   onCopyRecipe?: (meal: MealSlot) => void;
   copiedRecipe?: MealSlot | null;
   isToday?: boolean;
@@ -255,7 +255,10 @@ export function DayColumn({
                       mealIndex={mealIndex}
                       onRemove={() => handleRemoveMeal(key, mealIndex)}
                       onUpdate={(updatedMeal) => handleMealUpdate(key, mealIndex, updatedMeal)}
-                      onShowRecipe={onShowRecipe}
+                      onShowRecipe={(meal) => {
+                        console.log('🔍 DayColumn: onShowRecipe called', { meal: meal.recipeName, dayIndex, mealType: key });
+                        onShowRecipe?.(meal, dayIndex, key);
+                      }}
                       onCopyRecipe={onCopyRecipe}
                       isToday={isToday}
                     />

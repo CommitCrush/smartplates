@@ -88,18 +88,28 @@ export default function RecipePage() {
     setPage(1);
   }, [selectedDifficulty]);
 
-  const fetchOptions = useMemo(
-    () => ({
+  const fetchOptions = useMemo(() => {
+    const options: Record<string, string> = {
       type: selectedCategory,
       diet: selectedDiet,
       intolerances: selectedAllergy,
-      ...(maxReadyTime && { maxReadyTime }),
       number: isAuthenticated ? '30' : '15', // 30 for users, 15 for viewers
       page: String(page),
-      // Remove randomize for consistent pagination
-    }),
-    [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, page, isAuthenticated]
-  );
+    };
+
+    if (maxReadyTime) {
+      options.maxReadyTime = maxReadyTime;
+    }
+
+    // Randomization logic:
+    // - Viewers (not authenticated): always randomized on every page
+    // - Users (authenticated): only randomized on first page OR when filters change
+    if (!isAuthenticated || page === 1) {
+      options.randomize = 'true';
+    }
+
+    return options;
+  }, [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, page, isAuthenticated]);
 
   const { recipes, error, loading, hasMore, total } = useAllRecipes(searchQuery, fetchOptions);
 
@@ -138,7 +148,10 @@ export default function RecipePage() {
             Recipe Collection
           </h1>
           <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
-            Discover delicious recipes from our community of passionate cooks
+            {isAuthenticated 
+              ? 'Discover delicious recipes from our community - First page randomized, then paginated'
+              : 'Browse our collection of amazing recipes - Always randomly displayed'
+            }
           </p>
         </div>
 

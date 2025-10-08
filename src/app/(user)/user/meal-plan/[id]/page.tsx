@@ -136,7 +136,8 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
       key={index} 
       className={`${config.cardBg} border ${config.borderColor} rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer`}
       onClick={() => {
-        if (onShowRecipe) {
+        console.log('🍽️ Meal card clicked', { meal: meal.recipeName });
+        if (onShowRecipe) { 
           // Convert the meal data to MealSlot format
           const mealSlot: MealSlotType = {
             recipeId: meal.recipeId || '',
@@ -147,7 +148,9 @@ const TodayView: React.FC<TodayViewProps> = ({ currentDate, mealPlans, onAddMeal
             notes: meal.notes || '',
             image: meal.image || ''
           };
+          // Call the passed handler
           onShowRecipe(mealSlot);
+          console.log('🍽️ Called onShowRecipe with meal:', mealSlot);
         }
       }}
     >
@@ -362,6 +365,7 @@ export default function MealPlanningPage() {
   const [, setIsSaving] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<MealPlanningSlot | null>(null);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState<MealSlotType | null>(null);
   const [copiedRecipe, setCopiedRecipe] = useState<MealSlot | null>(null);
 
   // Handle copying recipe
@@ -374,7 +378,6 @@ export default function MealPlanningPage() {
   const handleClearCopiedRecipe = () => {
     setCopiedRecipe(null);
   };
-  const [selectedRecipe, setSelectedRecipe] = useState<MealSlot | null>(null);
 
   // Central meal plan storage - persists across navigation
   const [globalMealPlans, setGlobalMealPlans] = useState<Map<string, IMealPlan>>(new Map());
@@ -1214,13 +1217,15 @@ export default function MealPlanningPage() {
         )}
 
         {/* Recipe Detail Modal */}
-        {showRecipeModal && selectedRecipe && (
-          <RecipeDetailModal
-            isOpen={showRecipeModal}
-            onClose={handleCloseRecipeModal}
-            meal={selectedRecipe}
-          />
-        )}
+        <RecipeDetailModal
+          meal={selectedRecipe}
+          open={showRecipeModal}
+          onOpenChange={(open) => {
+            if (!open) handleCloseRecipeModal();
+          }}
+          dayName="Today"
+          mealType="Unknown"
+        />
         </div>
     </DndProvider>
   );

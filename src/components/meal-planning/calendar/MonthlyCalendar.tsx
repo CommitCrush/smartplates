@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { IMealPlan, DayMeals, MealSlot } from '@/types/meal-planning';
 import { getWeekStartDate } from '@/types/meal-planning';
+import { RecipeDetailModal } from '../modals/RecipeDetailModal';
 
 
 // ========================================
@@ -41,7 +42,7 @@ interface MonthlyCalendarProps {
   onAddRecipe?: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
   onEditMeal?: (meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
-  onShowRecipe?: (meal: MealSlot) => void;
+  onShowRecipe?: (meal: MealSlot, date: Date, mealType: string) => void;
   onCopyRecipe?: (meal: MealSlot) => void;
   copiedRecipe?: MealSlot | null;
   onClearCopiedRecipe?: () => void;
@@ -119,7 +120,7 @@ interface DayCellProps {
   onAddRecipe?: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onEditMeal?: (meal: MealSlot, date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
-  onShowRecipe?: (meal: MealSlot) => void;
+  onShowRecipe?: (meal: MealSlot, date: Date, mealType: string) => void;
   onCopyRecipe?: (meal: MealSlot) => void;
   onDayClick?: (date: Date) => void;
   selectedDate?: Date | null;
@@ -203,7 +204,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
                   onClick={(e) => {
                     e.stopPropagation();
                     if (onShowRecipe) {
-                      onShowRecipe(meal);
+                      onShowRecipe(meal, date, 'breakfast');
                     } else {
                       onEditMeal?.(meal, date, 'breakfast');
                     }
@@ -251,7 +252,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
                   onClick={(e) => {
                     e.stopPropagation();
                     if (onShowRecipe) {
-                      onShowRecipe(meal);
+                      onShowRecipe(meal, date, 'lunch');
                     } else {
                       onEditMeal?.(meal, date, 'lunch');
                     }
@@ -298,7 +299,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
                   onClick={(e) => {
                     e.stopPropagation();
                     if (onShowRecipe) {
-                      onShowRecipe(meal);
+                      onShowRecipe(meal, date, 'dinner');
                     } else {
                       onEditMeal?.(meal, date, 'dinner');
                     }
@@ -375,6 +376,12 @@ export function MonthlyCalendar({
 }: MonthlyCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(currentDate || new Date());
   const [dateSearchValue, setDateSearchValue] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  
+  // Modal state for recipe details
+  const [selectedMeal, setSelectedMeal] = useState<MealSlot | null>(null);
+  const [selectedMealContext, setSelectedMealContext] = useState<{dayName: string, mealType: string} | null>(null);
+  const [showRecipeModal, setShowRecipeModal] = useState(false);
 
   // Sync with parent currentDate prop
   useEffect(() => {
@@ -382,7 +389,15 @@ export function MonthlyCalendar({
       setCurrentMonth(currentDate);
     }
   }, [currentDate]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Handle showing recipe details
+  const handleShowRecipe = (meal: MealSlot, date: Date, mealType: string) => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = dayNames[date.getDay()];
+    setSelectedMeal(meal);
+    setSelectedMealContext({ dayName, mealType });
+    setShowRecipeModal(true);
+  };
 
   // Handle copying recipe
   const handleCopyRecipe = (meal: MealSlot) => {
@@ -639,7 +654,7 @@ export function MonthlyCalendar({
               onAddRecipe={onAddRecipe}
               onEditMeal={onEditMeal}
               onRemoveMeal={onRemoveMeal}
-              onShowRecipe={onShowRecipe}
+              onShowRecipe={handleShowRecipe}
               onCopyRecipe={handleCopyRecipe}
               onDayClick={handleDayClick}
               selectedDate={selectedDate}
@@ -665,6 +680,15 @@ export function MonthlyCalendar({
           </div>
         </div>
       </CardContent>
+      
+      {/* Recipe Detail Modal */}
+      <RecipeDetailModal
+        meal={selectedMeal}
+        open={showRecipeModal}
+        onOpenChange={setShowRecipeModal}
+        dayName={selectedMealContext?.dayName}
+        mealType={selectedMealContext?.mealType}
+      />
     </Card>
   );
 }

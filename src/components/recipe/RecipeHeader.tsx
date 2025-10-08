@@ -17,19 +17,44 @@ interface RecipeHeaderProps {
 }
 
 export function RecipeHeader({ recipe }: RecipeHeaderProps) {
+  // Helper: Handle Spoonacular images with direct loading
+  function getRecipeImageConfig(url?: string) {
+    if (!url || typeof url !== 'string') {
+      return { src: '/placeholder-recipe.svg', useNextImage: true };
+    }
+    
+    // For Spoonacular URLs: use direct loading to avoid 429 errors
+    if (url.includes('spoonacular.com') || url.includes('img.spoonacular.com')) {
+      return { src: url, useNextImage: false };
+    }
+    
+    return { src: url, useNextImage: true };
+  }
+
+  const imageConfig = getRecipeImageConfig(recipe.image);
+
   return (
     <Card className="overflow-hidden">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
         {/* Recipe Image */}
         <div className="relative aspect-square md:aspect-[4/3]">
-          <Image
-            src={recipe.image || '/images/placeholder-recipe.jpg'}
-            alt={recipe.title}
-            fill
-            className="object-cover"
-            priority
-            sizes="(max-width: 768px) 100vw, 50vw"
-          />
+          {imageConfig.useNextImage ? (
+            <Image
+              src={imageConfig.src}
+              alt={recipe.title}
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
+          ) : (
+            <img
+              src={imageConfig.src}
+              alt={recipe.title}
+              className="w-full h-full object-cover"
+              loading="eager"
+            />
+          )}
         </div>
 
         {/* Recipe Info */}

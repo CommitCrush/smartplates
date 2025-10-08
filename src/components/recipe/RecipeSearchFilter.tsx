@@ -22,6 +22,20 @@ export default function RecipeSearchFilter({ className }: { className?: string }
 		const { results, loading, error, searchRecipes } = useRecipeSearch();
 			const [details, setDetails] = useState<Record<string, Partial<Recipe>>>({});
 
+	// Helper: Handle Spoonacular images with direct loading
+	function getImageConfig(url?: string) {
+		if (!url || typeof url !== 'string') {
+			return { src: '/placeholder-recipe.svg', useNextImage: true };
+		}
+		
+		// For Spoonacular URLs: use direct loading to avoid 429 errors
+		if (url.includes('spoonacular.com') || url.includes('img.spoonacular.com')) {
+			return { src: url, useNextImage: false };
+		}
+		
+		return { src: url, useNextImage: true };
+	}
+
 		useEffect(() => {
 			async function fetchDetails() {
 				if (results.length === 0) return;
@@ -133,21 +147,31 @@ export default function RecipeSearchFilter({ className }: { className?: string }
 										{results.map((recipe: Recipe) => {
 											const recipeId = recipe.id || recipe._id;
 											const detail = recipeId ? details[recipeId.toString()] || {} : {};
+											const imageConfig = getImageConfig(recipe.image);
 											return (
 												<div
 													key={recipeId?.toString() || Math.random().toString()}
 													className="bg-white shadow-md rounded-2xl overflow-hidden transition hover:scale-[1.02] dark:bg-neutral-900"
 												>
-																	<Image
-																		src={recipe.image || '/placeholder.jpg'}
-																		alt={detail.title || recipe.title || 'No title'}
-																		width={400}
-																		height={192}
-																		className="w-full h-48 object-cover"
-																		priority={false}
-																		placeholder="blur"
-																		blurDataURL="/placeholder.jpg"
-																	/>
+													{imageConfig.useNextImage ? (
+														<Image
+															src={imageConfig.src}
+															alt={detail.title || recipe.title || 'No title'}
+															width={400}
+															height={192}
+															className="w-full h-48 object-cover"
+															priority={false}
+															placeholder="blur"
+															blurDataURL="/placeholder-recipe.svg"
+														/>
+													) : (
+														<img
+															src={imageConfig.src}
+															alt={detail.title || recipe.title || 'No title'}
+															className="w-full h-48 object-cover"
+															loading="lazy"
+														/>
+													)}
 													<div className="p-4">
 														<div className="flex items-center justify-between mb-2">
 															<h2 className="text-lg font-bold text-gray-900 dark:text-white">{detail.title || recipe.title || 'Untitled'}</h2>

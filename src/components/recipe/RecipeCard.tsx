@@ -29,13 +29,26 @@ export function RecipeCard({
   showAuthor = true,
   priority = false 
 }: RecipeCardProps) {
-  // Helper: check if image URL is valid (has extension and not empty)
+  // Helper: Handle Spoonacular images with direct loading (bypassing Next.js Image proxy)
   function getRecipeImage(url?: string) {
-    if (!url || typeof url !== 'string') return '/images/placeholder-recipe.jpg';
-    // Spoonacular images should end with .jpg, .png, .webp, etc.
-    if (!/\.(jpg|jpeg|png|webp|gif)$/i.test(url)) return '/images/placeholder-recipe.jpg';
-    return url;
+    if (!url || typeof url !== 'string') {
+      return { src: '/placeholder-recipe.svg', useNextImage: true };
+    }
+    
+    // For Spoonacular URLs: use direct loading to avoid 429 errors
+    if (url.includes('spoonacular.com') || url.includes('img.spoonacular.com')) {
+      return { src: url, useNextImage: false }; // Direct HTML img tag
+    }
+    
+    // For other URLs: use Next.js Image optimization
+    if (!/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url)) {
+      return { src: '/placeholder-recipe.svg', useNextImage: true };
+    }
+    
+    return { src: url, useNextImage: true };
   }
+
+  const imageConfig = getRecipeImage(recipe.image);
 
   // Calculate total time - handle both RecipeCard and Recipe types
   const totalTime = (() => {
@@ -47,8 +60,8 @@ export function RecipeCard({
     if (fullRecipe.readyInMinutes) {
       return fullRecipe.readyInMinutes;
     }
-    if (fullRecipe.prepTime && fullRecipe.cookTime) {
-      return fullRecipe.prepTime + fullRecipe.cookTime;
+    if (fullRecipe.preparationMinutes && fullRecipe.cookingMinutes) {
+      return fullRecipe.preparationMinutes + fullRecipe.cookingMinutes;
     }
     return 0;
   })();
@@ -66,21 +79,37 @@ export function RecipeCard({
       <Link href={`/recipe/${recipeId}`}>
         {/* Recipe Image */}
         <div className="relative aspect-[4/3] overflow-hidden">
-          <Image
-            src={getRecipeImage(recipe.image)}
-            alt={recipe.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            priority={priority}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            onError={(e) => {
-              // fallback to placeholder if image fails to load
-              const target = e.target as HTMLImageElement;
-              if (target.src !== '/images/placeholder-recipe.jpg') {
-                target.src = '/images/placeholder-recipe.jpg';
-              }
-            }}
-          />
+          {imageConfig.useNextImage ? (
+            // Use Next.js Image for optimization (non-Spoonacular images)
+            <Image
+              src={imageConfig.src}
+              alt={recipe.title}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              priority={priority}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== '/placeholder-recipe.svg') {
+                  target.src = '/placeholder-recipe.svg';
+                }
+              }}
+            />
+          ) : (
+            // Use direct HTML img tag for Spoonacular images (no proxy)
+            <img
+              src={imageConfig.src}
+              alt={recipe.title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== '/placeholder-recipe.svg') {
+                  target.src = '/placeholder-recipe.svg';
+                }
+              }}
+              loading={priority ? "eager" : "lazy"}
+            />
+          )}
           
           {/* Difficulty Badge */}
           {('difficulty' in recipe) && recipe.difficulty && (

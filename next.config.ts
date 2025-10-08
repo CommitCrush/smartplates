@@ -3,9 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   images: {
     domains: [
-      'img.spoonacular.com',
+      // 'img.spoonacular.com', // REMOVED: Causes 429 errors
       'images.unsplash.com',
-      'spoonacular.com',
+      // 'spoonacular.com', // REMOVED: Causes 429 errors
       'res.cloudinary.com'
     ],
     formats: ['image/webp', 'image/avif'],

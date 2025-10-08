@@ -64,7 +64,7 @@ export default function RecipePage() {
     { value: '', label: 'All Categories' },
     { value: 'breakfast', label: 'Breakfast' },
     { value: 'main course', label: 'Lunch' },
-    { value: 'main course', label: 'Dinner' },
+    { value: 'dinner', label: 'Dinner' },
     { value: 'dessert', label: 'Dessert' },
     { value: 'snack', label: 'Snack' },
   ];

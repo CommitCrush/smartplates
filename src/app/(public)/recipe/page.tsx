@@ -31,10 +31,11 @@ export default function RecipePage() {
   // Intelligente API-Aufrufe basierend auf Modus
   const apiOptions = useMemo(() => {
     if (hasSearchQuery) {
-      // Search-Modus: alle Rezepte holen
+      // Search-Modus: alle Rezepte ungefiltert holen für präzise client-side Filterung
       return {
-        number: '100',
+        number: '200', // Mehr Rezepte für bessere Search-Ergebnisse
         randomize: 'false',
+        // KEINE API-Filter bei Search - nur client-side filtering
       };
     } else {
       // Dropdown-Filter-Modus: normale API-basierte Paginierung

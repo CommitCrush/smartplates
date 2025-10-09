@@ -933,44 +933,15 @@ export function EnhancedRecipeUploadForm({
               rows={3}
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder="Zeit (Min)"
-                  value={newInstruction.time || ''}
-                  onChange={(e) => setNewInstruction(prev => ({ 
-                    ...prev, 
-                    time: parseInt(e.target.value) || 0 
-                  }))}
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Thermometer className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder="Temperatur (°C)"
-                  value={newInstruction.temperature || ''}
-                  onChange={(e) => setNewInstruction(prev => ({ 
-                    ...prev, 
-                    temperature: parseInt(e.target.value) || 0 
-                  }))}
-                />
-              </div>
-              
-              <Button 
-                type="button" 
-                onClick={addInstruction}
-                disabled={!newInstruction.instruction.trim()}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Hinzufügen
-              </Button>
-            </div>
+            <Button 
+              type="button" 
+              onClick={addInstruction}
+              disabled={!newInstruction.instruction.trim()}
+              className="w-full md:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Hinzufügen
+            </Button>
           </div>
 
           {/* Instructions List */}
@@ -982,22 +953,6 @@ export function EnhancedRecipeUploadForm({
                 </span>
                 <div className="flex-1">
                   <p>{instruction.instruction}</p>
-                  {(instruction.time || instruction.temperature) && (
-                    <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                      {instruction.time && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {instruction.time} Min
-                        </span>
-                      )}
-                      {instruction.temperature && (
-                        <span className="flex items-center gap-1">
-                          <Thermometer className="h-3 w-3" />
-                          {instruction.temperature}°C
-                        </span>
-                      )}
-                    </div>
-                  )}
                 </div>
                 <Button 
                   type="button"

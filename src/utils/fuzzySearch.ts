@@ -79,9 +79,9 @@ export const filterRecipesByDifficulty = (recipes: Recipe[], difficulty: string)
   return recipes.filter((recipe) => {
     const cookTime = recipe.readyInMinutes || 0;
     
-    if (difficulty === 'easy') return true; // Bereits durch API gefiltert
-    if (difficulty === 'medium') return cookTime >= 15 && cookTime <= 30;
-    if (difficulty === 'hard') return cookTime > 30;
+    if (difficulty === 'easy') return cookTime <= 15; // Easy: bis 15 Minuten
+    if (difficulty === 'medium') return cookTime >= 15 && cookTime <= 30; // Medium: 15-30 Minuten
+    if (difficulty === 'hard') return cookTime > 30; // Hard: über 30 Minuten
     
     return true;
   });

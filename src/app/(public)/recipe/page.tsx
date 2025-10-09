@@ -63,37 +63,71 @@ export default function RecipePage() {
 
   const { recipes: rawRecipes, error, loading, hasMore, total } = useAllRecipes('', apiOptions);
 
-  // Client-side Filterung (nur für Search + Difficulty)
+  // Client-side Filterung für alle Filter-Kombinationen
   const allFilteredRecipes = useMemo(() => {
-    if (!hasSearchQuery) {
-      // Dropdown-Filter: verwende API-gefilterte Rezepte direkt
-      return filterRecipesByDifficulty(rawRecipes, selectedDifficulty);
-    }
-
-    // Search-Modus: vollständige Client-side Filterung
-    console.log('🔍 Search-Modus - Client-side filtering:', {
+    console.log('🔍 Client-side filtering started:', {
       totalRecipes: rawRecipes.length,
+      hasSearchQuery,
       searchQuery: `"${searchQuery}"`,
+      selectedCategory,
+      selectedDiet,
+      selectedAllergy,
       selectedDifficulty
     });
 
     let filtered = rawRecipes;
 
-    // 1. Difficulty Filter
+    // 1. Search Filter (Title & Ingredients) - nur wenn Search Query vorhanden
+    if (hasSearchQuery && searchQuery.trim()) {
+      filtered = fuzzySearchRecipes(filtered, searchQuery);
+      console.log(`Nach Search "${searchQuery}":`, filtered.length);
+    }
+
+    // 2. Category Filter (client-side wenn Search aktiv)
+    if (hasSearchQuery && selectedCategory) {
+      filtered = filtered.filter(recipe => 
+        recipe.dishTypes?.some(type => 
+          type.toLowerCase() === selectedCategory.toLowerCase()
+        ) ||
+        recipe.cuisines?.some(cuisine => 
+          cuisine.toLowerCase() === selectedCategory.toLowerCase()
+        )
+      );
+      console.log(`Nach Category "${selectedCategory}":`, filtered.length);
+    }
+
+    // 3. Diet Filter (client-side wenn Search aktiv)
+    if (hasSearchQuery && selectedDiet) {
+      filtered = filtered.filter(recipe => 
+        recipe.diets?.some(diet => 
+          diet.toLowerCase() === selectedDiet.toLowerCase()
+        )
+      );
+      console.log(`Nach Diet "${selectedDiet}":`, filtered.length);
+    }
+
+    // 4. Allergy/Intolerance Filter (client-side wenn Search aktiv)
+    if (hasSearchQuery && selectedAllergy) {
+      filtered = filtered.filter(recipe => {
+        // Check if recipe does NOT contain the allergen
+        const ingredients = recipe.extendedIngredients || [];
+        return !ingredients.some(ingredient => {
+          const ingredientName = (ingredient.name || ingredient.originalName || '').toLowerCase();
+          return ingredientName.includes(selectedAllergy.toLowerCase());
+        });
+      });
+      console.log(`Nach Allergy filter "${selectedAllergy}":`, filtered.length);
+    }
+
+    // 5. Difficulty Filter (immer client-side)
     if (selectedDifficulty) {
       filtered = filterRecipesByDifficulty(filtered, selectedDifficulty);
       console.log(`Nach Difficulty "${selectedDifficulty}":`, filtered.length);
     }
 
-    // 2. Fuzzy Search (Title & Ingredients)
-    if (searchQuery.trim()) {
-      filtered = fuzzySearchRecipes(filtered, searchQuery);
-      console.log(`Nach Search "${searchQuery}":`, filtered.length);
-    }
-
-    console.log('🎯 Search-Ergebnisse final:', filtered.length);
+    console.log('🎯 Final filtered results:', filtered.length);
     return filtered;
-  }, [rawRecipes, selectedDifficulty, searchQuery, hasSearchQuery]);
+  }, [rawRecipes, hasSearchQuery, searchQuery, selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty]);
 
   // Client-side Pagination (nur für Search-Ergebnisse)
   const RECIPES_PER_PAGE = 30; // 3 Spalten × 10 Reihen
@@ -253,12 +287,12 @@ export default function RecipePage() {
             <ChefHat className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Recipes Found</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery || selectedCategory || selectedDifficulty
+              {searchQuery || selectedCategory || selectedDifficulty || selectedDiet || selectedAllergy
                 ? 'Try adjusting your search filters'
                 : 'No recipes available at the moment'
               }
             </p>
-            {(searchQuery || selectedCategory || selectedDifficulty) && (
+            {(searchQuery || selectedCategory || selectedDifficulty || selectedDiet || selectedAllergy) && (
               <Button variant="outline" onClick={clearAllFilters}>
                 Clear Filters
               </Button>

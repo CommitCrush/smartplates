@@ -487,16 +487,35 @@ export default function MealPlanningPage() {
     const weekStart = getWeekStartDate(date);
     const weekKey = weekStart.toISOString().split('T')[0];
     
+    // First check if we already have it in memory
     if (globalMealPlans.has(weekKey)) {
-      return globalMealPlans.get(weekKey)!;
-    } else {
-      console.log('Creating new meal plan for week:', weekKey);
-      const newPlan = createEmptyMealPlan('current-user', weekStart);
-      const updatedGlobalPlans = new Map(globalMealPlans);
-      updatedGlobalPlans.set(weekKey, newPlan);
-      setGlobalMealPlans(updatedGlobalPlans);
-      return newPlan;
+      const existingPlan = globalMealPlans.get(weekKey)!;
+      console.log('🔍 Found existing meal plan in memory for week:', weekKey, 'with', existingPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'total meals');
+      return existingPlan;
+    } 
+    
+    // Check if current mealPlan is for this week
+    if (mealPlan && mealPlan.weekStartDate) {
+      const mealPlanWeekKey = getWeekStartDate(mealPlan.weekStartDate).toISOString().split('T')[0];
+      if (mealPlanWeekKey === weekKey) {
+        console.log('🔍 Using current mealPlan for week:', weekKey, 'with', mealPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'total meals');
+        
+        // Store in global for future access
+        const updatedGlobalPlans = new Map(globalMealPlans);
+        updatedGlobalPlans.set(weekKey, mealPlan);
+        setGlobalMealPlans(updatedGlobalPlans);
+        
+        return mealPlan;
+      }
     }
+    
+    // Last resort: create new empty plan
+    console.log('⚠️ Creating new empty meal plan for week:', weekKey, '(This may cause data loss!)');
+    const newPlan = createEmptyMealPlan('current-user', weekStart);
+    const updatedGlobalPlans = new Map(globalMealPlans);
+    updatedGlobalPlans.set(weekKey, newPlan);
+    setGlobalMealPlans(updatedGlobalPlans);
+    return newPlan;
   };
 
   // Update a specific meal plan and sync with global storage
@@ -507,16 +526,24 @@ export default function MealPlanningPage() {
       : new Date(updatedPlan.weekStartDate);
       
     const weekKey = weekStartDate.toISOString().split('T')[0];
-    console.log('Updating meal plan for week:', weekKey, 'with', updatedPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'total meals');
+    console.log('🔄 Updating meal plan for week:', weekKey, 'with', updatedPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'total meals');
     
     // Update global storage
     const updatedGlobalPlans = new Map(globalMealPlans);
     updatedGlobalPlans.set(weekKey, updatedPlan);
     setGlobalMealPlans(updatedGlobalPlans);
     
-    // Update local state if this is the current week
+    // ALWAYS update local state if this plan matches current meal plan
+    if (mealPlan && mealPlan._id === updatedPlan._id) {
+      console.log('🔄 Syncing local mealPlan state with updated plan');
+      setMealPlan(updatedPlan);
+      setMealPlans([updatedPlan]);
+    }
+    
+    // Also update if current week matches (for cross-week synchronization)
     const currentWeekKey = getWeekStartDate(currentDate).toISOString().split('T')[0];
-    if (weekKey === currentWeekKey) {
+    if (weekKey === currentWeekKey && (!mealPlan || mealPlan._id !== updatedPlan._id)) {
+      console.log('🔄 Updating current week meal plan');
       setMealPlan(updatedPlan);
       setMealPlans([updatedPlan]);
     }
@@ -545,6 +572,13 @@ export default function MealPlanningPage() {
           setMealPlan(newPlan);
           setMealPlans([newPlan]);
           setCurrentDate(weekStart);
+          
+          // Add to global storage
+          const weekKey = weekStart.toISOString().split('T')[0];
+          const updatedGlobalPlans = new Map(globalMealPlans);
+          updatedGlobalPlans.set(weekKey, newPlan);
+          setGlobalMealPlans(updatedGlobalPlans);
+          console.log('🗃️ Stored new date-based meal plan in global storage for week:', weekKey);
         } else {
           // Database ID - fetch from MongoDB
           console.log('Loading meal plan by database ID:', mealPlanId);
@@ -560,9 +594,18 @@ export default function MealPlanningPage() {
               day.date = new Date(day.date);
             });
             
+            console.log('📥 Loaded meal plan from database with', plan.days.reduce((total: number, day: any) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'total meals');
+            
             setMealPlan(plan);
             setMealPlans([plan]);
             setCurrentDate(plan.weekStartDate);
+            
+            // IMPORTANT: Add loaded plan to global storage to prevent loss during view changes
+            const weekKey = getWeekStartDate(plan.weekStartDate).toISOString().split('T')[0];
+            const updatedGlobalPlans = new Map(globalMealPlans);
+            updatedGlobalPlans.set(weekKey, plan);
+            setGlobalMealPlans(updatedGlobalPlans);
+            console.log('🗃️ Stored loaded meal plan in global storage for week:', weekKey);
           } else if (response.status === 404) {
             // Meal plan not found - create a new one for current week
             const weekStart = getWeekStartDate(new Date());
@@ -570,6 +613,13 @@ export default function MealPlanningPage() {
             setMealPlan(newPlan);
             setMealPlans([newPlan]);
             setCurrentDate(weekStart);
+            
+            // Add to global storage
+            const weekKey = weekStart.toISOString().split('T')[0];
+            const updatedGlobalPlans = new Map(globalMealPlans);
+            updatedGlobalPlans.set(weekKey, newPlan);
+            setGlobalMealPlans(updatedGlobalPlans);
+            console.log('🗃️ Stored 404 fallback meal plan in global storage for week:', weekKey);
           } else {
             throw new Error(`Failed to load meal plan: ${response.statusText}`);
           }
@@ -584,6 +634,13 @@ export default function MealPlanningPage() {
         setMealPlan(newPlan);
         setMealPlans([newPlan]);
         setCurrentDate(weekStart);
+        
+        // Add to global storage
+        const weekKey = weekStart.toISOString().split('T')[0];
+        const updatedGlobalPlans = new Map(globalMealPlans);
+        updatedGlobalPlans.set(weekKey, newPlan);
+        setGlobalMealPlans(updatedGlobalPlans);
+        console.log('🗃️ Stored error fallback meal plan in global storage for week:', weekKey);
       } finally {
         setIsLoading(false);
       }
@@ -593,13 +650,62 @@ export default function MealPlanningPage() {
   }, [mealPlanId, session?.user?.email]);
 
   // Function to refresh meal plan data
-  const refreshCurrentMealPlan = () => {
-    const currentPlan = getOrCreateMealPlan(currentDate);
+  const refreshCurrentMealPlan = useCallback(() => {
     const weekKey = getWeekStartDate(currentDate).toISOString().split('T')[0];
-    console.log('Refreshing meal plan for week:', weekKey, 'with', currentPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'meals');
-    setMealPlan(currentPlan);
-    setMealPlans([currentPlan]);
-  };
+    
+    console.log('🔄 RefreshCurrentMealPlan called for week:', weekKey, 'current viewMode:', viewMode);
+    
+    // First check if we have the meal plan in global storage
+    const existingPlan = globalMealPlans.get(weekKey);
+    if (existingPlan) {
+      console.log('🔄 Found in globalMealPlans for week:', weekKey, 'with', existingPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'meals');
+      
+      // Force update local state
+      setMealPlan(existingPlan);
+      setMealPlans([existingPlan]);
+      return;
+    }
+    
+    // Check if current mealPlan is for this week (avoid creating new plans)
+    if (mealPlan && mealPlan.weekStartDate) {
+      const mealPlanWeekKey = getWeekStartDate(mealPlan.weekStartDate).toISOString().split('T')[0];
+      if (mealPlanWeekKey === weekKey) {
+        console.log('🔄 Current mealPlan is already for the correct week:', weekKey);
+        
+        // Add to global storage for consistency
+        const updatedGlobalPlans = new Map(globalMealPlans);
+        updatedGlobalPlans.set(weekKey, mealPlan);
+        setGlobalMealPlans(updatedGlobalPlans);
+        
+        // Keep current meal plan
+        setMealPlans([mealPlan]);
+        return;
+      }
+    }
+    
+    console.log('⚠️ No meal plan found for week:', weekKey, '- keeping current state or creating minimal plan');
+    
+    // Only create a new plan if absolutely necessary 
+    if (!mealPlan) {
+      const currentPlan = getOrCreateMealPlan(currentDate);
+      setMealPlan(currentPlan);
+      setMealPlans([currentPlan]);
+    }
+  }, [currentDate, globalMealPlans, mealPlan, viewMode]);
+
+  // Sync meal plan when view mode changes - placed after refreshCurrentMealPlan definition
+  useEffect(() => {
+    if (isLoading || !session?.user?.email) return;
+    
+    console.log('🔄 View mode changed to:', viewMode, 'refreshing meal plan for current date:', currentDate.toDateString());
+    
+    // Delay execution to avoid conflicts with other state updates
+    const timeoutId = setTimeout(() => {
+      refreshCurrentMealPlan();
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [viewMode]); // Only depend on viewMode to avoid infinite loops
 
   // Date search functionality
   const handleDateSearch = (value: string) => {
@@ -1126,7 +1232,7 @@ export default function MealPlanningPage() {
                   className="flex items-center gap-2 bg-white hover:bg-blue-50 border-blue-200"
                   title="Export as PDF"
                 >
-                  📄 Export PDF
+                  📄 Save Plan
                 </Button>
               </div>
             </div>

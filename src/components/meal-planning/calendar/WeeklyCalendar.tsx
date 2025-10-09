@@ -129,13 +129,23 @@ export function WeeklyCalendar({
   }, [user]);
 
   const updateMealPlan = useCallback((updater: (plan: IMealPlan) => IMealPlan) => {
-    if (!currentMealPlan) return;
+    // Use the most current meal plan (prefer currentMealPlan, fallback to mealPlan prop)
+    const sourcePlan = currentMealPlan || mealPlan;
+    if (!sourcePlan) {
+      console.warn('📅 WeeklyCalendar: No meal plan available for update');
+      return;
+    }
     
-    const updatedPlan = updater(currentMealPlan);
+    const updatedPlan = updater(sourcePlan);
+    console.log('📅 WeeklyCalendar: Updating meal plan', {
+      source: sourcePlan === currentMealPlan ? 'currentMealPlan' : 'mealPlan prop',
+      updated: updatedPlan
+    });
+    
     setCurrentMealPlan(updatedPlan);
     onMealPlanChange?.(updatedPlan);
     saveMealPlan(updatedPlan);
-  }, [currentMealPlan, onMealPlanChange, saveMealPlan]);
+  }, [currentMealPlan, mealPlan, onMealPlanChange, saveMealPlan]);
 
   // Sync with parent currentDate prop
   useEffect(() => {
@@ -152,10 +162,22 @@ export function WeeklyCalendar({
 
   // Use meal plan from parent props instead of creating independently
   useEffect(() => {
-    if (mealPlan && mealPlan !== currentMealPlan) {
+    if (mealPlan) {
+      console.log('📅 WeeklyCalendar: Syncing meal plan from props', mealPlan);
       setCurrentMealPlan(mealPlan);
     }
-  }, [mealPlan, currentMealPlan]);
+  }, [mealPlan]);
+
+  // Re-sync when week changes to ensure proper data loading
+  useEffect(() => {
+    if (mealPlan && weekDates.length > 0) {
+      console.log('📅 WeeklyCalendar: Week changed, re-syncing meal plan', {
+        weekStart: currentWeekStart.toDateString(),
+        mealPlanWeek: mealPlan.weekStartDate
+      });
+      setCurrentMealPlan(mealPlan);
+    }
+  }, [currentWeekStart, weekDates, mealPlan]);
 
   // Navigation handlers
   const goToPreviousWeek = () => {
@@ -224,20 +246,22 @@ export function WeeklyCalendar({
 
   // Get meals for a specific day - MongoDB integrated version
   const getMealsForDay = (dayIndex: number): DayMeals | undefined => {
-    // Priority 1: Current MongoDB meal plan
+    const targetDate = weekDates[dayIndex];
+    if (!targetDate) return undefined;
+
+    // Priority 1: Current MongoDB meal plan (most reliable)
     if (currentMealPlan && currentMealPlan.days && currentMealPlan.days[dayIndex]) {
+      console.log('📅 WeeklyCalendar: Using currentMealPlan for day', dayIndex, currentMealPlan.days[dayIndex]);
       return currentMealPlan.days[dayIndex];
     }
     
     // Priority 2: Props meal plan (for external control)
     if (mealPlan && mealPlan.days && mealPlan.days[dayIndex]) {
+      console.log('📅 WeeklyCalendar: Using props mealPlan for day', dayIndex, mealPlan.days[dayIndex]);
       return mealPlan.days[dayIndex];
     }
     
     // Priority 3: Cross-week synchronization from meal plans array
-    const targetDate = weekDates[dayIndex];
-    if (!targetDate) return undefined;
-    
     const targetWeekStart = getWeekStartDate(targetDate);
     const targetWeekKey = targetWeekStart.toISOString().split('T')[0];
     
@@ -257,18 +281,25 @@ export function WeeklyCalendar({
       });
       
       if (matchingDay) {
-        console.log('WeeklyCalendar: Cross-week meals found for', targetDate.toDateString());
+        console.log('📅 WeeklyCalendar: Cross-week meals found for', targetDate.toDateString(), matchingDay);
         return matchingDay;
       }
     }
     
+    console.log('📅 WeeklyCalendar: No meals found for day', dayIndex, targetDate.toDateString());
     return undefined;
   };
 
   // Handle meal changes - MongoDB integrated version
   const handleMealChange = (dayIndex: number, meals: DayMeals) => {
-    if (!currentMealPlan) return;
+    const sourcePlan = currentMealPlan || mealPlan;
+    if (!sourcePlan) {
+      console.warn('📅 WeeklyCalendar: No meal plan available for meal change');
+      return;
+    }
 
+    console.log('📅 WeeklyCalendar: Handling meal change for day', dayIndex, meals);
+    
     updateMealPlan(plan => ({
       ...plan,
       days: plan.days.map((day, index) => 
@@ -303,36 +334,43 @@ export function WeeklyCalendar({
 
   // Handle pasting copied recipe
   const handlePasteRecipe = (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
-    if (!copiedRecipe || !mealPlan) return;
+    const sourcePlan = currentMealPlan || mealPlan;
+    if (!copiedRecipe || !sourcePlan) {
+      console.warn('📅 WeeklyCalendar: Cannot paste recipe - missing copied recipe or meal plan');
+      return;
+    }
+
+    console.log('📅 WeeklyCalendar: Pasting recipe', copiedRecipe.recipeName, 'to day', dayIndex, mealType);
 
     // Create a new meal based on the copied recipe
     const newMeal: MealSlot = {
       ...copiedRecipe,
     };
 
-    // Update the meal plan
-    const updatedMealPlan = { ...mealPlan };
-    if (!updatedMealPlan.days[dayIndex]) {
-      updatedMealPlan.days[dayIndex] = {
-        date: weekDates[dayIndex],
-        breakfast: [],
-        lunch: [],
-        dinner: [],
-        snacks: []
-      };
-    }
+    // Update the meal plan using the updateMealPlan function
+    updateMealPlan(plan => {
+      const updatedPlan = { ...plan };
+      if (!updatedPlan.days[dayIndex]) {
+        updatedPlan.days[dayIndex] = {
+          date: weekDates[dayIndex],
+          breakfast: [],
+          lunch: [],
+          dinner: [],
+          snacks: []
+        };
+      }
 
-    updatedMealPlan.days[dayIndex][mealType].push(newMeal);
-
-    if (onMealPlanChange) {
-      onMealPlanChange(updatedMealPlan);
-    }
+      updatedPlan.days[dayIndex][mealType].push(newMeal);
+      updatedPlan.updatedAt = new Date();
+      
+      return updatedPlan;
+    });
 
     // Clear copied recipe after pasting
     if (onClearCopiedRecipe) {
       onClearCopiedRecipe();
     }
-    console.log('Recipe pasted:', newMeal.recipeName);
+    console.log('📅 WeeklyCalendar: Recipe pasted successfully:', newMeal.recipeName);
   };
 
   // Handle cross-day meal movement
@@ -344,34 +382,46 @@ export function WeeklyCalendar({
     targetDayIndex: number,
     targetMealType: string
   ) => {
-    if (!mealPlan || !onMealPlanChange) return;
-
-    const updatedMealPlan = { ...mealPlan };
-    
-    // Remove from source
-    const sourceMealTypeKey = sourceMealType as keyof DayMeals;
-    const targetMealTypeKey = targetMealType as keyof DayMeals;
-    
-    if (updatedMealPlan.days[sourceDayIndex] && updatedMealPlan.days[targetDayIndex]) {
-      // Remove from source day
-      const sourceDay = updatedMealPlan.days[sourceDayIndex];
-      const sourceMeals = sourceDay[sourceMealTypeKey] as any[];
-      updatedMealPlan.days[sourceDayIndex] = {
-        ...sourceDay,
-        [sourceMealTypeKey]: sourceMeals.filter((_, index) => index !== sourceMealIndex)
-      };
-      
-      // Add to target day
-      const targetDay = updatedMealPlan.days[targetDayIndex];
-      const targetMeals = targetDay[targetMealTypeKey] as any[];
-      updatedMealPlan.days[targetDayIndex] = {
-        ...targetDay,
-        [targetMealTypeKey]: [...targetMeals, draggedMeal.meal]
-      };
-
-      updatedMealPlan.updatedAt = new Date();
-      onMealPlanChange(updatedMealPlan);
+    const sourcePlan = currentMealPlan || mealPlan;
+    if (!sourcePlan || !onMealPlanChange) {
+      console.warn('📅 WeeklyCalendar: Cannot move meal - missing meal plan');
+      return;
     }
+
+    console.log('📅 WeeklyCalendar: Moving meal cross-day', {
+      meal: draggedMeal,
+      from: `day${sourceDayIndex}-${sourceMealType}`,
+      to: `day${targetDayIndex}-${targetMealType}`
+    });
+
+    updateMealPlan(plan => {
+      const updatedPlan = { ...plan };
+      
+      // Remove from source
+      const sourceMealTypeKey = sourceMealType as keyof DayMeals;
+      const targetMealTypeKey = targetMealType as keyof DayMeals;
+      
+      if (updatedPlan.days[sourceDayIndex] && updatedPlan.days[targetDayIndex]) {
+        // Remove from source day
+        const sourceDay = updatedPlan.days[sourceDayIndex];
+        const sourceMeals = sourceDay[sourceMealTypeKey] as any[];
+        updatedPlan.days[sourceDayIndex] = {
+          ...sourceDay,
+          [sourceMealTypeKey]: sourceMeals.filter((_, index) => index !== sourceMealIndex)
+        };
+        
+        // Add to target day
+        const targetDay = updatedPlan.days[targetDayIndex];
+        const targetMeals = targetDay[targetMealTypeKey] as any[];
+        updatedPlan.days[targetDayIndex] = {
+          ...targetDay,
+          [targetMealTypeKey]: [...targetMeals, draggedMeal.meal]
+        };
+      }
+
+      updatedPlan.updatedAt = new Date();
+      return updatedPlan;
+    });
   };
 
   // Week day names

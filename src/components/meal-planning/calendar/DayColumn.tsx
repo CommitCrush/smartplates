@@ -140,28 +140,28 @@ export function DayColumn({
       label: 'Breakfast', 
       icon: '🌅', 
       color: 'text-orange-600',
-      bgColor: 'bg-orange-50 hover:bg-orange-100'
+      bgColor: 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-900 dark:hover:bg-orange-800'
     },
     { 
       key: 'lunch', 
       label: 'Lunch', 
       icon: '☀️', 
       color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50 hover:bg-yellow-100'
+      bgColor: 'bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900 dark:hover:bg-yellow-800'
     },
     { 
       key: 'dinner', 
       label: 'Dinner', 
       icon: '🌙', 
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50 hover:bg-blue-100'
+      bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900 dark:hover:bg-blue-800'
     },
     { 
       key: 'snacks', 
       label: 'Snacks', 
       icon: '🍎', 
       color: 'text-green-600',
-      bgColor: 'bg-green-50 hover:bg-green-100'
+      bgColor: 'bg-green-50 hover:bg-green-100 dark:bg-green-900 dark:hover:bg-green-800'
     }
   ];
 
@@ -204,7 +204,7 @@ export function DayColumn({
         className={cn(
           'min-h-[60px] p-2 rounded-lg transition-colors border-2 border-dashed',
           isOver 
-            ? 'border-primary-400 bg-primary-50' 
+            ? 'border-[#F96850] dark:border-[#F16B59] bg-[#CDE7C0] dark:bg-[#C1D3AF]' 
             : 'border-transparent'
         )}
       >
@@ -227,19 +227,6 @@ export function DayColumn({
                   {label}
                 </h4>
               </div>
-              
-              {/* Add Meal Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleAddMeal(key)}
-                className={cn(
-                  'h-6 w-6 p-0 rounded-full transition-colors',
-                  bgColor
-                )}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
             </div>
 
             {/* Meal Slots */}
@@ -271,22 +258,22 @@ export function DayColumn({
                       'flex flex-col items-center justify-center text-center',
                       'transition-colors cursor-pointer group min-h-[50px]',
                       copiedRecipe 
-                        ? 'border-green-300 bg-green-50 hover:border-green-400 hover:bg-green-100' 
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        ? 'border-green-300 bg-green-50 hover:border-green-400 hover:bg-green-100 dark:border-green-700 dark:bg-green-900 dark:hover:border-green-600 dark:hover:bg-green-800' 
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-gray-600 dark:hover:bg-gray-800'
                     )}
                     onClick={() => handleAddMeal(key)}
                   >
                     <Plus className={cn(
                       'h-4 w-4 mb-1 transition-colors',
                       copiedRecipe 
-                        ? 'text-green-500 group-hover:text-green-600' 
-                        : 'text-gray-400 group-hover:text-gray-500'
+                        ? 'text-green-500 group-hover:text-green-600 dark:text-green-400 dark:group-hover:text-green-300' 
+                        : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'
                     )} />
                     <span className={cn(
                       'text-xs transition-colors',
                       copiedRecipe 
-                        ? 'text-green-600 group-hover:text-green-700' 
-                        : 'text-gray-400 group-hover:text-gray-500'
+                        ? 'text-green-600 group-hover:text-green-700 dark:text-green-400 dark:group-hover:text-green-300' 
+                        : 'text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400'
                     )}>
                       {copiedRecipe 
                         ? `Paste "${copiedRecipe.recipeName || 'Recipe'}"` 
@@ -302,9 +289,9 @@ export function DayColumn({
 
       {/* Day Notes Section */}
       {dayMeals.dailyNotes && (
-        <div className="mt-4 pt-3 border-t border-gray-100">
-          <h4 className="text-xs font-medium text-gray-600 mb-1">Notes</h4>
-          <p className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+        <div className="mt-4 pt-3 border-t border-[#EFF4E6] dark:border-[#74765D]">
+          <h4 className="text-xs font-medium text-[#7D966D] dark:text-[#C1D3AF] mb-1">Notes</h4>
+          <p className="text-xs text-[#7D966D] dark:text-[#C1D3AF] bg-[#EFF4E6] dark:bg-[#74765D] p-2 rounded">
             {dayMeals.dailyNotes}
           </p>
         </div>

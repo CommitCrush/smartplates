@@ -46,6 +46,7 @@ interface MonthlyCalendarProps {
   onCopyRecipe?: (meal: MealSlot) => void;
   copiedRecipe?: MealSlot | null;
   onClearCopiedRecipe?: () => void;
+  hideSearch?: boolean;
   className?: string;
 }
 
@@ -200,7 +201,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
               {meals?.breakfast?.slice(0, 1).map((meal, index) => (
                 <div
                   key={`breakfast-${index}`}
-                  className="group flex items-center gap-1 text-xs text-gray-600 bg-orange-100 px-1 py-0.5 rounded cursor-pointer hover:bg-orange-200 transition-colors"
+                  className="group flex items-center gap-1 text-xs text-green-700 bg-green-100 px-1 py-0.5 rounded cursor-pointer hover:bg-green-200 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (onShowRecipe) {
@@ -210,7 +211,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
                     }
                   }}
                 >
-                  <div className="w-4 h-4 bg-orange-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {meal.image ? (
                       <img src={meal.image} alt={meal.recipeName} className="w-full h-full object-cover" />
                     ) : (
@@ -220,7 +221,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
                   <span className="truncate flex-1">{meal.recipeName}</span>
                   {onCopyRecipe && (
                     <button
-                      className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-green-500 hover:text-green-700 transition-all"
+                      className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-gray-600 hover:text-red-500 transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
                         onCopyRecipe(meal);
@@ -231,7 +232,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
                     </button>
                   )}
                   <button
-                    className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-700 transition-all"
+                    className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-600 transition-all"
                     onClick={(e) => {
                       e.stopPropagation();
                       // Find the meal plan and remove the meal
@@ -248,7 +249,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
               {meals?.lunch?.slice(0, 1).map((meal, index) => (
                 <div
                   key={`lunch-${index}`}
-                  className="group flex items-center gap-1 text-xs text-gray-600 bg-yellow-100 px-1 py-0.5 rounded cursor-pointer hover:bg-yellow-200 transition-colors"
+                  className="group flex items-center gap-1 text-xs text-blue-700 bg-blue-100 px-1 py-0.5 rounded cursor-pointer hover:bg-blue-200 transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (onShowRecipe) {
@@ -258,7 +259,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
                     }
                   }}
                 >
-                  <div className="w-4 h-4 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {meal.image ? (
                       <img src={meal.image} alt={meal.recipeName} className="w-full h-full object-cover" />
                     ) : (
@@ -268,7 +269,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
                   <span className="truncate flex-1">{meal.recipeName}</span>
                   {onCopyRecipe && (
                     <button
-                      className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-green-500 hover:text-green-700 transition-all"
+                      className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-gray-600 hover:text-red-500 transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
                         onCopyRecipe(meal);
@@ -279,7 +280,7 @@ function DayCell({ dayData, onAddRecipe, onEditMeal, onRemoveMeal, onShowRecipe,
                     </button>
                   )}
                   <button
-                    className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-700 transition-all"
+                    className="opacity-0 group-hover:opacity-100 w-3 h-3 flex items-center justify-center text-red-500 hover:text-red-600 transition-all"
                     onClick={(e) => {
                       e.stopPropagation();
                       const weekStart = getWeekStartDate(date);
@@ -372,10 +373,10 @@ export function MonthlyCalendar({
   onCopyRecipe,
   copiedRecipe,
   onClearCopiedRecipe,
+  hideSearch = false,
   className
 }: MonthlyCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(currentDate || new Date());
-  const [dateSearchValue, setDateSearchValue] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   
   // Modal state for recipe details
@@ -523,54 +524,6 @@ export function MonthlyCalendar({
     console.log('Day clicked:', date);
   };
 
-  // Date search functionality
-  const handleDateSearch = (value: string) => {
-    setDateSearchValue(value);
-    
-    if (!value) return;
-    
-    // Parse different date formats
-    let targetDate: Date | null = null;
-    
-    // Try YYYY-MM-DD format
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      targetDate = new Date(value);
-    }
-    // Try DD/MM/YYYY format
-    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-      const [day, month, year] = value.split('/');
-      targetDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    }
-    // Try MM/DD/YYYY format
-    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
-      const [month, day, year] = value.split('/');
-      targetDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    }
-    // Try DD.MM.YYYY format
-    else if (/^\d{2}\.\d{2}\.\d{4}$/.test(value)) {
-      const [day, month, year] = value.split('.');
-      targetDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    }
-    // Try partial year-month: YYYY-MM
-    else if (/^\d{4}-\d{2}$/.test(value)) {
-      const [year, month] = value.split('-');
-      targetDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-    }
-    
-    // Navigate to the month containing the target date
-    if (targetDate && !isNaN(targetDate.getTime())) {
-      setCurrentMonth(new Date(targetDate.getFullYear(), targetDate.getMonth(), 1));
-      setSelectedDate(targetDate);
-    }
-  };
-
-  // Handle Enter key press for date search
-  const handleDateSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleDateSearch(dateSearchValue);
-    }
-  };
-
   // Format month title
   const monthTitle = currentMonth.toLocaleDateString('en-US', {
     month: 'long',
@@ -583,52 +536,11 @@ export function MonthlyCalendar({
     <Card id="monthly-calendar" className={cn('w-full', className)}>
       <CardHeader className="pb-4">
         <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+          <div className="flex items-center justify-center">
+            <CardTitle className="flex items-center gap-2 text-center">
               <Calendar className="h-5 w-5" />
               {monthTitle}
             </CardTitle>
-            
-            {/* Navigation Controls */}
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleToday}
-              >
-                Today
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviousMonth}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextMonth}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          {/* Date Search */}
-          <div className="flex items-center justify-center">
-            <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Jump to date (YYYY-MM-DD, DD/MM/YYYY...)"
-                value={dateSearchValue}
-                onChange={(e) => setDateSearchValue(e.target.value)}
-                onKeyPress={handleDateSearchKeyPress}
-                onBlur={() => handleDateSearch(dateSearchValue)}
-                className="pl-10"
-              />
-            </div>
           </div>
         </div>
       </CardHeader>
@@ -663,8 +575,8 @@ export function MonthlyCalendar({
         </div>
         
         {/* Month Summary */}
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="mt-4 p-3 bg-gray-100 rounded-lg">
+          <div className="flex items-center justify-between text-sm text-gray-700">
             <span>
               Total planned meals this month: {
                 processedMonthData.reduce((total, day) => 

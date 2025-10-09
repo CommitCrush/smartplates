@@ -113,9 +113,9 @@ export function RecipeDetailModal({ meal, open, onOpenChange, dayName, mealType 
                 </div>
               )}
 
-              <div className="mt-8 p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold text-lg mb-2">Meal Planning Information</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="mt-8 p-4 bg-[#EFF4E6] dark:bg-[#74765D] rounded-lg">
+                <h3 className="font-semibold text-lg mb-2 text-[#7D966D] dark:text-[#C1D3AF]">Meal Planning Information</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm text-[#7D966D] dark:text-[#C1D3AF]">
                   <div>
                     <span className="font-medium">Day:</span> {dayName || 'Unknown'}
                   </div>
@@ -133,10 +133,10 @@ export function RecipeDetailModal({ meal, open, onOpenChange, dayName, mealType 
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">Recipe details could not be loaded.</p>
-              <div className="p-4 bg-muted rounded-lg">
-                <h3 className="font-semibold text-lg mb-2">Meal Information</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+              <p className="text-[#7D966D] dark:text-[#C1D3AF] mb-4">Recipe details could not be loaded.</p>
+              <div className="p-4 bg-[#EFF4E6] dark:bg-[#74765D] rounded-lg">
+                <h3 className="font-semibold text-lg mb-2 text-[#7D966D] dark:text-[#C1D3AF]">Meal Information</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm text-[#7D966D] dark:text-[#C1D3AF]">
                   <div>
                     <span className="font-medium">Recipe:</span> {meal.recipeName || meal.name}
                   </div>

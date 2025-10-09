@@ -56,6 +56,7 @@ interface WeeklyCalendarProps {
   onCopyRecipe?: (meal: MealSlot) => void;
   copiedRecipe?: MealSlot | null;
   onClearCopiedRecipe?: () => void;
+  hideSearch?: boolean;
   className?: string;
 }
 
@@ -75,6 +76,7 @@ export function WeeklyCalendar({
   onCopyRecipe,
   copiedRecipe,
   onClearCopiedRecipe,
+  hideSearch = false,
   className 
 }: WeeklyCalendarProps) {
   // Get user context for MongoDB operations
@@ -378,67 +380,20 @@ export function WeeklyCalendar({
 
   return (
       <div id="weekly-calendar" className={cn('w-full space-y-4', className)}>
-        {/* Header with Date Search */}
+        {/* Header */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 justify-center flex-1">
                 <Calendar className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg sm:text-xl">
+                <CardTitle className="text-lg sm:text-xl text-center">
                   Weekly Meal Plan
                 </CardTitle>
-              </div>
-              
-              {/* Date Search and Navigation */}
-              <div className="flex items-center space-x-2 w-full sm:w-auto">
-                {/* Date Search Input */}
-                <div className="relative flex-1 sm:flex-initial">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search date (YYYY-MM-DD, DD/MM/YYYY...)"
-                    value={dateSearchValue}
-                    onChange={(e) => setDateSearchValue(e.target.value)}
-                    onKeyPress={handleDateSearchKeyPress}
-                    onBlur={() => handleDateSearch(dateSearchValue)}
-                    className="pl-10 w-full sm:w-64"
-                  />
-                </div>
-                
-                {/* Week Navigation */}
-                <div className="flex items-center space-x-1">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={goToPreviousWeek}
-                    className="h-9 px-2"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={goToCurrentWeek}
-                    className="h-9 px-3 hidden sm:inline-flex"
-                  >
-                    Today
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={goToNextWeek}
-                    className="h-9 px-2"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
             </div>
             
             {/* Week Range Display */}
-            <div className="text-sm text-muted-foreground mt-2 flex items-center">
+            <div className="text-sm text-muted-foreground mt-2 flex items-center justify-center">
               {formatWeekRange(currentWeekStart)}
               
               {/* Save status indicator */}
@@ -446,9 +401,9 @@ export function WeeklyCalendar({
                 <span className={cn(
                   'ml-2 px-2 py-1 text-xs rounded-full',
                   {
-                    'bg-yellow-100 text-yellow-800': saveStatus === 'saving',
-                    'bg-green-100 text-green-800': saveStatus === 'saved',
-                    'bg-red-100 text-red-800': saveStatus === 'error',
+                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': saveStatus === 'saving',
+                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': saveStatus === 'saved',
+                    'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': saveStatus === 'error',
                   }
                 )}>
                   {saveStatus === 'saving' && 'Saving...'}
@@ -461,7 +416,7 @@ export function WeeklyCalendar({
         </Card>
 
         {/* Calendar Grid */}
-        <div id="calendar-container" className="grid grid-cols-1 lg:grid-cols-7 gap-3 sm:gap-4">
+        <div id="calendar-container" className="grid grid-cols-1 lg:grid-cols-7 gap-2 sm:gap-3 lg:gap-4">
           {weekDates.map((date, dayIndex) => {
             const dayMeals = getMealsForDay(dayIndex);
             const isToday = date.toDateString() === new Date().toDateString();
@@ -470,7 +425,7 @@ export function WeeklyCalendar({
               <Card 
                 key={dayIndex}
                 className={cn(
-                  'min-h-[400px] sm:min-h-[500px]',
+                  'min-h-[400px] sm:min-h-[500px] lg:min-h-[600px]',
                   isToday && 'ring-2 ring-primary ring-opacity-50'
                 )}
               >
@@ -520,14 +475,14 @@ export function WeeklyCalendar({
 
         {/* Empty State */}
         {!mealPlan && (
-          <Card className="py-12">
+          <Card className="py-12 bg-[#EFF4E6] dark:bg-[#74765D] border-[#AAC91] dark:border-[#C1D3AF]">
             <CardContent className="text-center">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Meal Plan Yet</h3>
-              <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+              <Calendar className="h-12 w-12 text-[#7D966D] dark:text-[#C1D3AF] mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2 text-[#7D966D] dark:text-[#C1D3AF]">No Meal Plan Yet</h3>
+              <p className="text-[#7D966D] dark:text-[#C1D3AF] mb-4 max-w-md mx-auto">
                 Start planning your meals by creating a new meal plan for this week.
               </p>
-              <Button>
+              <Button className="bg-[#F96850] hover:bg-[#F96850]/90 dark:bg-[#F16B59] dark:hover:bg-[#F16B59]/90 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Meal Plan
               </Button>
@@ -538,12 +493,12 @@ export function WeeklyCalendar({
         {/* Mobile Week Summary */}
         <div className="lg:hidden">
           {mealPlan && (
-            <Card>
+            <Card className="bg-[#EFF4E6] dark:bg-[#74765D] border-[#AAC91] dark:border-[#C1D3AF]">
               <CardHeader>
-                <CardTitle className="text-base">Week Summary</CardTitle>
+                <CardTitle className="text-base text-[#7D966D] dark:text-[#C1D3AF]">Week Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-sm text-[#7D966D] dark:text-[#C1D3AF]">
                   <div>
                     <span className="font-medium">Total Meals:</span>
                     <span className="ml-2">

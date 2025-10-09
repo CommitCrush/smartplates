@@ -454,6 +454,7 @@ export function EnhancedRecipeUploadForm({
                 id="isOriginal"
                 checked={formData.isOriginal}
                 onCheckedChange={(checked) => handleFieldChange('isOriginal', checked)}
+                className="data-[state=checked]:bg-green-600"
               />
               <Label htmlFor="isOriginal">Das ist mein eigenes Originalrezept</Label>
             </div>
@@ -484,6 +485,7 @@ export function EnhancedRecipeUploadForm({
           maxSize={5}
           multiple={true}
           showPreview={true}
+          allowedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
         />
         
         {/* Image Gallery */}
@@ -786,9 +788,9 @@ export function EnhancedRecipeUploadForm({
             )}
           </div>
 
-          {/* Custom Tags */}
+          {/* Custom Tags (Optional) */}
           <div className="space-y-3">
-            <Label>Eigene Tags</Label>
+            <Label>Eigene Tags <span className="text-gray-500 text-sm">(optional)</span></Label>
             <div className="flex gap-2">
               <Input
                 placeholder="Tag hinzufügen (z.B. schnell, gesund)"
@@ -806,6 +808,7 @@ export function EnhancedRecipeUploadForm({
                 type="button" 
                 onClick={() => addTag(newTag, 'custom')}
                 disabled={!newTag.trim()}
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -937,7 +940,7 @@ export function EnhancedRecipeUploadForm({
               type="button" 
               onClick={addInstruction}
               disabled={!newInstruction.instruction.trim()}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
               Hinzufügen
@@ -990,6 +993,7 @@ export function EnhancedRecipeUploadForm({
               id="isPublic"
               checked={formData.isPublic}
               onCheckedChange={(checked) => handleFieldChange('isPublic', checked)}
+              className="data-[state=checked]:bg-green-600"
             />
             <div className="flex-1">
               <Label htmlFor="isPublic" className="text-base font-medium cursor-pointer">
@@ -1023,7 +1027,7 @@ export function EnhancedRecipeUploadForm({
             type="submit"
             disabled={isLoading}
             size="lg"
-            className="w-full md:w-auto px-12"
+            className="w-full md:w-auto px-12 bg-green-600 hover:bg-green-700 text-white"
           >
             {isLoading ? (
               <>

@@ -31,7 +31,7 @@ import Link from 'next/link';
 export default function AboutPage() {
   const stats = [
     { icon: Users, label: 'Active Users', value: '50K+', color: 'text-blue-600' },
-    { icon: BookOpen, label: 'Recipe Database', value: '10K+', color: 'text-green-600' },
+    { icon: BookOpen, label: 'Community Recipes', value: '10K+', color: 'text-green-600' },
     { icon: Calendar, label: 'Meal Plans Created', value: '100K+', color: 'text-purple-600' },
     { icon: Award, label: 'User Rating', value: '4.9/5', color: 'text-yellow-600' }
   ];

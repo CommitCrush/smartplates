@@ -272,6 +272,47 @@ export default function RecipePage() {
               )}
             </div>
           </div>
+          
+          {/* Community Recipes Toggle Button */}
+          <div className="mt-4 flex justify-center gap-3">
+            <Button
+              variant={searchQuery.includes('community:') ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                if (searchQuery.includes('community:')) {
+                  setSearchQuery(searchQuery.replace('community:', '').trim());
+                } else {
+                  setSearchQuery(searchQuery + ' community:').trim();
+                }
+                setPage(1);
+              }}
+              className="text-sm flex items-center gap-2"
+            >
+              <span>👥</span>
+              Community Recipes
+              {searchQuery.includes('community:') && <span className="text-xs">(Active)</span>}
+            </Button>
+            
+            {/* Show All Recipes Button */}
+            {(searchQuery || selectedCategory || selectedDiet || selectedAllergy || selectedDifficulty) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('');
+                  setSelectedDiet('');
+                  setSelectedAllergy('');
+                  setSelectedDifficulty('');
+                  setMaxReadyTime(undefined);
+                  setPage(1);
+                }}
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                🏠 All Recipes
+              </Button>
+            )}
+          </div>
         </div>
 
   {/* Loading State */}

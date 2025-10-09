@@ -29,7 +29,7 @@ export function RecipeCard({
   showAuthor = true,
   priority = false 
 }: RecipeCardProps) {
-  // Helper: Handle Spoonacular images with direct loading (bypassing Next.js Image proxy)
+  // Helper: Handle different image sources properly
   function getRecipeImage(url?: string) {
     if (!url || typeof url !== 'string') {
       return { src: '/placeholder-recipe.svg', useNextImage: true };
@@ -40,6 +40,11 @@ export function RecipeCard({
       return { src: url, useNextImage: false }; // Direct HTML img tag
     }
     
+    // For Cloudinary URLs: use Next.js Image optimization
+    if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
+      return { src: url, useNextImage: true }; // Use Next.js Image for Cloudinary
+    }
+    
     // For other URLs: use Next.js Image optimization
     if (!/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url)) {
       return { src: '/placeholder-recipe.svg', useNextImage: true };
@@ -48,7 +53,11 @@ export function RecipeCard({
     return { src: url, useNextImage: true };
   }
 
-  const imageConfig = getRecipeImage(recipe.image);
+  const imageConfig = getRecipeImage(
+    recipe.image || 
+    ('primaryImageUrl' in recipe ? recipe.primaryImageUrl : undefined) ||
+    ('images' in recipe && Array.isArray(recipe.images) && recipe.images.length > 0 ? recipe.images[0]?.url : undefined)
+  );
 
   // Calculate total time - handle both RecipeCard and Recipe types
   const totalTime = (() => {
@@ -132,6 +141,23 @@ export function RecipeCard({
               >
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                 {recipe.rating.toFixed(1)}
+              </Badge>
+            </div>
+          )}
+
+          {/* Community Source Badge */}
+          {('source' in recipe) && (recipe.source === 'chef' || recipe.source === 'community') && (
+            <div className="absolute bottom-3 right-3">
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "text-xs backdrop-blur-sm border-white/50",
+                  recipe.source === 'chef' && "bg-blue-500/90 text-white border-blue-500",
+                  recipe.source === 'community' && "bg-green-500/90 text-white border-green-500"
+                )}
+              >
+                {recipe.source === 'chef' && '👨‍🍳 Chef'}
+                {recipe.source === 'community' && '👥 Community'}
               </Badge>
             </div>
           )}

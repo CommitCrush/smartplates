@@ -6,7 +6,22 @@ const nextConfig: NextConfig = {
       // 'img.spoonacular.com', // REMOVED: Causes 429 errors
       'images.unsplash.com',
       // 'spoonacular.com', // REMOVED: Causes 429 errors
-      'res.cloudinary.com'
+      'res.cloudinary.com',
+      'cloudinary.com'
+    ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      }
     ],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

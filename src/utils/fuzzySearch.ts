@@ -1,6 +1,6 @@
 import type { Recipe } from '@/types/recipe';
 
-// Vereinfachtes und präzises Fuzzy Search für Title + Ingredients
+// Simplified and precise Fuzzy Search for Title + Ingredients
 export const fuzzySearchRecipes = (recipes: Recipe[], searchQuery: string): Recipe[] => {
   console.log('🔍 Fuzzy Search started:', { 
     recipesCount: recipes.length, 
@@ -15,7 +15,7 @@ export const fuzzySearchRecipes = (recipes: Recipe[], searchQuery: string): Reci
   const query = searchQuery.toLowerCase().trim();
   console.log('🔍 Normalized query:', `"${query}"`);
   
-  // Einfache aber effektive Tippfehler-Korrekturen - Array-basiert
+  // Simple but effective typo corrections - Array-based
   const commonMisspellings: { [key: string]: string[] } = {
     'pasta': ['pata', 'past', 'pasta'],
     'chicken': ['chiken', 'chicen', 'chikken', 'chicken'],
@@ -29,7 +29,7 @@ export const fuzzySearchRecipes = (recipes: Recipe[], searchQuery: string): Reci
     'soup': ['sope', 'supe', 'soupe', 'suppe', 'soup'],
   };
 
-  // Finde das korrekte Wort falls Tippfehler erkannt
+  // Find the correct word if typo detected
   let correctedQuery = query;
   for (const [correct, variants] of Object.entries(commonMisspellings)) {
     if (variants.includes(query)) {
@@ -43,10 +43,10 @@ export const fuzzySearchRecipes = (recipes: Recipe[], searchQuery: string): Reci
     const title = recipe.title.toLowerCase();
     const ingredients = recipe.extendedIngredients || [];
     
-    // NUR verwende correctedQuery wenn es wirklich eine Korrektur gab
+    // ONLY use correctedQuery if there was actually a correction
     const searchTerm = correctedQuery !== query ? correctedQuery : query;
     
-    // 1. Exact match in title (höchste Priorität)
+    // 1. Exact match in title (highest priority)
     if (title.includes(searchTerm)) {
       console.log(`✅ Title match: "${searchTerm}" in "${recipe.title}"`);
       return true;
@@ -64,7 +64,7 @@ export const fuzzySearchRecipes = (recipes: Recipe[], searchQuery: string): Reci
     
     if (ingredientMatch) return true;
     
-    // 3. KEINE Fuzzy-Matches mehr - nur exakte Suche
+    // 3. NO Fuzzy-Matches anymore - only exact search
     return false;
   });
   
@@ -79,9 +79,9 @@ export const filterRecipesByDifficulty = (recipes: Recipe[], difficulty: string)
   return recipes.filter((recipe) => {
     const cookTime = recipe.readyInMinutes || 0;
     
-    if (difficulty === 'easy') return cookTime <= 15; // Easy: bis 15 Minuten
-    if (difficulty === 'medium') return cookTime >= 15 && cookTime <= 30; // Medium: 15-30 Minuten
-    if (difficulty === 'hard') return cookTime > 30; // Hard: über 30 Minuten
+    if (difficulty === 'easy') return cookTime <= 15; // Easy: up to 15 minutes
+    if (difficulty === 'medium') return cookTime >= 15 && cookTime <= 30; // Medium: 15-30 minutes
+    if (difficulty === 'hard') return cookTime > 30; // Hard: over 30 minutes
     
     return true;
   });

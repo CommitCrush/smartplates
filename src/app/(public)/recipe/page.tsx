@@ -10,6 +10,7 @@ import { useAllRecipes } from '@/hooks/useRecipes';
 import { useAuth } from '@/context/authContext';
 import { useRouter } from 'next/navigation';
 import { RecipeFilters } from '@/components/recipe/RecipeFilters';
+import { ActiveFilters } from '@/components/recipe/ActiveFilters';
 import { fuzzySearchRecipes, filterRecipesByDifficulty } from '@/utils/fuzzySearch';
 import type { Recipe } from '@/types/recipe';
 
@@ -63,7 +64,7 @@ export default function RecipePage() {
 
   const { recipes: rawRecipes, error, loading, hasMore, total } = useAllRecipes('', apiOptions);
 
-  // Client-side Filterung für alle Filter-Kombinationen
+  // Client-side filtering for all filter combinations
   const allFilteredRecipes = useMemo(() => {
     console.log('🔍 Client-side filtering started:', {
       totalRecipes: rawRecipes.length,
@@ -77,13 +78,13 @@ export default function RecipePage() {
 
     let filtered = rawRecipes;
 
-    // 1. Search Filter (Title & Ingredients) - nur wenn Search Query vorhanden
+    // 1. Search Filter (Title & Ingredients) - only when Search Query present
     if (hasSearchQuery && searchQuery.trim()) {
       filtered = fuzzySearchRecipes(filtered, searchQuery);
-      console.log(`Nach Search "${searchQuery}":`, filtered.length);
+      console.log(`After Search "${searchQuery}":`, filtered.length);
     }
 
-    // 2. Category Filter (client-side wenn Search aktiv)
+    // 2. Category Filter (client-side when Search active)
     if (hasSearchQuery && selectedCategory) {
       filtered = filtered.filter(recipe => 
         recipe.dishTypes?.some(type => 
@@ -93,20 +94,20 @@ export default function RecipePage() {
           cuisine.toLowerCase() === selectedCategory.toLowerCase()
         )
       );
-      console.log(`Nach Category "${selectedCategory}":`, filtered.length);
+      console.log(`After Category "${selectedCategory}":`, filtered.length);
     }
 
-    // 3. Diet Filter (client-side wenn Search aktiv)
+    // 3. Diet Filter (client-side when Search active)
     if (hasSearchQuery && selectedDiet) {
       filtered = filtered.filter(recipe => 
         recipe.diets?.some(diet => 
           diet.toLowerCase() === selectedDiet.toLowerCase()
         )
       );
-      console.log(`Nach Diet "${selectedDiet}":`, filtered.length);
+      console.log(`After Diet "${selectedDiet}":`, filtered.length);
     }
 
-    // 4. Allergy/Intolerance Filter (client-side wenn Search aktiv)
+    // 4. Allergy/Intolerance Filter (client-side when Search active)
     if (hasSearchQuery && selectedAllergy) {
       filtered = filtered.filter(recipe => {
         // Check if recipe does NOT contain the allergen
@@ -116,30 +117,30 @@ export default function RecipePage() {
           return ingredientName.includes(selectedAllergy.toLowerCase());
         });
       });
-      console.log(`Nach Allergy filter "${selectedAllergy}":`, filtered.length);
+      console.log(`After Allergy filter "${selectedAllergy}":`, filtered.length);
     }
 
-    // 5. Difficulty Filter (immer client-side)
+    // 5. Difficulty Filter (always client-side)
     if (selectedDifficulty) {
       filtered = filterRecipesByDifficulty(filtered, selectedDifficulty);
-      console.log(`Nach Difficulty "${selectedDifficulty}":`, filtered.length);
+      console.log(`After Difficulty "${selectedDifficulty}":`, filtered.length);
     }
 
     console.log('🎯 Final filtered results:', filtered.length);
     return filtered;
   }, [rawRecipes, hasSearchQuery, searchQuery, selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty]);
 
-  // Client-side Pagination (nur für Search-Ergebnisse)
-  const RECIPES_PER_PAGE = 30; // 3 Spalten × 10 Reihen
+  // Client-side Pagination (only for Search results)
+  const RECIPES_PER_PAGE = 30; // 3 columns × 10 rows
   const totalFilteredPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
   
   const displayedRecipes = useMemo(() => {
     if (!hasSearchQuery) {
-      // Dropdown-Filter: verwende API-paginierte Rezepte
+      // Dropdown-Filter: use API-paginated recipes
       return allFilteredRecipes;
     }
 
-    // Search-Modus: client-side Pagination
+    // Search-Mode: client-side Pagination
     const startIndex = (page - 1) * RECIPES_PER_PAGE;
     return allFilteredRecipes.slice(startIndex, startIndex + RECIPES_PER_PAGE);
   }, [allFilteredRecipes, page, hasSearchQuery]);
@@ -200,6 +201,21 @@ export default function RecipePage() {
           selectedAllergy={selectedAllergy}
           setSelectedAllergy={setSelectedAllergy}
           onFilterChange={handleFilterChange}
+        />
+
+        {/* Active Filters Display */}
+        <ActiveFilters
+          searchQuery={searchQuery}
+          selectedCategory={selectedCategory}
+          selectedDifficulty={selectedDifficulty}
+          selectedDiet={selectedDiet}
+          selectedAllergy={selectedAllergy}
+          onRemoveSearch={() => setSearchQuery('')}
+          onRemoveCategory={() => setSelectedCategory('')}
+          onRemoveDifficulty={() => setSelectedDifficulty('')}
+          onRemoveDiet={() => setSelectedDiet('')}
+          onRemoveAllergy={() => setSelectedAllergy('')}
+          onClearAll={clearAllFilters}
         />
 
   {/* Loading State */}
@@ -272,7 +288,7 @@ export default function RecipePage() {
                       variant="outline"
                       size="lg"
                     >
-                      Registrieren für mehr Rezepte
+                      Register for More Recipes
                     </Button>
                   </div>
                 )}

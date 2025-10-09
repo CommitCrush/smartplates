@@ -971,23 +971,27 @@ export default function MealPlanningPage() {
   // Export handlers
   const handleExportMealPlan = async () => {
     try {
-      let elementId = '';
+      let elementSelector = '';
       if (viewMode === 'today') {
-        elementId = 'today-view-container';
+        elementSelector = 'today-view-container';
       } else if (viewMode === 'weekly') {
-        elementId = 'weekly-calendar'; // Fixed: Match WeeklyCalendar component ID
+        elementSelector = 'weekly-calendar-container'; // Use the container wrapper
       } else if (viewMode === 'monthly') {
-        elementId = 'monthly-calendar'; // Fixed: Match MonthlyCalendar component ID
+        elementSelector = 'monthly-calendar-container';
       }
       
-      if (elementId) {
+      if (elementSelector) {
         const filename = `meal-plan-${viewMode}-${format(currentDate, 'yyyy-MM-dd')}`;
-        await exportCalendarAsImage(elementId, { format: 'png', filename });
+        console.log('🔄 Attempting screenshot of:', elementSelector);
+        await exportCalendarAsImage(elementSelector, { format: 'png', filename });
         console.log('📸 Screenshot captured successfully:', filename);
+      } else {
+        console.error('No valid element selector found for viewMode:', viewMode);
+        alert('Unable to determine calendar view for screenshot.');
       }
     } catch (error) {
       console.error('Screenshot failed:', error);
-      alert('Screenshot failed. Please try again.');
+      alert(`Screenshot failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
   };
 
@@ -1368,8 +1372,8 @@ export default function MealPlanningPage() {
             onAddRecipe={(recipeId: string, recipeName: string, servings?: number, cookingTime?: number, image?: string) => {
               handleQuickAddSubmit({ id: recipeId, name: recipeName, servings, cookingTime, image });
             }}
-            mealType={selectedSlot.mealType}
-            dayName={selectedSlot.dayOfWeek !== undefined ? format(addDays(currentDate, selectedSlot.dayOfWeek), 'EEEE') : undefined}
+            mealType={selectedSlot.mealType || 'breakfast'}
+            dayName={selectedSlot.dayOfWeek !== undefined ? format(addDays(currentDate, selectedSlot.dayOfWeek), 'EEEE') : 'Unknown Day'}
           />
         )}
 

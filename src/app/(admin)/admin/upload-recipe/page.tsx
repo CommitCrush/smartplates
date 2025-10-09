@@ -31,23 +31,51 @@ export default function AdminUploadRecipePage() {
 
   const handleRecipeUpload = async (recipeData: EnhancedRecipeFormData) => {
     setIsLoading(true);
+    setMessage(null);
+    
     try {
+      console.log('Starting recipe upload for admin');
+      
+      // Create FormData for multipart upload
+      const formData = new FormData();
+      
+      // Add recipe data as JSON string (images are already uploaded to Cloudinary)
+      const recipeDataToSend = {
+        ...recipeData,
+        authorId: user?.id,
+        isAdminUpload: true,
+        // Include the already uploaded Cloudinary image URLs
+        imageUrls: recipeData.images.map(img => img.url),
+        cloudinaryImages: recipeData.images, // Include full Cloudinary metadata
+      };
+      
+      formData.append('recipeData', JSON.stringify(recipeDataToSend));
+      
+      console.log('Sending FormData to API');
+      
       const response = await fetch('/api/recipes/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...recipeData,
-          authorId: user?.id,
-          isAdminUpload: true,
-        }),
+        body: formData, // No Content-Type header for FormData
       });
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Recipe uploaded successfully' });
+      
+      const result = await response.json();
+      console.log('API response:', result);
+      
+      if (response.ok && result.success) {
+        setMessage({ 
+          type: 'success', 
+          text: result.message || 'Recipe uploaded successfully'
+        });
+        // Don't reset form here - it will be reset by onSuccess callback
       } else {
-        throw new Error('Error uploading recipe');
+        throw new Error(result.message || 'Error uploading recipe');
       }
-    } catch (_error) {
-      setMessage({ type: 'error', text: 'Error uploading recipe' });
+    } catch (error) {
+      console.error('Recipe upload error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Error uploading recipe'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -64,6 +92,10 @@ export default function AdminUploadRecipePage() {
         </div>
         <EnhancedRecipeUploadForm
           onSubmit={handleRecipeUpload}
+          onSuccess={() => {
+            // Form will be automatically reset
+            console.log('Recipe uploaded successfully, form reset');
+          }}
           isLoading={isLoading}
           user={user}
           submitButtonText="Upload Recipe"

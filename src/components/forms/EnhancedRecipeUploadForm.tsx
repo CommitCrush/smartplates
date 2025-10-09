@@ -94,6 +94,7 @@ interface ValidationRules {
 
 interface EnhancedRecipeUploadFormProps {
   onSubmit: (data: EnhancedRecipeFormData) => Promise<void>;
+  onSuccess?: () => void; // New callback for successful submission
   isLoading?: boolean;
   user: any;
   submitButtonText?: string;
@@ -133,13 +134,14 @@ const COMMON_UNITS = [
 
 export function EnhancedRecipeUploadForm({
   onSubmit,
+  onSuccess,
   isLoading = false,
   _user,
   submitButtonText = 'Rezept hochladen',
   validationRules = {}
 }: EnhancedRecipeUploadFormProps) {
-  // Form state
-  const [formData, setFormData] = useState<EnhancedRecipeFormData>({
+  // Initial form state (for reset functionality)
+  const initialFormData: EnhancedRecipeFormData = {
     title: '',
     description: '',
     ingredients: [],
@@ -158,7 +160,10 @@ export function EnhancedRecipeUploadForm({
     source: '',
     isOriginal: true,
     isPublic: false,
-  });
+  };
+
+  // Form state
+  const [formData, setFormData] = useState<EnhancedRecipeFormData>(initialFormData);
 
   // Component states
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
@@ -170,6 +175,16 @@ export function EnhancedRecipeUploadForm({
   });
   const [newTag, setNewTag] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Reset form to initial state
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setUploadedImages([]);
+    setNewIngredient({ name: '', amount: 0, unit: '', notes: '' });
+    setNewInstruction({ instruction: '', time: 0, temperature: 0 });
+    setNewTag('');
+    setErrors({});
+  };
 
   
 
@@ -400,6 +415,12 @@ export function EnhancedRecipeUploadForm({
         ...formData,
         images: uploadedImages
       });
+      
+      // Call onSuccess callback and reset form if provided
+      if (onSuccess) {
+        onSuccess();
+        resetForm();
+      }
     } catch (error) {
       console.error('Form submission error:', error);
     }
@@ -481,7 +502,7 @@ export function EnhancedRecipeUploadForm({
         
         <ImageUpload
           onUpload={handleImageUpload}
-          uploadType="recipe"
+          uploadType="general"
           maxSize={5}
           multiple={true}
           showPreview={true}

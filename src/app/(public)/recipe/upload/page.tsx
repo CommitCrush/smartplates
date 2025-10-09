@@ -30,38 +30,44 @@ export default function UploadRecipePage() {
     setIsSubmitting(true);
     
     try {
-      // Create FormData for file uploads
+      console.log('Starting recipe upload for user');
+      
+      // Create FormData for multipart upload
       const uploadData = new FormData();
       
-      // Add recipe data (images are already uploaded to Cloudinary)
-      uploadData.append('recipeData', JSON.stringify({
+      // Add recipe data as JSON string (images are already uploaded to Cloudinary)
+      const recipeDataToSend = {
         ...formData,
-        tags: formData.customTags, // Convert customTags to tags for API compatibility
         userId: user.id,
-        // Include Cloudinary image URLs
-        imageUrls: formData.images.map(img => img.url)
-      }));
+        // Include the already uploaded Cloudinary image URLs
+        imageUrls: formData.images.map(img => img.url),
+        cloudinaryImages: formData.images, // Include full Cloudinary metadata
+      };
+      
+      uploadData.append('recipeData', JSON.stringify(recipeDataToSend));
+      
+      console.log('Sending FormData to API');
       
       const response = await fetch('/api/recipes/upload', {
         method: 'POST',
-        body: uploadData,
+        body: uploadData, // No Content-Type header for FormData
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        
+      const result = await response.json();
+      console.log('API response:', result);
+
+      if (response.ok && result.success) {
         // Show success message
         alert('Rezept erfolgreich hochgeladen!');
         
         // Redirect based on recipe status
         if (formData.isPublic) {
-          router.push(`/recipe/${result.recipe._id}?success=uploaded`);
+          router.push(`/recipe/${result.recipe.id}?success=uploaded`);
         } else {
           router.push(`/user/my_added_recipes?success=uploaded`);
         }
       } else {
-        const error = await response.json();
-        throw new Error(error.message || 'Fehler beim Hochladen des Rezepts');
+        throw new Error(result.message || 'Fehler beim Hochladen des Rezepts');
       }
     } catch (error) {
       console.error('Error uploading recipe:', error);
@@ -155,6 +161,10 @@ export default function UploadRecipePage() {
         {/* Enhanced Recipe Form */}
         <EnhancedRecipeUploadForm
           onSubmit={handleSubmit}
+          onSuccess={() => {
+            // Form will be automatically reset after redirect
+            console.log('Recipe submitted successfully, form reset');
+          }}
           isLoading={isSubmitting}
           user={user}
           submitButtonText="Rezept hochladen"

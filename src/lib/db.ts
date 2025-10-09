@@ -111,7 +111,9 @@ export async function getCollection<T extends Document = Document>(collectionNam
  */
 export const COLLECTIONS = {
   USERS: 'users',
+  ADMINS: 'admins',
   RECIPES: 'recipes',
+  USER_RECIPES: 'userRecipes',
   CATEGORIES: 'categories',
   MEAL_PLANS: 'mealPlans',
   GROCERY_LISTS: 'groceryLists',

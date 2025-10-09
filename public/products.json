@@ -13,9 +13,9 @@
   },
   {
     "id": 3,
-    "title": "Stainless steel frying pan",
-    "description": "This professional-grade frying pan is built from high-quality stainless steel for superior heat distribution. It features a comfortable, heat-resistant black handle.",
-  "image": "/images/cookware/frying-pan.png"
+   "title": "stainless steel pots set",
+    "description": "stainless steel cookware set provides the essentials for a modern, functional kitchen. Built with durable construction for superior heat distribution.",
+  "image": "/images/cookware/pots-set.png"
   },
   {
     "id": 4,
@@ -25,9 +25,9 @@
   },
   {
     "id": 5,
-    "title": "silicone baking mat",
-    "description": "This non-stick silicone baking mat is a baker's essential. It features printed measurements and guides for easily rolling out dough, and provides a clean, flexible surface for all your baking needs.",
-  "image": "/images/cookware/baking-mat.png"
+    "title": "plate set",
+    "description": "This elegant dinnerware set includes dinner plates and perfectly matching mugs. Designed for modern dining, it is ideal for serving a complete meal, as shown with the healthy entrée.",
+  "image": "/images/cookware/plate-set.png"
   },
   {
     "id": 6,
@@ -97,14 +97,14 @@
   }, 
   {
     "id": 17,
-    "title": "stainless steel pots set",
-    "description": "stainless steel cookware set provides the essentials for a modern, functional kitchen. Built with durable construction for superior heat distribution.",
-  "image": "/images/cookware/pots-set.png"
+   "title": "Stainless steel frying pan",
+    "description": "This professional-grade frying pan is built from high-quality stainless steel for superior heat distribution. It features a comfortable, heat-resistant black handle.",
+  "image": "/images/cookware/frying-pan.png"
   },
   {
     "id": 18,
-    "title": "plate set",
-    "description": "This elegant dinnerware set includes dinner plates and perfectly matching mugs. Designed for modern dining, it is ideal for serving a complete meal, as shown with the healthy entrée.",
-  "image": "/images/cookware/plate-set.png"
+   "title": "silicone baking mat",
+    "description": "This non-stick silicone baking mat is a baker's essential. It features printed measurements and guides for easily rolling out dough, and provides a clean, flexible surface for all your baking needs.",
+  "image": "/images/cookware/baking-mat.png"
   }
 ]

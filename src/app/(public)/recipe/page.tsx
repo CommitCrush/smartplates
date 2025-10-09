@@ -17,68 +17,102 @@ export default function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
-  const [showMore, setShowMore] = useState(false);
   const [selectedDiet, setSelectedDiet] = useState('');
   const [selectedAllergy, setSelectedAllergy] = useState('');
-  const [maxReadyTime, setMaxReadyTime] = useState<string | undefined>();
   const [page, setPage] = useState(1);
 
   // Auth and routing
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (selectedDifficulty === 'easy') {
-      setMaxReadyTime('15');
-    } else if (selectedDifficulty === 'medium') {
-      setMaxReadyTime('30');
+  // Separate API-Aufruf für Dropdown-Filter vs. Search
+  const hasSearchQuery = searchQuery.trim().length > 0;
+  
+  // Intelligente API-Aufrufe basierend auf Modus
+  const apiOptions = useMemo(() => {
+    if (hasSearchQuery) {
+      // Search-Modus: alle Rezepte holen
+      return {
+        number: '100',
+        randomize: 'false',
+      };
     } else {
-      setMaxReadyTime(undefined);
+      // Dropdown-Filter-Modus: normale API-basierte Paginierung
+      const options: Record<string, string> = {
+        type: selectedCategory,
+        diet: selectedDiet,
+        intolerances: selectedAllergy,
+        number: isAuthenticated ? '30' : '15',
+        page: String(page),
+      };
+
+      if (selectedDifficulty === 'easy') {
+        options.maxReadyTime = '15';
+      } else if (selectedDifficulty === 'medium') {
+        options.maxReadyTime = '30';
+      }
+
+      if (!isAuthenticated || page === 1) {
+        options.randomize = 'true';
+      }
+
+      return options;
     }
-    setPage(1);
-  }, [selectedDifficulty]);
+  }, [selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, page, isAuthenticated, hasSearchQuery]);
 
-  const fetchOptions = useMemo(() => {
-    const options: Record<string, string> = {
-      type: selectedCategory,
-      diet: selectedDiet,
-      intolerances: selectedAllergy,
-      number: isAuthenticated ? '30' : '15',
-      page: String(page),
-    };
+  const { recipes: rawRecipes, error, loading, hasMore, total } = useAllRecipes('', apiOptions);
 
-    if (maxReadyTime) {
-      options.maxReadyTime = maxReadyTime;
+  // Client-side Filterung (nur für Search + Difficulty)
+  const allFilteredRecipes = useMemo(() => {
+    if (!hasSearchQuery) {
+      // Dropdown-Filter: verwende API-gefilterte Rezepte direkt
+      return filterRecipesByDifficulty(rawRecipes, selectedDifficulty);
     }
 
-    if (!isAuthenticated || page === 1) {
-      options.randomize = 'true';
-    }
-
-    return options;
-  }, [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, page, isAuthenticated]);
-
-  const { recipes, error, loading, hasMore, total } = useAllRecipes('', fetchOptions);
-
-  // Apply filters using utility functions (including search)
-  const filteredRecipes = useMemo(() => {
-    console.log('🔍 Filtering recipes:', {
-      totalRecipes: recipes.length,
-      searchQuery,
+    // Search-Modus: vollständige Client-side Filterung
+    console.log('🔍 Search-Modus - Client-side filtering:', {
+      totalRecipes: rawRecipes.length,
+      searchQuery: `"${searchQuery}"`,
       selectedDifficulty
     });
 
-    let filtered = filterRecipesByDifficulty(recipes, selectedDifficulty);
-    console.log('After difficulty filter:', filtered.length);
+    let filtered = rawRecipes;
 
-    filtered = fuzzySearchRecipes(filtered, searchQuery);
-    console.log('After fuzzy search:', filtered.length);
+    // 1. Difficulty Filter
+    if (selectedDifficulty) {
+      filtered = filterRecipesByDifficulty(filtered, selectedDifficulty);
+      console.log(`Nach Difficulty "${selectedDifficulty}":`, filtered.length);
+    }
 
-    const result = filtered.slice(0, 30);
-    console.log('Final result:', result.length);
+    // 2. Fuzzy Search (Title & Ingredients)
+    if (searchQuery.trim()) {
+      filtered = fuzzySearchRecipes(filtered, searchQuery);
+      console.log(`Nach Search "${searchQuery}":`, filtered.length);
+    }
 
-    return result;
-  }, [recipes, selectedDifficulty, searchQuery]);
+    console.log('🎯 Search-Ergebnisse final:', filtered.length);
+    return filtered;
+  }, [rawRecipes, selectedDifficulty, searchQuery, hasSearchQuery]);
+
+  // Client-side Pagination (nur für Search-Ergebnisse)
+  const RECIPES_PER_PAGE = 30; // 3 Spalten × 10 Reihen
+  const totalFilteredPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
+  
+  const displayedRecipes = useMemo(() => {
+    if (!hasSearchQuery) {
+      // Dropdown-Filter: verwende API-paginierte Rezepte
+      return allFilteredRecipes;
+    }
+
+    // Search-Modus: client-side Pagination
+    const startIndex = (page - 1) * RECIPES_PER_PAGE;
+    return allFilteredRecipes.slice(startIndex, startIndex + RECIPES_PER_PAGE);
+  }, [allFilteredRecipes, page, hasSearchQuery]);
+
+  // Reset page when search query changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   const handleFilterChange = () => {
     setPage(1);
@@ -91,7 +125,6 @@ export default function RecipePage() {
     setSelectedDiet('');
     setSelectedAllergy('');
     setPage(1);
-    setShowMore(false);
   };
 
   const generateUniqueKey = (recipe: Recipe) => {
@@ -165,41 +198,56 @@ export default function RecipePage() {
         {!loading && !error && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredRecipes.map((recipe) => (
+              {displayedRecipes.map((recipe: Recipe) => (
                 <RecipeCard key={generateUniqueKey(recipe)} recipe={recipe} />
               ))}
             </div>
             
-            {/* Pagination for authenticated users */}
-            {isAuthenticated && recipes.length > 0 && (
-              <div className="flex justify-center mt-8">
-                <Pagination
-                  currentPage={page}
-                  totalPages={Math.ceil((total || recipes.length) / 30)}
-                  onPageChange={setPage}
-                />
-              </div>
-            )}
-            
-            {/* Load More button for viewers */}
-            {!isAuthenticated && (hasMore ?? (!showMore && recipes.length >= 15)) && (
-              <div className="flex justify-center mt-8">
-                <Button
-                  onClick={() => {
-                    router.push('/register');
-                  }}
-                  variant="outline"
-                  size="lg"
-                >
-                  Registrieren für mehr Rezepte
-                </Button>
-              </div>
+            {/* Pagination Logic basierend auf Modus */}
+            {hasSearchQuery ? (
+              // Search-Modus: Client-side Pagination
+              allFilteredRecipes.length > RECIPES_PER_PAGE && (
+                <div className="flex justify-center mt-8">
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalFilteredPages}
+                    onPageChange={setPage}
+                  />
+                </div>
+              )
+            ) : (
+              // Dropdown-Filter-Modus: API-basierte Pagination
+              <>
+                {isAuthenticated && rawRecipes.length > 0 && (
+                  <div className="flex justify-center mt-8">
+                    <Pagination
+                      currentPage={page}
+                      totalPages={Math.ceil((total || rawRecipes.length) / 30)}
+                      onPageChange={setPage}
+                    />
+                  </div>
+                )}
+                
+                {!isAuthenticated && hasMore && rawRecipes.length >= 15 && (
+                  <div className="flex justify-center mt-8">
+                    <Button
+                      onClick={() => {
+                        router.push('/register');
+                      }}
+                      variant="outline"
+                      size="lg"
+                    >
+                      Registrieren für mehr Rezepte
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
 
         {/* Empty State */}
-        {!loading && !error && filteredRecipes.length === 0 && (
+        {!loading && !error && displayedRecipes.length === 0 && (
           <Card className="p-12 text-center">
             <ChefHat className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Recipes Found</h3>

@@ -199,8 +199,11 @@ export function RecipeIngredients({ recipe }: RecipeIngredientsProps) {
             const converted = convertUnit(adjustedAmount, ingredient.unit);
             const formattedAmount = formatQuantity(converted.amount);
             
+            // Create unique key combining id, name, and index to prevent duplicates
+            const uniqueKey = `ingredient-${ingredient.id || 'no-id'}-${ingredient.name?.replace(/[^a-zA-Z0-9]/g, '') || 'unnamed'}-${index}`;
+            
             return (
-              <li key={ingredient.id || index} className="flex items-start gap-3 py-2 border-b border-border last:border-b-0">
+              <li key={uniqueKey} className="flex items-start gap-3 py-2 border-b border-border last:border-b-0">
                 <div className="flex-1">
                   <div className="flex items-baseline gap-2">
                     {formattedAmount && (

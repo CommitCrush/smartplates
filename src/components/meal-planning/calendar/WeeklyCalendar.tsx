@@ -51,6 +51,7 @@ interface WeeklyCalendarProps {
   onMealPlanChange?: (mealPlan: IMealPlan) => void;
   onAddRecipe?: (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onAddMeal?: (slot: any) => void;
+  onEditMeal?: (slot: any) => void; // Add edit meal handler
   onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
   onShowRecipe?: (meal: MealSlot) => void;
   onCopyRecipe?: (meal: MealSlot) => void;
@@ -71,6 +72,7 @@ export function WeeklyCalendar({
   onMealPlanChange, 
   onAddRecipe,
   onAddMeal,
+  onEditMeal,
   onRemoveMeal,
   onShowRecipe,
   onCopyRecipe,
@@ -179,21 +181,46 @@ export function WeeklyCalendar({
     }
   }, [currentWeekStart, weekDates, mealPlan]);
 
-  // Navigation handlers
+  // Navigation handlers - Enhanced to communicate with parent
   const goToPreviousWeek = () => {
     const newDate = new Date(currentWeekStart);
     newDate.setDate(newDate.getDate() - 7);
     setCurrentWeekStart(newDate);
+    
+    // Communicate navigation to parent if possible
+    if (onMealPlanChange && mealPlan) {
+      console.log('📅 WeeklyCalendar: Previous week navigation, triggering parent refresh');
+      // Just trigger a refresh by updating the meal plan's lastViewed date
+      const refreshedPlan = { ...mealPlan, lastViewed: new Date() };
+      onMealPlanChange(refreshedPlan);
+    }
   };
 
   const goToNextWeek = () => {
     const newDate = new Date(currentWeekStart);
     newDate.setDate(newDate.getDate() + 7);
     setCurrentWeekStart(newDate);
+    
+    // Communicate navigation to parent if possible
+    if (onMealPlanChange && mealPlan) {
+      console.log('📅 WeeklyCalendar: Next week navigation, triggering parent refresh');
+      // Just trigger a refresh by updating the meal plan's lastViewed date  
+      const refreshedPlan = { ...mealPlan, lastViewed: new Date() };
+      onMealPlanChange(refreshedPlan);
+    }
   };
 
   const goToCurrentWeek = () => {
-    setCurrentWeekStart(getWeekStartDate(new Date()));
+    const currentWeek = getWeekStartDate(new Date());
+    setCurrentWeekStart(currentWeek);
+    
+    // Communicate navigation to parent if possible
+    if (onMealPlanChange && mealPlan) {
+      console.log('📅 WeeklyCalendar: Current week navigation, triggering parent refresh');
+      // Just trigger a refresh by updating the meal plan's lastViewed date
+      const refreshedPlan = { ...mealPlan, lastViewed: new Date() };
+      onMealPlanChange(refreshedPlan);
+    }
   };
 
   // Date search functionality
@@ -309,7 +336,7 @@ export function WeeklyCalendar({
     }));
   };
 
-  // Handle adding a new meal
+  // Handle adding a new meal - Enhanced with edit capability
   const handleAddRecipe = (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
     // If there's a copied recipe, paste it instead of opening add dialog
     if (copiedRecipe) {
@@ -329,6 +356,41 @@ export function WeeklyCalendar({
       onAddMeal(mealSlot);
     } else if (onAddRecipe) {
       onAddRecipe(dayIndex, mealType);
+    }
+  };
+
+  // Handle editing existing meal
+  const handleEditMeal = (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks', meal: MealSlot, mealIndex: number) => {
+    console.log('📝 WeeklyCalendar: Edit meal requested for:', meal.recipeName);
+    
+    if (onEditMeal) {
+      const editSlot = {
+        dayOfWeek: dayIndex,
+        mealType: mealType,
+        recipeId: meal.recipeId || '',
+        recipeName: meal.recipeName || '',
+        servings: meal.servings || 2,
+        prepTime: meal.prepTime || 30,
+        cookingTime: meal.cookingTime || 0,
+        notes: meal.notes || '',
+        ingredients: meal.ingredients || [],
+        tags: meal.tags || [],
+        image: meal.image || '',
+        existingMealIndex: mealIndex // Include index for updating existing meal
+      };
+      onEditMeal(editSlot);
+    } else if (onAddMeal) {
+      // Fallback to add meal with existing data
+      const editSlot = {
+        dayOfWeek: dayIndex,
+        mealType: mealType,
+        recipeId: meal.recipeId || '',
+        recipeName: meal.recipeName || '',
+        servings: meal.servings || 2,
+        prepTime: meal.prepTime || 30,
+        existingMealIndex: mealIndex
+      };
+      onAddMeal(editSlot);
     }
   };
 
@@ -511,6 +573,9 @@ export function WeeklyCalendar({
                     meals={dayMeals}
                     onMealsChange={(meals: DayMeals) => handleMealChange(dayIndex, meals)}
                     onAddRecipe={handleAddRecipe}
+                    onEditMeal={(meal: MealSlot, mealIndex: number, mealType: string) => 
+                      handleEditMeal(dayIndex, mealType as 'breakfast' | 'lunch' | 'dinner' | 'snacks', meal, mealIndex)
+                    }
                     onCrossDayMealMove={handleCrossDayMealMove}
                     onShowRecipe={handleShowRecipe}
                     onCopyRecipe={handleCopyRecipe}

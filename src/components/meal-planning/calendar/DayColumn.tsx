@@ -25,6 +25,7 @@ interface DayColumnProps {
   meals?: DayMeals;
   onMealsChange?: (meals: DayMeals) => void;
   onAddRecipe?: (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
+  onEditMeal?: (meal: MealSlot, mealIndex: number, mealType: string) => void;
   onCrossDayMealMove?: (
     draggedMeal: any,
     sourceDayIndex: number,
@@ -52,6 +53,7 @@ export function DayColumn({
   meals,
   onMealsChange,
   onAddRecipe,
+  onEditMeal,
   onCrossDayMealMove,
   onShowRecipe,
   onCopyRecipe,
@@ -242,6 +244,13 @@ export function DayColumn({
                       mealIndex={mealIndex}
                       onRemove={() => handleRemoveMeal(key, mealIndex)}
                       onUpdate={(updatedMeal) => handleMealUpdate(key, mealIndex, updatedMeal)}
+                      onEdit={() => {
+                        // Pass meal editing request up to parent
+                        console.log('📝 DayColumn: Edit meal requested for:', meal.recipeName, 'at day', dayIndex, 'mealType', key);
+                        
+                        // Trigger parent's edit meal handler
+                        onEditMeal?.(meal, mealIndex, key);
+                      }}
                       onShowRecipe={(meal) => {
                         console.log('🔍 DayColumn: onShowRecipe called', { meal: meal.recipeName, dayIndex, mealType: key });
                         onShowRecipe?.(meal, dayIndex, key);

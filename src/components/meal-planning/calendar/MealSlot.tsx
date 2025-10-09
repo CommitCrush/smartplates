@@ -158,8 +158,8 @@ export function MealSlotComponent({
       <div className="space-y-2">
         {/* Top Row: Image and Title */}
         <div className="flex items-start gap-2">
-          {/* Recipe Image - Compact */}
-          <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-md overflow-hidden shadow-sm">
+          {/* Recipe Image - Responsive */}
+          <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-md overflow-hidden shadow-sm">
             {meal.image ? (
               <Image 
                 src={meal.image} 
@@ -171,7 +171,7 @@ export function MealSlotComponent({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-700 dark:to-gray-800">
-                <span className="text-lg">
+                <span className="text-sm sm:text-lg">
                   {mealType === 'breakfast' && '🍳'}
                   {mealType === 'lunch' && '🥗'}
                   {mealType === 'dinner' && '🍽️'}
@@ -181,58 +181,93 @@ export function MealSlotComponent({
             )}
           </div>
 
-          {/* Title and Copy Button */}
+          {/* Title and Action Buttons */}
           <div className="flex-1 flex items-start justify-between min-w-0">
-            <h5 className="font-semibold text-sm leading-tight text-gray-900 dark:text-gray-100 truncate pr-1">
+            <h5 className="font-semibold text-xs sm:text-sm leading-tight text-gray-900 dark:text-gray-100 truncate pr-1">
               {meal.recipeName || 'Unnamed Recipe'}
             </h5>
             
-            {/* Copy Button - Always Visible */}
-            {onCopyRecipe && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCopyRecipe(meal);
-                }}
-                className="h-6 w-6 p-0 flex-shrink-0 hover:bg-green-100 dark:hover:bg-green-900 transition-colors"
-                title="Copy recipe"
-              >
-                <Copy className="h-3 w-3 text-green-600 dark:text-green-400" />
-              </Button>
-            )}
+            {/* Action Buttons - Mobile Optimized */}
+            <div className="flex items-center space-x-1 flex-shrink-0">
+              {/* Edit Button - Weekly View */}
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"
+                  title="Edit recipe"
+                >
+                  <Edit3 className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-blue-600 dark:text-blue-400" />
+                </Button>
+              )}
+              
+              {/* Copy Button */}
+              {onCopyRecipe && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCopyRecipe(meal);
+                  }}
+                  className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-green-100 dark:hover:bg-green-900 transition-colors"
+                  title="Copy recipe"
+                >
+                  <Copy className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-600 dark:text-green-400" />
+                </Button>
+              )}
+              
+              {/* Delete Button - Weekly View */}
+              {onRemove && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove();
+                  }}
+                  className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900 transition-colors"
+                  title="Remove recipe"
+                >
+                  <X className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-red-600 dark:text-red-400" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Bottom Row: Time, Servings, and Menu */}
+        {/* Bottom Row: Time and Servings - Mobile Optimized */}
         <div className="flex items-center justify-between">
-          {/* Time and Servings */}
-          <div className="flex items-center space-x-2 text-xs">
+          {/* Time and Servings - Responsive */}
+          <div className="flex items-center space-x-1 sm:space-x-2 text-xs">
             {/* Cooking Time */}
             {totalTime > 0 && (
-              <div className="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 px-1.5 py-0.5 rounded">
-                <Clock className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                <span className="font-medium text-gray-700 dark:text-gray-300">{totalTime}min</span>
+              <div className="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 px-1 sm:px-1.5 py-0.5 rounded">
+                <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-gray-500 dark:text-gray-400" />
+                <span className="font-medium text-gray-700 dark:text-gray-300 text-xs">{totalTime}min</span>
               </div>
             )}
 
-            {/* Servings - Editable */}
-            <div className="flex items-center space-x-1 bg-blue-50 dark:bg-blue-900 px-1.5 py-0.5 rounded">
-              <Users className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-              <span className="font-medium text-blue-700 dark:text-blue-300">{meal.servings || 1}</span>
+            {/* Servings - Responsive Editable */}
+            <div className="flex items-center space-x-1 bg-blue-50 dark:bg-blue-900 px-1 sm:px-1.5 py-0.5 rounded">
+              <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-blue-600 dark:text-blue-400" />
+              <span className="font-medium text-blue-700 dark:text-blue-300 text-xs">{meal.servings || 1}</span>
               {onUpdate && (
-                <div className="ml-1 flex space-x-0.5">
+                <div className="ml-0.5 sm:ml-1 flex space-x-0.5">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleServingsChange((meal.servings || 1) - 1);
                     }}
                     disabled={(meal.servings || 1) <= 1}
-                    className="w-3.5 h-3.5 rounded-full bg-white dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-blue-200 dark:border-blue-700 transition-colors"
+                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-blue-200 dark:border-blue-700 transition-colors"
                     title="Decrease servings"
                   >
-                    −
+                    <span className="text-xs leading-none">−</span>
                   </button>
                   <button
                     onClick={(e) => {
@@ -240,68 +275,20 @@ export function MealSlotComponent({
                       handleServingsChange((meal.servings || 1) + 1);
                     }}
                     disabled={(meal.servings || 1) >= 20}
-                    className="w-3.5 h-3.5 rounded-full bg-white dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-blue-200 dark:border-blue-700 transition-colors"
+                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-blue-200 dark:border-blue-700 transition-colors"
                     title="Increase servings"
                   >
-                    +
+                    <span className="text-xs leading-none">+</span>
                   </button>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Action Menu - Only on Hover */}
-          {isHovered && (onEdit || onRemove) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                >
-                  <MoreVertical className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                {onEdit && (
-                  <DropdownMenuItem onClick={onEdit}>
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {onRemove && (
-                  <DropdownMenuItem 
-                    onClick={onRemove}
-                    className="text-red-600 focus:text-red-600"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Remove
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </div>
-
-        {/* Recipe Type Badge - Only if space allows */}
-        {meal.recipeId && (
-          <div className="flex justify-end">
-            <Badge 
-              variant={meal.recipeId.includes('spoon') ? 'default' : 'secondary'} 
-              className={cn(
-                "text-xs px-1.5 py-0.5",
-                meal.recipeId.includes('spoon') 
-                  ? 'bg-[#F96850] dark:bg-[#F16B59] text-white' 
-                  : 'bg-[#EFF4E6] dark:bg-[#74765D] text-[#7D966D] dark:text-[#C1D3AF]'
-              )}
-            >
-              {meal.recipeId.includes('spoon') ? 'API' : 'Custom'}
-            </Badge>
-          </div>
-        )}
       </div>
 
       {/* Notes - Compact */}
+            {/* Notes - Compact */}
       {meal.notes && (
         <div className="mt-2 pt-1.5 border-t border-[#EFF4E6] dark:border-[#74765D]">
           <p className="text-xs text-[#7D966D] dark:text-[#C1D3AF] italic truncate">

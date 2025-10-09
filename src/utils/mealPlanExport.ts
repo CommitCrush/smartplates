@@ -113,286 +113,427 @@ export async function captureCalendarScreenshot(
  * Capture the full visual calendar with all recipe cards and styling
  */
 async function captureFullVisualCalendar(element: HTMLElement, options: ExportOptions): Promise<string> {
-  console.log('🎨 Capturing full visual calendar...');
+  console.log('🎨 Capturing PROFESSIONAL weekly meal plan PDF...');
   
-  // First, completely disable all existing stylesheets temporarily
-  const allStylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'));
-  const originalDisplay = allStylesheets.map(sheet => {
-    const display = (sheet as HTMLElement).style.display;
-    (sheet as HTMLElement).style.display = 'none';
-    return display;
-  });
+  // Create dedicated PDF render container with fixed dimensions
+  const pdfContainer = document.createElement('div');
+  pdfContainer.id = 'pdf-weekly-calendar';
+  pdfContainer.style.cssText = `
+    position: fixed;
+    top: -20000px;
+    left: 0;
+    width: 1600px;
+    min-height: 1200px;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    z-index: 99999;
+    padding: 60px;
+    box-sizing: border-box;
+    overflow: hidden;
+  `;
   
-  // Create a comprehensive replacement stylesheet that avoids lab() functions
-  const tempStyle = document.createElement('style');
-  tempStyle.setAttribute('data-temp-screenshot', 'true');
-  tempStyle.textContent = `
-    /* Complete CSS reset and replacement for screenshot */
-    *, *::before, *::after {
-      margin: 0 !important;
-      padding: 0 !important;
+  // Clone and process the weekly calendar element
+  const clonedCalendar = element.cloneNode(true) as HTMLElement;
+  
+  // Apply comprehensive professional PDF styles
+  const professionalPDFStyles = document.createElement('style');
+  professionalPDFStyles.id = 'pdf-professional-styles';
+  professionalPDFStyles.textContent = `
+    /* RESET AND BASE STYLES */
+    #pdf-weekly-calendar * {
       box-sizing: border-box !important;
-      border: none !important;
-      background: transparent !important;
-      color: #000000 !important;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-      text-decoration: none !important;
-      list-style: none !important;
-      outline: none !important;
-      box-shadow: none !important;
-      text-shadow: none !important;
-      transition: none !important;
-      animation: none !important;
-      transform: none !important;
-      filter: none !important;
-      backdrop-filter: none !important;
-      clip-path: none !important;
-      mask: none !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
     }
-    
-    /* Basic layout structure */
-    body, html {
+
+    #pdf-weekly-calendar {
       background: #ffffff !important;
+      color: #1f2937 !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+      font-size: 16px !important;
+      line-height: 1.5 !important;
+      width: 1600px !important;
+      padding: 60px !important;
+    }
+
+    /* WEEKLY CALENDAR MAIN CONTAINER */
+    #pdf-weekly-calendar .weekly-calendar,
+    #pdf-weekly-calendar [id*="weekly"] {
       width: 100% !important;
-      height: auto !important;
-    }
-    
-    /* Container and layout elements */
-    div, section, article, main, aside, header, footer, nav {
-      display: block !important;
+      max-width: 1480px !important;
+      margin: 0 auto !important;
       background: #ffffff !important;
-      border: 1px solid #e5e7eb !important;
-      border-radius: 4px !important;
-      padding: 8px !important;
-      margin: 4px !important;
+      border: 3px solid #e5e7eb !important;
+      border-radius: 16px !important;
+      padding: 40px !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     }
-    
-    /* Grid layouts */
-    .grid, [class*="grid"] {
+
+    /* CALENDAR HEADER */
+    #pdf-weekly-calendar h1,
+    #pdf-weekly-calendar h2,
+    #pdf-weekly-calendar .calendar-title {
+      font-size: 32px !important;
+      font-weight: 700 !important;
+      color: #111827 !important;
+      text-align: center !important;
+      margin: 0 0 40px 0 !important;
+      padding: 20px 0 !important;
+      border-bottom: 4px solid #3b82f6 !important;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+      border-radius: 12px !important;
+    }
+
+    /* WEEK DATE RANGE */
+    #pdf-weekly-calendar .week-range,
+    #pdf-weekly-calendar .date-range {
+      font-size: 18px !important;
+      color: #6b7280 !important;
+      text-align: center !important;
+      margin: 0 0 30px 0 !important;
+      font-weight: 500 !important;
+    }
+
+    /* 7-DAY GRID LAYOUT */
+    #pdf-weekly-calendar .grid,
+    #pdf-weekly-calendar [class*="grid"] {
       display: grid !important;
-    }
-    
-    .grid-cols-7, [class*="grid-cols-7"] {
       grid-template-columns: repeat(7, 1fr) !important;
-      gap: 8px !important;
+      gap: 20px !important;
+      margin: 0 !important;
+      width: 100% !important;
     }
-    
-    .grid-cols-1, [class*="grid-cols-1"] {
-      grid-template-columns: 1fr !important;
-    }
-    
-    /* Cards and containers */
-    .card, [class*="card"], .meal-card, [class*="meal"] {
+
+    /* INDIVIDUAL DAY COLUMNS */
+    #pdf-weekly-calendar .day-column,
+    #pdf-weekly-calendar [class*="day"] {
       background: #ffffff !important;
       border: 2px solid #d1d5db !important;
-      border-radius: 8px !important;
-      padding: 12px !important;
-      margin: 4px !important;
-      display: block !important;
+      border-radius: 12px !important;
+      padding: 20px 16px !important;
+      min-height: 500px !important;
+      width: 100% !important;
       position: relative !important;
+      overflow: visible !important;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
     }
-    
-    /* Images */
-    img {
-      max-width: 100% !important;
-      height: auto !important;
-      border-radius: 4px !important;
+
+    /* DAY HEADERS (Monday, Tuesday, etc.) */
+    #pdf-weekly-calendar .day-column h3,
+    #pdf-weekly-calendar [class*="day"] h3,
+    #pdf-weekly-calendar .day-header {
+      font-size: 20px !important;
+      font-weight: 700 !important;
+      color: #1f2937 !important;
+      text-align: center !important;
+      margin: 0 0 20px 0 !important;
+      padding: 12px 8px !important;
+      background: #f3f4f6 !important;
+      border-radius: 8px !important;
       border: 1px solid #e5e7eb !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+    }
+
+    /* DAY NUMBERS */
+    #pdf-weekly-calendar .day-number {
+      font-size: 24px !important;
+      font-weight: 600 !important;
+      color: #3b82f6 !important;
+      text-align: center !important;
+      margin: 0 0 16px 0 !important;
+    }
+
+    /* MEAL TYPE SECTIONS */
+    #pdf-weekly-calendar .meal-section {
+      margin: 16px 0 !important;
+      padding: 0 !important;
+    }
+
+    /* MEAL TYPE HEADERS */
+    #pdf-weekly-calendar .meal-type,
+    #pdf-weekly-calendar h4,
+    #pdf-weekly-calendar [class*="breakfast"],
+    #pdf-weekly-calendar [class*="lunch"],
+    #pdf-weekly-calendar [class*="dinner"],
+    #pdf-weekly-calendar [class*="snacks"] {
+      font-size: 14px !important;
+      font-weight: 600 !important;
+      color: #374151 !important;
+      margin: 12px 0 8px 0 !important;
+      padding: 8px 12px !important;
+      background: #f9fafb !important;
+      border-radius: 6px !important;
+      border: 1px solid #e5e7eb !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      text-align: center !important;
+    }
+
+    /* RECIPE CARDS */
+    #pdf-weekly-calendar .recipe-card,
+    #pdf-weekly-calendar [class*="recipe"],
+    #pdf-weekly-calendar .meal-card {
+      background: #ffffff !important;
+      border: 2px solid #e5e7eb !important;
+      border-radius: 10px !important;
+      padding: 12px !important;
+      margin: 8px 0 !important;
+      min-height: 80px !important;
+      position: relative !important;
       display: block !important;
+      page-break-inside: avoid !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
     }
-    
-    /* Text elements */
-    h1, h2, h3, h4, h5, h6 {
+
+    /* RECIPE TITLES */
+    #pdf-weekly-calendar .recipe-title,
+    #pdf-weekly-calendar .recipe-card h5,
+    #pdf-weekly-calendar .recipe-card h6,
+    #pdf-weekly-calendar [class*="recipe"] h5,
+    #pdf-weekly-calendar [class*="recipe"] h6 {
+      font-size: 16px !important;
+      font-weight: 600 !important;
       color: #111827 !important;
-      font-weight: bold !important;
-      margin: 4px 0 !important;
-      line-height: 1.2 !important;
+      margin: 0 0 8px 0 !important;
+      line-height: 1.3 !important;
+      word-wrap: break-word !important;
     }
-    
-    p, span, div, label {
+
+    /* RECIPE IMAGES */
+    #pdf-weekly-calendar img {
+      width: 70px !important;
+      height: 60px !important;
+      border-radius: 8px !important;
+      border: 2px solid #d1d5db !important;
+      object-fit: cover !important;
+      float: left !important;
+      margin: 0 12px 8px 0 !important;
+      background: #f3f4f6 !important;
+      display: block !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* RECIPE META INFORMATION */
+    #pdf-weekly-calendar .recipe-meta,
+    #pdf-weekly-calendar .prep-time,
+    #pdf-weekly-calendar .servings,
+    #pdf-weekly-calendar [class*="time"],
+    #pdf-weekly-calendar [class*="serving"] {
+      font-size: 12px !important;
+      color: #6b7280 !important;
+      margin: 4px 0 !important;
+      display: block !important;
+      clear: both !important;
+    }
+
+    /* TEXT ELEMENTS */
+    #pdf-weekly-calendar p,
+    #pdf-weekly-calendar span,
+    #pdf-weekly-calendar div {
       color: #374151 !important;
       font-size: 14px !important;
       line-height: 1.4 !important;
       margin: 2px 0 !important;
     }
-    
-    /* Buttons */
-    button, .button, [class*="button"] {
-      background: #f3f4f6 !important;
-      border: 1px solid #d1d5db !important;
-      border-radius: 4px !important;
-      padding: 6px 12px !important;
-      color: #374151 !important;
-      font-size: 12px !important;
-      cursor: pointer !important;
-    }
-    
-    /* Specific meal plan styling */
-    .weekly-calendar, #weekly-calendar {
-      background: #ffffff !important;
-      padding: 16px !important;
-      border: 2px solid #e5e7eb !important;
-      border-radius: 8px !important;
-    }
-    
-    /* Day columns */
-    .day-column, [class*="day"] {
+
+    /* EMPTY SLOT STYLING */
+    #pdf-weekly-calendar .empty-slot,
+    #pdf-weekly-calendar [class*="add-"],
+    #pdf-weekly-calendar [class*="empty"] {
       background: #f9fafb !important;
-      border: 1px solid #e5e7eb !important;
-      border-radius: 6px !important;
-      padding: 8px !important;
-      margin: 2px !important;
-    }
-    
-    /* Recipe cards specific styling */
-    .recipe-card, [class*="recipe"] {
-      background: #ffffff !important;
-      border: 2px solid #d1d5db !important;
+      border: 2px dashed #d1d5db !important;
       border-radius: 8px !important;
-      padding: 8px !important;
-      margin: 4px !important;
-      min-height: 80px !important;
-    }
-    
-    /* Meal type headers */
-    .meal-type, [class*="breakfast"], [class*="lunch"], [class*="dinner"], [class*="snacks"] {
-      background: #f3f4f6 !important;
-      color: #111827 !important;
-      font-weight: bold !important;
-      padding: 4px 8px !important;
-      border-radius: 4px !important;
-      margin: 2px 0 !important;
+      padding: 16px !important;
+      text-align: center !important;
+      color: #9ca3af !important;
       font-size: 12px !important;
+      min-height: 60px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
-    
-    /* Hide problematic elements */
-    script, style:not([data-temp-screenshot]), noscript, 
-    .tooltip, [data-tooltip], .popover, .modal,
-    .loading, .spinner, [class*="loading"], [class*="spinner"] {
+
+    /* HIDE INTERACTIVE ELEMENTS */
+    #pdf-weekly-calendar button,
+    #pdf-weekly-calendar .button,
+    #pdf-weekly-calendar [class*="button"],
+    #pdf-weekly-calendar .btn,
+    #pdf-weekly-calendar [class*="btn"],
+    #pdf-weekly-calendar .edit-btn,
+    #pdf-weekly-calendar .delete-btn,
+    #pdf-weekly-calendar .copy-btn,
+    #pdf-weekly-calendar [class*="hover:"],
+    #pdf-weekly-calendar .tooltip,
+    #pdf-weekly-calendar [data-tooltip],
+    #pdf-weekly-calendar .popover,
+    #pdf-weekly-calendar .modal,
+    #pdf-weekly-calendar .loading,
+    #pdf-weekly-calendar .spinner,
+    #pdf-weekly-calendar [class*="loading"],
+    #pdf-weekly-calendar [class*="spinner"],
+    #pdf-weekly-calendar script,
+    #pdf-weekly-calendar noscript {
       display: none !important;
+      visibility: hidden !important;
     }
-    
-    /* Override any remaining color functions */
-    [style*="lab("], [style*="lch("], [style*="oklab("], [style*="oklch("] {
-      color: #000000 !important;
-      background-color: #ffffff !important;
+
+    /* PRINT OPTIMIZATION */
+    @media print {
+      #pdf-weekly-calendar {
+        width: 1600px !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 60px !important;
+        page-break-inside: avoid !important;
+        background: white !important;
+      }
+      
+      #pdf-weekly-calendar .day-column {
+        page-break-inside: avoid !important;
+        min-height: 450px !important;
+      }
+      
+      #pdf-weekly-calendar .recipe-card {
+        page-break-inside: avoid !important;
+        margin-bottom: 8px !important;
+      }
+
+      #pdf-weekly-calendar img {
+        width: 65px !important;
+        height: 55px !important;
+      }
     }
   `;
   
-  document.head.appendChild(tempStyle);
+  // Add styles to document head
+  document.head.appendChild(professionalPDFStyles);
+  
+  // Add cloned calendar to PDF container
+  pdfContainer.appendChild(clonedCalendar);
+  document.body.appendChild(pdfContainer);
   
   try {
-    // Wait for content to stabilize
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait for layout stabilization
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // Ensure all images are loaded
-    const allImages = element.querySelectorAll('img');
-    console.log(`🖼️ Found ${allImages.length} images, ensuring they're loaded...`);
+    // Enhanced image loading with error handling
+    const allImages = pdfContainer.querySelectorAll('img');
+    console.log(`🖼️ Processing ${allImages.length} images for professional PDF...`);
     
     await Promise.all(Array.from(allImages).map((img) => {
       return new Promise<void>((resolve) => {
-        if (img.complete && img.naturalHeight !== 0) {
+        const htmlImg = img as HTMLImageElement;
+        
+        if (htmlImg.complete && htmlImg.naturalHeight !== 0) {
           resolve();
         } else {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          setTimeout(() => resolve(), 3000);
+          const handleLoad = () => {
+            console.log('✅ Image loaded successfully');
+            resolve();
+          };
+          
+          const handleError = () => {
+            console.log('❌ Image failed to load, creating placeholder');
+            // Create professional placeholder
+            const placeholder = document.createElement('div');
+            placeholder.style.cssText = `
+              width: 70px !important; 
+              height: 60px !important; 
+              background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important; 
+              border-radius: 8px !important; 
+              border: 2px solid #d1d5db !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              float: left !important;
+              margin: 0 12px 8px 0 !important;
+              font-size: 24px !important;
+              color: #9ca3af !important;
+            `;
+            placeholder.textContent = '🍽️';
+            htmlImg.parentNode?.replaceChild(placeholder, htmlImg);
+            resolve();
+          };
+          
+          htmlImg.addEventListener('load', handleLoad);
+          htmlImg.addEventListener('error', handleError);
+          
+          // Extended timeout for better image loading
+          setTimeout(() => {
+            htmlImg.removeEventListener('load', handleLoad);
+            htmlImg.removeEventListener('error', handleError);
+            handleError();
+          }, 20000);
         }
       });
     }));
     
-    console.log('✅ All images loaded, proceeding with capture');
+    console.log('✅ All images processed for professional PDF');
     
-    // Apply additional inline styles to ensure visibility
-    const elementsToStyle = element.querySelectorAll('*');
-    const originalStyles: Array<{element: HTMLElement, style: string}> = [];
-    
-    elementsToStyle.forEach(el => {
-      const htmlEl = el as HTMLElement;
-      originalStyles.push({element: htmlEl, style: htmlEl.getAttribute('style') || ''});
-      
-      // Remove any style attributes that might contain lab() functions
-      if (htmlEl.style.cssText.includes('lab(') || 
-          htmlEl.style.cssText.includes('lch(') || 
-          htmlEl.style.cssText.includes('oklab(') || 
-          htmlEl.style.cssText.includes('oklch(')) {
-        htmlEl.removeAttribute('style');
-      }
-    });
-    
-    // Create canvas with html2canvas
-    const canvas = await html2canvas(element, {
+    // Create ultra-high-quality canvas for professional output
+    const canvas = await html2canvas(pdfContainer, {
       backgroundColor: '#ffffff',
-      scale: 1.5,
+      scale: 4, // Ultra-high scale for professional quality
       useCORS: true,
       allowTaint: true,
       logging: false,
       removeContainer: false,
-      width: element.scrollWidth,
-      height: element.scrollHeight,
+      width: 1600,
+      height: Math.max(1200, pdfContainer.scrollHeight),
       scrollX: 0,
       scrollY: 0,
-      imageTimeout: 10000,
-      foreignObjectRendering: false,
+      imageTimeout: 30000,
+      foreignObjectRendering: true,
       ignoreElements: (el) => {
+        const ignoredTags = ['SCRIPT', 'STYLE', 'NOSCRIPT'];
+        const ignoredClasses = ['ignore-screenshot', 'btn', 'button', 'edit-btn', 'delete-btn', 'copy-btn'];
+        
         return (
-          el.tagName === 'SCRIPT' || 
-          el.tagName === 'STYLE' ||
-          el.tagName === 'NOSCRIPT' ||
-          el.classList?.contains('ignore-screenshot')
+          ignoredTags.includes(el.tagName) ||
+          ignoredClasses.some(cls => el.classList?.contains(cls)) ||
+          el.style.display === 'none' ||
+          el.style.visibility === 'hidden'
         );
       },
       onclone: (clonedDoc: Document) => {
-        console.log('🔧 Processing cloned document...');
+        console.log('🔧 Processing cloned document for PROFESSIONAL PDF...');
         
-        // Remove ALL original stylesheets from cloned document
-        const clonedSheets = clonedDoc.querySelectorAll('link[rel="stylesheet"], style:not([data-temp-screenshot])');
-        clonedSheets.forEach(sheet => sheet.remove());
+        // Remove any problematic color functions
+        const problematicElements = clonedDoc.querySelectorAll('[style*="lab("], [style*="lch("], [style*="oklab("], [style*="oklch("]');
+        problematicElements.forEach((el: HTMLElement) => {
+          el.removeAttribute('style');
+        });
         
-        // Ensure our temp style is the only one
-        const tempStyleInClone = clonedDoc.querySelector('style[data-temp-screenshot]');
-        if (!tempStyleInClone) {
-          const newTempStyle = clonedDoc.createElement('style');
-          newTempStyle.textContent = tempStyle.textContent;
-          clonedDoc.head.appendChild(newTempStyle);
-        }
+        // Ensure professional styles are applied
+        const professionalStylesClone = clonedDoc.createElement('style');
+        professionalStylesClone.textContent = professionalPDFStyles.textContent;
+        clonedDoc.head.appendChild(professionalStylesClone);
         
-        console.log('✅ Cloned document cleaned and styled');
-      }
-    });
-    
-    // Restore original styles
-    originalStyles.forEach(({element, style}) => {
-      if (style) {
-        element.setAttribute('style', style);
+        console.log('✅ Cloned document optimized for PROFESSIONAL PDF rendering');
       }
     });
     
     const format = options.format === 'jpeg' ? 'image/jpeg' : 'image/png';
-    const dataUrl = canvas.toDataURL(format, options.quality || 0.9);
+    const dataUrl = canvas.toDataURL(format, 0.98); // Ultra-high quality
     
-    console.log('✅ Full visual calendar captured successfully:', {
+    console.log('✅ PROFESSIONAL weekly meal plan PDF captured successfully:', {
       canvasWidth: canvas.width,
       canvasHeight: canvas.height,
-      dataSize: Math.round(dataUrl.length / 1024) + 'KB'
+      dataSize: Math.round(dataUrl.length / 1024) + 'KB',
+      quality: 'PROFESSIONAL GRADE - 4x Scale',
+      imageFormat: format
     });
     
     return dataUrl;
     
   } catch (error) {
-    console.error('❌ Full visual capture failed:', error);
+    console.error('❌ Professional PDF capture failed:', error);
     throw error;
   } finally {
-    // Always restore original stylesheets
-    allStylesheets.forEach((sheet, index) => {
-      (sheet as HTMLElement).style.display = originalDisplay[index];
-    });
-    
-    // Remove temp style
-    const tempStyleElement = document.querySelector('style[data-temp-screenshot]');
-    if (tempStyleElement) {
-      tempStyleElement.remove();
-    }
+    // Clean up
+    document.head.removeChild(professionalPDFStyles);
+    document.body.removeChild(pdfContainer);
   }
 }
 

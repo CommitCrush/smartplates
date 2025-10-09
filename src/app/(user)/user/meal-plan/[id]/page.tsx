@@ -481,6 +481,9 @@ export default function MealPlanningPage() {
 
   // Central meal plan storage - persists across navigation
   const [globalMealPlans, setGlobalMealPlans] = useState<Map<string, IMealPlan>>(new Map());
+  
+  // Force refresh key for weekly view persistence
+  const [forceRefreshKey, setForceRefreshKey] = useState(0);
 
   // Get or create meal plan for a specific week
   const getOrCreateMealPlan = (date: Date): IMealPlan => {
@@ -649,18 +652,97 @@ export default function MealPlanningPage() {
     loadMealPlan();
   }, [mealPlanId, session?.user?.email]);
 
-  // Function to refresh meal plan data
+  // Function to refresh meal plan data - Enhanced with Weekly View specific handling
   const refreshCurrentMealPlan = useCallback(() => {
     const weekKey = getWeekStartDate(currentDate).toISOString().split('T')[0];
     
     console.log('🔄 RefreshCurrentMealPlan called for week:', weekKey, 'current viewMode:', viewMode);
+    console.log('🔄 Current globalMealPlans keys:', Array.from(globalMealPlans.keys()));
+    console.log('🔄 Current mealPlan exists:', !!mealPlan, 'with meals:', mealPlan?.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0) || 0);
     
+    // WEEKLY VIEW SPECIFIC HANDLING - Force refresh from globalMealPlans
+    if (viewMode === 'weekly') {
+      console.log('📅 Weekly view detected - performing ENHANCED refresh');
+      
+      // Check ALL meal plans in global storage for this week
+      let foundPlan = null;
+      for (const [storedWeekKey, storedPlan] of globalMealPlans.entries()) {
+        if (storedWeekKey === weekKey) {
+          foundPlan = storedPlan;
+          break;
+        }
+      }
+      
+      if (foundPlan) {
+        const mealCount = foundPlan.days.reduce((total, day) => 
+          total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0
+        );
+        console.log(`✅ Weekly: Found plan in globalMealPlans with ${mealCount} meals`);
+        
+        // Force complete state update for weekly view
+        const clonedPlan = { 
+          ...foundPlan, 
+          days: foundPlan.days.map(day => ({
+            ...day,
+            breakfast: [...day.breakfast],
+            lunch: [...day.lunch],
+            dinner: [...day.dinner],
+            snacks: [...day.snacks]
+          }))
+        };
+        
+        setMealPlan(clonedPlan);
+        setMealPlans([clonedPlan]);
+        setForceRefreshKey(prev => prev + 1);
+        
+        console.log('✅ Weekly view state FORCE updated');
+        return;
+      }
+      
+      // Check if current meal plan is correct but not in global storage
+      if (mealPlan && mealPlan.weekStartDate) {
+        const mealPlanWeekKey = getWeekStartDate(mealPlan.weekStartDate).toISOString().split('T')[0];
+        if (mealPlanWeekKey === weekKey) {
+          const mealCount = mealPlan.days.reduce((total, day) => 
+            total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0
+          );
+          
+          if (mealCount > 0) {
+            console.log(`✅ Weekly: Current mealPlan has ${mealCount} meals for correct week`);
+            
+            // Add to global storage
+            const updatedGlobalPlans = new Map(globalMealPlans);
+            updatedGlobalPlans.set(weekKey, { ...mealPlan });
+            setGlobalMealPlans(updatedGlobalPlans);
+            
+            // Force refresh state
+            setMealPlan({ ...mealPlan });
+            setMealPlans([{ ...mealPlan }]);
+            setForceRefreshKey(prev => prev + 1);
+            
+            console.log('✅ Weekly: Added current plan to global storage and refreshed');
+            return;
+          }
+        }
+      }
+      
+      console.log('⚠️ Weekly: No data found for week:', weekKey, '- creating empty plan');
+      
+      // Create empty plan for weekly view if nothing exists
+      const emptyPlan = createEmptyMealPlan(session?.user?.email || 'current-user', getWeekStartDate(currentDate));
+      setMealPlan(emptyPlan);
+      setMealPlans([emptyPlan]);
+      setForceRefreshKey(prev => prev + 1);
+      return;
+    }
+    
+    // GENERAL VIEW HANDLING (Today/Monthly)
     // First check if we have the meal plan in global storage
     const existingPlan = globalMealPlans.get(weekKey);
     if (existingPlan) {
       console.log('🔄 Found in globalMealPlans for week:', weekKey, 'with', existingPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'meals');
       
-      // Force update local state
+      // Force update local state with proper synchronization
       setMealPlan(existingPlan);
       setMealPlans([existingPlan]);
       return;
@@ -672,10 +754,11 @@ export default function MealPlanningPage() {
       if (mealPlanWeekKey === weekKey) {
         console.log('🔄 Current mealPlan is already for the correct week:', weekKey);
         
-        // Add to global storage for consistency
+        // IMPORTANT: Add to global storage for persistence across view changes
         const updatedGlobalPlans = new Map(globalMealPlans);
         updatedGlobalPlans.set(weekKey, mealPlan);
         setGlobalMealPlans(updatedGlobalPlans);
+        console.log('🗃️ Added current meal plan to global storage for persistence');
         
         // Keep current meal plan
         setMealPlans([mealPlan]);
@@ -683,26 +766,48 @@ export default function MealPlanningPage() {
       }
     }
     
-    console.log('⚠️ No meal plan found for week:', weekKey, '- keeping current state or creating minimal plan');
+    // Look through all stored plans for cross-week functionality
+    for (const [storedWeekKey, storedPlan] of globalMealPlans.entries()) {
+      if (storedWeekKey === weekKey) {
+        console.log('🔄 Found matching week plan in global storage:', storedWeekKey);
+        setMealPlan(storedPlan);
+        setMealPlans([storedPlan]);
+        return;
+      }
+    }
     
-    // Only create a new plan if absolutely necessary 
-    if (!mealPlan) {
+    console.log('⚠️ No meal plan found for week:', weekKey, '- keeping current state');
+    
+    // Only create a new plan if absolutely necessary and we're in weekly mode
+    if (!mealPlan && viewMode === 'weekly') {
+      console.log('🆕 Creating new plan for weekly view only');
       const currentPlan = getOrCreateMealPlan(currentDate);
       setMealPlan(currentPlan);
       setMealPlans([currentPlan]);
     }
   }, [currentDate, globalMealPlans, mealPlan, viewMode]);
 
-  // Sync meal plan when view mode changes - placed after refreshCurrentMealPlan definition
+  // Sync meal plan when view mode changes - Enhanced for better data persistence
   useEffect(() => {
     if (isLoading || !session?.user?.email) return;
     
     console.log('🔄 View mode changed to:', viewMode, 'refreshing meal plan for current date:', currentDate.toDateString());
+    console.log('🔄 Current meal plan before refresh:', mealPlan ? `${mealPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0)} meals` : 'null');
+    console.log('🔄 Global plans available:', Array.from(globalMealPlans.keys()));
+    
+    // Ensure current meal plan is saved to global storage before switching views
+    if (mealPlan) {
+      const currentWeekKey = getWeekStartDate(mealPlan.weekStartDate).toISOString().split('T')[0];
+      const updatedGlobalPlans = new Map(globalMealPlans);
+      updatedGlobalPlans.set(currentWeekKey, mealPlan);
+      setGlobalMealPlans(updatedGlobalPlans);
+      console.log('🗃️ Saved current meal plan to global storage before view switch');
+    }
     
     // Delay execution to avoid conflicts with other state updates
     const timeoutId = setTimeout(() => {
       refreshCurrentMealPlan();
-    }, 100);
+    }, 150); // Slightly longer delay for better synchronization
     
     return () => clearTimeout(timeoutId);
   }, [viewMode]); // Only depend on viewMode to avoid infinite loops
@@ -760,7 +865,7 @@ export default function MealPlanningPage() {
     }
   };
 
-  // Navigation handlers
+  // Navigation handlers - Fixed to preserve existing meal plans
   const handlePrevious = () => {
     const newDate = new Date(currentDate);
     if (viewMode === 'today') {
@@ -771,7 +876,31 @@ export default function MealPlanningPage() {
       newDate.setMonth(newDate.getMonth() - 1);
     }
     setCurrentDate(newDate);
-    // Meal plan will be updated by useEffect
+    
+    // Get or create meal plan for the new date without creating empty plans
+    const targetWeekStart = getWeekStartDate(newDate);
+    const weekKey = targetWeekStart.toISOString().split('T')[0];
+    
+    console.log('📅 Navigation Previous: Moving to date', newDate.toDateString(), 'week key:', weekKey);
+    
+    // Check if we already have a meal plan for this week
+    const existingPlan = globalMealPlans.get(weekKey);
+    if (existingPlan) {
+      console.log('✅ Found existing plan for week:', weekKey, 'with', existingPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'meals');
+      setMealPlan(existingPlan);
+      setMealPlans([existingPlan]);
+    } else {
+      // Only create a plan if we're in weekly view and need one
+      if (viewMode === 'weekly') {
+        console.log('⚠️ Creating new plan for week navigation (no existing plan found)');
+        const newPlan = getOrCreateMealPlan(newDate);
+        setMealPlan(newPlan);
+        setMealPlans([newPlan]);
+      } else {
+        // For daily/monthly views, don't force create a plan
+        console.log('📅 No plan found for this week, keeping current state for', viewMode, 'view');
+      }
+    }
   };
 
   const handleNext = () => {
@@ -784,18 +913,52 @@ export default function MealPlanningPage() {
       newDate.setMonth(newDate.getMonth() + 1);
     }
     setCurrentDate(newDate);
-    // Meal plan will be updated by useEffect
+    
+    // Get or create meal plan for the new date without creating empty plans
+    const targetWeekStart = getWeekStartDate(newDate);
+    const weekKey = targetWeekStart.toISOString().split('T')[0];
+    
+    console.log('📅 Navigation Next: Moving to date', newDate.toDateString(), 'week key:', weekKey);
+    
+    // Check if we already have a meal plan for this week
+    const existingPlan = globalMealPlans.get(weekKey);
+    if (existingPlan) {
+      console.log('✅ Found existing plan for week:', weekKey, 'with', existingPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'meals');
+      setMealPlan(existingPlan);
+      setMealPlans([existingPlan]);
+    } else {
+      // Only create a plan if we're in weekly view and need one
+      if (viewMode === 'weekly') {
+        console.log('⚠️ Creating new plan for week navigation (no existing plan found)');
+        const newPlan = getOrCreateMealPlan(newDate);
+        setMealPlan(newPlan);
+        setMealPlans([newPlan]);
+      } else {
+        // For daily/monthly views, don't force create a plan
+        console.log('📅 No plan found for this week, keeping current state for', viewMode, 'view');
+      }
+    }
   };
 
   const handleToday = () => {
     const today = new Date();
     setCurrentDate(today);
     
-    // Update meal plan for current week
-    const weekStart = getWeekStartDate(today);
-    const newPlan = createEmptyMealPlan('current-user', weekStart);
-    setMealPlan(newPlan);
-    setMealPlans([newPlan]);
+    // Get existing meal plan for current week instead of creating new
+    const todayWeekStart = getWeekStartDate(today);
+    const weekKey = todayWeekStart.toISOString().split('T')[0];
+    
+    const existingPlan = globalMealPlans.get(weekKey);
+    if (existingPlan) {
+      console.log('✅ Found existing plan for current week:', weekKey);
+      setMealPlan(existingPlan);
+      setMealPlans([existingPlan]);
+    } else {
+      console.log('⚠️ No plan found for current week, creating new one');
+      const newPlan = getOrCreateMealPlan(today);
+      setMealPlan(newPlan);
+      setMealPlans([newPlan]);
+    }
   };
 
   // Get formatted date range text
@@ -1182,7 +1345,15 @@ export default function MealPlanningPage() {
                   <Button
                     variant={viewMode === 'weekly' ? 'default' : 'ghost'}
                     size="sm"
-                    onClick={() => { setViewMode('weekly'); refreshCurrentMealPlan(); }}
+                    onClick={() => { 
+                      console.log('🔄 Switching to weekly view...');
+                      setViewMode('weekly'); 
+                      // Enhanced refresh for weekly view
+                      setTimeout(() => {
+                        refreshCurrentMealPlan();
+                        setForceRefreshKey(prev => prev + 1);
+                      }, 100);
+                    }}
                     className={`flex items-center gap-2 ${
                       viewMode === 'weekly' 
                         ? 'bg-blue-600 text-white shadow-sm' 
@@ -1306,6 +1477,7 @@ export default function MealPlanningPage() {
           {viewMode === 'weekly' && mealPlan && (
             <div id="weekly-calendar-container" className="weekly-calendar-container">
               <WeeklyCalendar
+              key={`weekly-${mealPlan._id}-${forceRefreshKey}-${mealPlan.weekStartDate?.toISOString()}`}
               mealPlan={mealPlan}
               mealPlans={Array.from(globalMealPlans.values())}
               currentDate={currentDate}
@@ -1314,6 +1486,11 @@ export default function MealPlanningPage() {
                 updateMealPlan(updatedPlan);
               }}
               onAddMeal={handleAddMeal}
+              onEditMeal={(editSlot) => {
+                console.log('📝 WeeklyCalendar edit meal requested:', editSlot);
+                setSelectedSlot(editSlot);
+                setShowQuickAdd(true);
+              }}
               onRemoveMeal={handleRemoveMeal}
               onShowRecipe={handleShowRecipe}
               onCopyRecipe={handleCopyRecipe}

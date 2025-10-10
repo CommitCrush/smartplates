@@ -69,7 +69,7 @@ export default function AiRecipePage() {
     setAnalyzing(true);
     setError(null);
     setRecognizedIngredients([]);
-    addNotification('info', '🤖 AI analysiert Ihr Kühlschrank-Foto...');
+    addNotification('info', '🤖 AI is analyzing your fridge photo...');
     
     try {
       const res = await fetch('/api/ai/analyze-fridge', {
@@ -83,19 +83,19 @@ export default function AiRecipePage() {
         setError(data.error || 'No ingredients recognized.');
         setRecognizedIngredients([]);
         setShowConfirm(false);
-        addNotification('error', '❌ Keine Zutaten erkannt. Versuchen Sie ein klareres Foto.');
+        addNotification('error', '❌ No ingredients detected. Try a clearer photo.');
       } else {
         // Extract only ingredient names if objects are returned
         const names = data.data.ingredients.map((ing: any) => typeof ing === 'string' ? ing : ing.name).filter(Boolean);
         setRecognizedIngredients(names);
         setShowConfirm(true);
-        addNotification('success', `🎯 ${names.length} Zutaten erfolgreich erkannt!`);
+        addNotification('success', `🎯 ${names.length} ingredients successfully detected!`);
       }
     } catch (err) {
       setError('Image analysis failed. Please try again.');
       setRecognizedIngredients([]);
       setShowConfirm(false);
-      addNotification('error', '🚨 AI-Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.');
+      addNotification('error', '🚨 AI analysis failed. Please try again.');
     } finally {
       setAnalyzing(false);
     }
@@ -136,12 +136,12 @@ export default function AiRecipePage() {
         return;
       }
       setRecipesWithPagination(data.recipes || []);
-      addNotification('success', `🎉 ${data.recipes?.length || 0} Rezepte gefunden!`);
+      addNotification('success', `🎉 ${data.recipes?.length || 0} recipes found!`);
     } catch (err) {
       setError('Server error. Please try again later.');
       setRecipesWithPagination([]);
       setDebugResponse({ status: 500, error: err });
-      addNotification('error', 'Fehler beim Laden der Rezepte. Bitte versuchen Sie es erneut.');
+      addNotification('error', 'Error loading recipes. Please try again.');
     }
   };
 
@@ -155,7 +155,7 @@ export default function AiRecipePage() {
     if (recipes.length === 0) return;
     
     setIsFiltering(true);
-    addNotification('info', '🔍 Filter werden angewendet...');
+    addNotification('info', '🔍 Applying filters...');
     
     const searchIngredients = recognizedIngredients.length > 0 ? recognizedIngredients.join(',') : ingredients.join(',');
     const params = new URLSearchParams();
@@ -177,16 +177,16 @@ export default function AiRecipePage() {
         else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
         setError(errorMsg);
         setRecipesWithPagination([]);
-        addNotification('error', 'Keine Rezepte mit den aktuellen Filtern gefunden.');
+        addNotification('error', 'No recipes found with current filters.');
         return;
       }
       setRecipesWithPagination(data.recipes || []);
-      addNotification('success', `✅ ${data.recipes?.length || 0} Rezepte mit Filtern gefunden!`);
+      addNotification('success', `✅ ${data.recipes?.length || 0} recipes found with filters!`);
     } catch (err) {
       setError('Server error. Please try again later.');
       setRecipesWithPagination([]);
       setDebugResponse({ status: 500, error: err });
-      addNotification('error', 'Fehler beim Filtern. Bitte versuchen Sie es erneut.');
+      addNotification('error', 'Error applying filters. Please try again.');
     } finally {
       setIsFiltering(false);
     }
@@ -223,11 +223,11 @@ export default function AiRecipePage() {
   const handleRefreshRecipes = async () => {
     setIsRefreshing(true);
     setError(null);
-    addNotification('info', '🔄 Rezepte werden aktualisiert...');
+    addNotification('info', '🔄 Refreshing recipes...');
     
     try {
       await handleSearchRecipes();
-      addNotification('success', '✅ Rezepte erfolgreich aktualisiert!');
+      addNotification('success', '✅ Recipes successfully refreshed!');
       
       // Kurze Verzögerung für visuelles Feedback
       setTimeout(() => {
@@ -235,35 +235,9 @@ export default function AiRecipePage() {
       }, 500);
     } catch (error) {
       setIsRefreshing(false);
-      addNotification('error', 'Aktualisierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+      addNotification('error', 'Refresh failed. Please try again.');
     }
   };
-
-  // ✅ Notification Component
-  const NotificationBar = () => (
-    <div className="fixed top-20 right-4 z-50 space-y-2 max-w-sm">
-      {notifications.map(notification => (
-        <div
-          key={notification.id}
-          className={cn(
-            "px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform animate-in slide-in-from-right",
-            "flex items-center justify-between border-l-4",
-            notification.type === 'success' && "bg-green-600/90 text-white border-green-400 backdrop-blur-sm",
-            notification.type === 'error' && "bg-red-600/90 text-white border-red-400 backdrop-blur-sm",
-            notification.type === 'info' && "bg-blue-600/90 text-white border-blue-400 backdrop-blur-sm"
-          )}
-        >
-          <span className="text-sm font-medium">{notification.message}</span>
-          <button
-            onClick={() => removeNotification(notification.id)}
-            className="ml-3 text-white/80 hover:text-white text-lg leading-none"
-          >
-            ×
-          </button>
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#23293a] via-[#181e2a] to-[#232b3e] flex flex-col items-center justify-start">
@@ -272,7 +246,7 @@ export default function AiRecipePage() {
         <div className="flex flex-row items-stretch justify-center w-full max-w-5xl gap-0 h-[340px]">
           {/* Left: Headline & Button */}
           <div className="flex-1 flex flex-col justify-center items-start pl-16 pr-8 bg-transparent z-10">
-            <h1 className="text-5xl font-extrabold text-white mb-6 leading-tight drop-shadow-lg">
+                        <h1 className="text-5xl font-extrabold text-white mb-6 leading-tight drop-shadow-lg">
               Smart Fridge AI<br />
               <span className="text-primary">Your Fridge's Potential. Unlocked by AI!</span>
             </h1>
@@ -296,19 +270,19 @@ export default function AiRecipePage() {
           </div>
         </div>
       </div>
-      <div className="w-full max-w-4xl mx-auto px-0 py-10">
+            <div className="w-full max-w-4xl mx-auto px-0 py-10">
         {/* Section 1: Input options */}
-        <h2 className="text-2xl font-bold text-white mb-6"> Add your ingredients</h2>
+        <h2 className="text-2xl font-bold text-white mb-6">Add your ingredients</h2>
         <div className="flex gap-6 mb-8">
           <div className="flex-1 bg-[#232b3e] rounded-xl border border-gray-700 flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
             <div className="mb-2 text-3xl text-primary"><i className="lucide lucide-image" /></div>
-            <div className="font-semibold text-white mb-1">Scan your fridge or upload a fridge photo 📷</div>
+            <div className="font-semibold text-white mb-1">Scan your fridge or upload a photo 📷</div>
             <div className="text-gray-400 text-sm mb-4 text-center">Let AI analyze what's inside your fridge.</div>
             <ImageUpload image={image} onUpload={handleImageUpload} onNewImage={handleNewImage} analyzing={analyzing} />
           </div>
           <div className="flex-1 bg-[#232b3e] rounded-xl border border-gray-700 flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
             <div className="mb-2 text-3xl text-primary"><i className="lucide lucide-pencil" /></div>
-            <div className="font-semibold text-white mb-1">Enter what you have  ✍️</div>
+            <div className="font-semibold text-white mb-1">Enter what you have ✍️</div>
 
             <IngredientInput ingredients={ingredients} onChange={handleIngredientsChange} />
           </div>
@@ -316,7 +290,7 @@ export default function AiRecipePage() {
         </div>
         <div className="border-t border-gray-700 my-8" />
         {/* Section 2: Ingredient list and filters */}
-        <h2 className="text-2xl font-bold text-white mb-6"> Your current ingredient </h2>
+        <h2 className="text-2xl font-bold text-white mb-6">Your current ingredients</h2>
         <div className="flex flex-wrap gap-2 mb-6">
           {/* Ingredient chips: green, red, gray */}
           {[...ingredients, ...recognizedIngredients].map((ing, idx) => (
@@ -353,7 +327,7 @@ export default function AiRecipePage() {
                 if (inputEl) inputEl.focus();
               }}
             >
-              + Add ingredient your AI didn't recognize
+              + Add ingredients AI didn't recognize
             </button>
           </div>
         )}
@@ -361,6 +335,32 @@ export default function AiRecipePage() {
         <div className="flex flex-wrap gap-2 mb-6">
           <RecipeFilterDropdown filters={filters} onChange={handleFilterChange} />
         </div>
+        
+        {/* ✅ Notification Bar - Unter den Filtern für besseren Kontext */}
+        {notifications.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {notifications.map(notification => (
+              <div
+                key={notification.id}
+                className={cn(
+                  "px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform animate-in slide-in-from-top",
+                  "flex items-center justify-between border-l-4 mx-auto max-w-lg",
+                  notification.type === 'success' && "bg-green-600/90 text-white border-green-400",
+                  notification.type === 'error' && "bg-red-600/90 text-white border-red-400",
+                  notification.type === 'info' && "bg-blue-600/90 text-white border-blue-400"
+                )}
+              >
+                <span className="text-sm font-medium">{notification.message}</span>
+                <button
+                  onClick={() => removeNotification(notification.id)}
+                  className="ml-3 text-white/80 hover:text-white text-lg leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         {/* Error display */}
         {error && (
           <div className="mb-8 rounded-xl shadow-lg bg-gradient-to-r from-red-900 to-red-800 p-6">
@@ -368,37 +368,38 @@ export default function AiRecipePage() {
             <div className="text-red-300">{error}</div>
           </div>
         )}
-        {/* Main recipe search button */}
-        <div className="flex justify-center mb-4">
-          <button
-            className={cn(
-              "w-full max-w-md py-3 text-lg font-bold rounded-xl",
-              "bg-lime-400 text-gray-900 shadow-lg border border-lime-500",
-              "hover:bg-lime-500 hover:shadow-xl transition-all duration-150",
-              analyzing ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-            )}
-            onClick={handleSearchRecipes}
-            disabled={analyzing}
-          >
-            FIND RECIPES
-          </button>
-        </div>
+        
+        {/* Main recipe search button - nur anzeigen wenn keine Rezepte vorhanden */}
+        {recipes.length === 0 && (
+          <div className="flex justify-center mb-4">
+            <button
+              className={cn(
+                "w-full max-w-md py-3 text-lg font-bold rounded-xl",
+                "bg-lime-400 text-gray-900 shadow-lg border border-lime-500",
+                "hover:bg-lime-500 hover:shadow-xl transition-all duration-150",
+                analyzing ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+              )}
+              onClick={handleSearchRecipes}
+              disabled={analyzing}
+            >
+              FIND RECIPES
+            </button>
+          </div>
+        )}
         
         {/* Conditional text based on recipe state */}
         {recipes.length === 0 && !error && (
           <div className="text-center text-gray-400 text-sm mt-2">
             Upload ingredients to get started! Your next meal idea is waiting.
           </div>
-        )}
-        
-        {/* No recipes found message */}
+        )}        {/* No recipes found message */}
         {recipes.length === 0 && error && (
           <div className="text-center mt-6 p-6 rounded-xl bg-yellow-900/30 border border-yellow-600">
             <div className="text-yellow-200 text-lg font-semibold mb-2">
-              😔 Keine Rezepte gefunden
+              😔 No recipes found
             </div>
             <div className="text-yellow-300 text-sm mb-4">
-              Versuchen Sie andere Zutaten oder weniger Filter. Möglicherweise sind Ihre Zutaten sehr spezifisch.
+              Try different ingredients or fewer filters. Your ingredients might be very specific.
             </div>
             <button
               className="px-4 py-2 bg-yellow-600 text-yellow-900 rounded-lg font-semibold hover:bg-yellow-500 transition"
@@ -407,7 +408,7 @@ export default function AiRecipePage() {
                 setError(null);
               }}
             >
-              Filter zurücksetzen
+              Reset filters
             </button>
           </div>
         )}
@@ -415,14 +416,12 @@ export default function AiRecipePage() {
         {/* Recipe results with pagination */}
         {recipes.length > 0 && (
           <>
-            <div className="text-center text-green-400 text-sm mt-2 mb-6">
-              🎉 {recipes.length} Rezepte gefunden! Perfekt für Ihre Zutaten.
-              {totalPages > 1 && (
-                <span className="block text-gray-400 text-xs mt-1">
-                  Seite {currentPage} von {totalPages} (Zeige {currentRecipes.length} von {recipes.length} Rezepten)
-                </span>
-              )}
-            </div>
+            {/* Entferne den redundanten Erfolgstext - Notifications zeigen bereits die Information */}
+            {totalPages > 1 && (
+              <div className="text-center text-gray-400 text-xs mb-6">
+                Page {currentPage} of {totalPages} (Showing {currentRecipes.length} of {recipes.length} recipes)
+              </div>
+            )}
             
             {/* Display current page recipes */}
             <RecipeResults recipes={currentRecipes} />
@@ -441,7 +440,7 @@ export default function AiRecipePage() {
                       : "bg-gray-600 text-white hover:bg-gray-500"
                   )}
                 >
-                  ← Zurück
+                  ← Previous
                 </button>
 
                 {/* Page Numbers */}
@@ -473,11 +472,12 @@ export default function AiRecipePage() {
                       : "bg-gray-600 text-white hover:bg-gray-500"
                   )}
                 >
-                  Weiter →
+                  Next →
                 </button>
               </div>
             )}
             
+            {/* Action buttons - nur wenn Rezepte vorhanden */}
             <div className="flex justify-center mt-8 gap-4">
               <button
                 className={cn(
@@ -507,7 +507,7 @@ export default function AiRecipePage() {
                   setRecipesWithPagination([]);
                   setFilters({});
                   setError(null);
-                  addNotification('info', '🗑️ Alle Filter und Ergebnisse gelöscht');
+                  addNotification('info', '🗑️ All filters and results cleared');
                 }}
               >
                 🗑️ Clear All
@@ -516,18 +516,15 @@ export default function AiRecipePage() {
           </>
         )}
 
-        {/* ✅ Filter Loading Anzeige */}
+        {/* Filter Loading Anzeige */}
         {isFiltering && (
           <div className="flex justify-center mb-4">
             <div className="flex items-center gap-2 text-gray-400 text-sm bg-gray-800/50 px-4 py-2 rounded-lg">
               <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-r-transparent" />
-              Filter werden angewendet...
+              Applying filters...
             </div>
           </div>
         )}
-
-        {/* ✅ Notification Bar */}
-        <NotificationBar />
       </div>
     </div>
   );

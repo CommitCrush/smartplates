@@ -57,6 +57,8 @@ export function SavePlanModal({
       onClose();
     } catch (error) {
       console.error('Failed to save meal plan:', error);
+      // Show error to user
+      alert('Failed to save meal plan. Please try again.');
     }
   };
 

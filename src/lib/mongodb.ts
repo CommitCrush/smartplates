@@ -5,14 +5,22 @@
  */
 
 import mongoose from 'mongoose';
+import { config } from '@/config/env';
 
 declare global {
   var mongoose: any; // This must be a `var` and not a `let / const`
 }
 
-const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URL!;
+// Get the base URI and append the database name
+const MONGODB_BASE_URI = process.env.MONGODB_URI || process.env.MONGODB_URL!;
+const DATABASE_NAME = config.database.name;
 
-if (!MONGODB_URI) {
+// Ensure the URI includes the database name
+const MONGODB_URI = MONGODB_BASE_URI.endsWith('/') 
+  ? `${MONGODB_BASE_URI}${DATABASE_NAME}`
+  : `${MONGODB_BASE_URI}/${DATABASE_NAME}`;
+
+if (!MONGODB_BASE_URI) {
   throw new Error(
     'Please define the MONGODB_URI or MONGODB_URL environment variable inside .env.local'
   );

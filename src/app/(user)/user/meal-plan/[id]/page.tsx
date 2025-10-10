@@ -521,8 +521,21 @@ export default function MealPlanningPage() {
     return newPlan;
   };
 
-  // Update a specific meal plan and sync with global storage
-  const updateMealPlan = (updatedPlan: IMealPlan) => {
+  // Update a specific meal plan and sync with global storage + auto-save to database
+  const updateMealPlan = async (updatedPlan: IMealPlan) => {
+    console.log('🚀 updateMealPlan called with plan:', {
+      id: updatedPlan._id,
+      title: updatedPlan.title,
+      totalMeals: updatedPlan.days.reduce((total, day) => 
+        total + (day.breakfast?.length || 0) + (day.lunch?.length || 0) + 
+        (day.dinner?.length || 0) + (day.snacks?.length || 0), 0
+      ),
+      daysWithMeals: updatedPlan.days.filter(day => 
+        (day.breakfast?.length || 0) + (day.lunch?.length || 0) + 
+        (day.dinner?.length || 0) + (day.snacks?.length || 0) > 0
+      ).length
+    });
+
     // Ensure weekStartDate is a Date object
     const weekStartDate = updatedPlan.weekStartDate instanceof Date 
       ? updatedPlan.weekStartDate 
@@ -531,7 +544,7 @@ export default function MealPlanningPage() {
     const weekKey = weekStartDate.toISOString().split('T')[0];
     console.log('🔄 Updating meal plan for week:', weekKey, 'with', updatedPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0), 'total meals');
     
-    // Update global storage
+    // Update global storage first (for immediate UI update)
     const updatedGlobalPlans = new Map(globalMealPlans);
     updatedGlobalPlans.set(weekKey, updatedPlan);
     setGlobalMealPlans(updatedGlobalPlans);
@@ -550,7 +563,128 @@ export default function MealPlanningPage() {
       setMealPlan(updatedPlan);
       setMealPlans([updatedPlan]);
     }
+    
+    // AUTO-SAVE TO DATABASE: Save changes immediately to MongoDB
+    try {
+      console.log('💾 Starting auto-save process...', {
+        planId: updatedPlan._id,
+        hasId: !!updatedPlan._id,
+        idType: typeof updatedPlan._id
+      });
+
+      if (updatedPlan._id && updatedPlan._id !== 'temp-id') {
+        console.log('💾 Auto-saving existing meal plan to database...', updatedPlan._id);
+        
+        // Prepare meal plan data for API - only send updateable fields
+        const mealPlanData = {
+          title: updatedPlan.title,
+          days: updatedPlan.days.map(day => ({
+            date: day.date instanceof Date ? day.date.toISOString() : day.date,
+            breakfast: day.breakfast || [],
+            lunch: day.lunch || [],
+            dinner: day.dinner || [],
+            snacks: day.snacks || [],
+            dailyNotes: day.dailyNotes
+          })),
+          tags: updatedPlan.tags || [],
+          totalCalories: updatedPlan.totalCalories,
+          shoppingListGenerated: updatedPlan.shoppingListGenerated || false
+        };
+
+        console.log('📡 Sending PUT request to /api/meal-plans/' + updatedPlan._id, {
+          totalDays: mealPlanData.days.length,
+          totalMealsToSave: mealPlanData.days.reduce((total, day) => 
+            total + (day.breakfast?.length || 0) + (day.lunch?.length || 0) + 
+            (day.dinner?.length || 0) + (day.snacks?.length || 0), 0
+          )
+        });
+
+        const response = await fetch(`/api/meal-plans/${updatedPlan._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(mealPlanData)
+        });
+
+        console.log('📡 PUT Response status:', response.status, response.statusText);
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Meal plan auto-saved successfully to database');
+          console.log('✅ Database response:', result);
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Failed to auto-save meal plan to database:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText
+          });
+        }
+      } else if (updatedPlan._id === 'temp-id' || !updatedPlan._id) {
+        // Create new meal plan in database
+        console.log('🆕 Creating new meal plan in database...');
+        
+        const createData = {
+          weekStartDate: updatedPlan.weekStartDate instanceof Date 
+            ? updatedPlan.weekStartDate.toISOString() 
+            : updatedPlan.weekStartDate,
+          title: updatedPlan.title,
+          days: updatedPlan.days.map(day => ({
+            ...day,
+            date: day.date instanceof Date ? day.date.toISOString() : day.date
+          }))
+        };
+
+        console.log('📡 Sending POST request to /api/meal-plans', createData);
+
+        const response = await fetch('/api/meal-plans', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(createData)
+        });
+
+        console.log('📡 POST Response status:', response.status, response.statusText);
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ New meal plan created in database with ID:', result.data._id);
+          
+          // Update the plan with the real database ID
+          const savedPlan = {
+            ...updatedPlan,
+            _id: result.data._id
+          };
+          
+          // Update both global and local storage with the database ID
+          const finalGlobalPlans = new Map(globalMealPlans);
+          finalGlobalPlans.set(weekKey, savedPlan);
+          setGlobalMealPlans(finalGlobalPlans);
+          
+          if (mealPlan && (mealPlan._id === updatedPlan._id || weekKey === currentWeekKey)) {
+            setMealPlan(savedPlan);
+            setMealPlans([savedPlan]);
+          }
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Failed to create meal plan in database:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText
+          });
+        }
+      } else {
+        console.warn('⚠️ Skipping auto-save - no valid meal plan ID');
+      }
+    } catch (error) {
+      console.error('❌ Auto-save error:', error);
+      // Don't block the UI - just log the error
+    }
   };
+
+
 
   // Load meal plan by ID from URL parameter
   useEffect(() => {
@@ -778,13 +912,8 @@ export default function MealPlanningPage() {
     
     console.log('⚠️ No meal plan found for week:', weekKey, '- keeping current state');
     
-    // Only create a new plan if absolutely necessary and we're in weekly mode
-    if (!mealPlan && viewMode === 'weekly') {
-      console.log('🆕 Creating new plan for weekly view only');
-      const currentPlan = getOrCreateMealPlan(currentDate);
-      setMealPlan(currentPlan);
-      setMealPlans([currentPlan]);
-    }
+    // Note: Weekly mode is handled in the earlier conditional block above
+    // This section handles today/monthly views only
   }, [currentDate, globalMealPlans, mealPlan, viewMode]);
 
   // Sync meal plan when view mode changes - Enhanced for better data persistence
@@ -985,12 +1114,14 @@ export default function MealPlanningPage() {
 
   // Meal management handlers
   const handleAddMeal = (slot: MealPlanningSlot) => {
+    console.log('🍽️ handleAddMeal called with slot:', slot);
     setSelectedSlot(slot);
     setShowQuickAdd(true);
   };
 
   // Recipe modal handlers
   const handleShowRecipe = (meal: MealSlot) => {
+    console.log('👁️ handleShowRecipe called for meal:', meal.recipeName);
     setSelectedRecipe(meal);
     setShowRecipeModal(true);
   };
@@ -1002,6 +1133,8 @@ export default function MealPlanningPage() {
 
   // Handle adding meal from MonthlyCalendar (date-based)
   const handleAddMealFromDate = (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
+    console.log('📅 handleAddMealFromDate called:', { date, mealType });
+    
     // Normalize the date to avoid timezone issues
     const normalizedDate = new Date(date);
     normalizedDate.setHours(0, 0, 0, 0);
@@ -1010,7 +1143,7 @@ export default function MealPlanningPage() {
     const weekStart = getWeekStartDate(normalizedDate);
     const daysDiff = Math.floor((normalizedDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
     
-    console.log('Adding meal for date:', normalizedDate.toDateString(), 'weekStart:', weekStart.toDateString(), 'daysDiff:', daysDiff);
+    console.log('📅 Adding meal for date:', normalizedDate.toDateString(), 'weekStart:', weekStart.toDateString(), 'daysDiff:', daysDiff);
     
     // Ensure we have a meal plan for this week
     const weekKey = weekStart.toISOString().split('T')[0];
@@ -1035,7 +1168,9 @@ export default function MealPlanningPage() {
     setShowQuickAdd(true);
   };
 
-  const handleRemoveMeal = (planId: string, day: number, mealType: string, index: number) => {
+  const handleRemoveMeal = async (planId: string, day: number, mealType: string, index: number) => {
+    console.log('🗑️ handleRemoveMeal called:', { planId, day, mealType, index });
+    
     // Find the correct meal plan (could be from any week if called from monthly view)
     const targetPlan = mealPlan;
     
@@ -1053,10 +1188,10 @@ export default function MealPlanningPage() {
       meals.splice(index, 1);
       updatedPlan.updatedAt = new Date();
       
-      console.log('Removing meal from day:', day, 'date:', targetDay.date.toDateString(), 'mealType:', mealType);
+      console.log('🗑️ Removing meal from day:', day, 'date:', targetDay.date.toDateString(), 'mealType:', mealType);
       
-      // Update meal plan using centralized function
-      updateMealPlan(updatedPlan);
+      // Update meal plan using centralized function with auto-save
+      await updateMealPlan(updatedPlan);
     }
   };
 
@@ -1118,7 +1253,7 @@ export default function MealPlanningPage() {
         updatedPlan.updatedAt = new Date();
         
         // Update meal plan using centralized function
-        updateMealPlan(updatedPlan);
+        await updateMealPlan(updatedPlan);
         
         console.log('Meal added successfully to', targetDay.date.toDateString());
         console.log('Global meal plans now contain:', Array.from(globalMealPlans.keys()));
@@ -1481,9 +1616,17 @@ export default function MealPlanningPage() {
               mealPlan={mealPlan}
               mealPlans={Array.from(globalMealPlans.values())}
               currentDate={currentDate}
-              onMealPlanChange={(updatedPlan) => {
-                console.log('WeeklyCalendar onMealPlanChange called');
-                updateMealPlan(updatedPlan);
+              onMealPlanChange={async (updatedPlan) => {
+                console.log('🔔 WeeklyCalendar onMealPlanChange called with plan:', {
+                  id: updatedPlan._id,
+                  title: updatedPlan.title,
+                  totalMeals: updatedPlan.days.reduce((total, day) => 
+                    total + (day.breakfast?.length || 0) + (day.lunch?.length || 0) + 
+                    (day.dinner?.length || 0) + (day.snacks?.length || 0), 0
+                  )
+                });
+                await updateMealPlan(updatedPlan);
+                console.log('✅ WeeklyCalendar onMealPlanChange updateMealPlan completed');
               }}
               onAddMeal={handleAddMeal}
               onEditMeal={(editSlot) => {

@@ -335,32 +335,6 @@ export default function AiRecipePage() {
         <div className="flex flex-wrap gap-2 mb-6">
           <RecipeFilterDropdown filters={filters} onChange={handleFilterChange} />
         </div>
-        
-        {/* ✅ Notification Bar - Unter den Filtern für besseren Kontext */}
-        {notifications.length > 0 && (
-          <div className="mb-6 space-y-2">
-            {notifications.map(notification => (
-              <div
-                key={notification.id}
-                className={cn(
-                  "px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform animate-in slide-in-from-top",
-                  "flex items-center justify-between border-l-4 mx-auto max-w-lg",
-                  notification.type === 'success' && "bg-green-600/90 text-white border-green-400",
-                  notification.type === 'error' && "bg-red-600/90 text-white border-red-400",
-                  notification.type === 'info' && "bg-blue-600/90 text-white border-blue-400"
-                )}
-              >
-                <span className="text-sm font-medium">{notification.message}</span>
-                <button
-                  onClick={() => removeNotification(notification.id)}
-                  className="ml-3 text-white/80 hover:text-white text-lg leading-none"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
         {/* Error display */}
         {error && (
           <div className="mb-8 rounded-xl shadow-lg bg-gradient-to-r from-red-900 to-red-800 p-6">
@@ -391,6 +365,32 @@ export default function AiRecipePage() {
         {recipes.length === 0 && !error && (
           <div className="text-center text-gray-400 text-sm mt-2">
             Upload ingredients to get started! Your next meal idea is waiting.
+          </div>
+        )}
+        
+        {/* ✅ Notifications wenn keine Rezepte vorhanden (z.B. während AI-Analyse) */}
+        {recipes.length === 0 && notifications.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {notifications.map(notification => (
+              <div
+                key={notification.id}
+                className={cn(
+                  "px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform animate-in slide-in-from-top",
+                  "flex items-center justify-between border-l-4 mx-auto max-w-lg",
+                  notification.type === 'success' && "bg-green-600/90 text-white border-green-400",
+                  notification.type === 'error' && "bg-red-600/90 text-white border-red-400",
+                  notification.type === 'info' && "bg-blue-600/90 text-white border-blue-400"
+                )}
+              >
+                <span className="text-sm font-medium">{notification.message}</span>
+                <button
+                  onClick={() => removeNotification(notification.id)}
+                  className="ml-3 text-white/80 hover:text-white text-lg leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
         )}        {/* No recipes found message */}
         {recipes.length === 0 && error && (
@@ -423,8 +423,39 @@ export default function AiRecipePage() {
               </div>
             )}
             
-            {/* Display current page recipes */}
-            <RecipeResults recipes={currentRecipes} />
+            {/* ✅ Layout mit Notifications neben Rezepten */}
+            <div className="flex gap-6 items-start">
+              {/* Recipe Results - Hauptinhalt */}
+              <div className="flex-1">
+                <RecipeResults recipes={currentRecipes} />
+              </div>
+              
+              {/* Notifications Sidebar - Neben den Rezepten */}
+              {notifications.length > 0 && (
+                <div className="w-80 space-y-2 sticky top-20">
+                  {notifications.map(notification => (
+                    <div
+                      key={notification.id}
+                      className={cn(
+                        "px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform animate-in slide-in-from-right",
+                        "flex items-center justify-between border-l-4",
+                        notification.type === 'success' && "bg-green-600/90 text-white border-green-400",
+                        notification.type === 'error' && "bg-red-600/90 text-white border-red-400",
+                        notification.type === 'info' && "bg-blue-600/90 text-white border-blue-400"
+                      )}
+                    >
+                      <span className="text-sm font-medium">{notification.message}</span>
+                      <button
+                        onClick={() => removeNotification(notification.id)}
+                        className="ml-3 text-white/80 hover:text-white text-lg leading-none"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             
             {/* Pagination Controls */}
             {totalPages > 1 && (

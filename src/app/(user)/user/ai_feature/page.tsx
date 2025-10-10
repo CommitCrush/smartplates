@@ -16,6 +16,22 @@ export default function AiRecipePage() {
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const recipesPerPage = 6;
+
+  // Pagination Logic
+  const totalPages = Math.ceil(recipes.length / recipesPerPage);
+  const startIndex = (currentPage - 1) * recipesPerPage;
+  const endIndex = startIndex + recipesPerPage;
+  const currentRecipes = recipes.slice(startIndex, endIndex);
+
+  // Reset pagination when recipes change
+  const setRecipesWithPagination = (newRecipes: any[]) => {
+    setRecipes(newRecipes);
+    setCurrentPage(1); // Reset to first page
+  };
 
   // Handle manual ingredient input
   const handleIngredientsChange = (newIngredients: string[]) => {
@@ -68,7 +84,7 @@ export default function AiRecipePage() {
 
   // Handle recipe search (manual or confirmed ingredients)
   const handleSearchRecipes = async () => {
-    setRecipes([]);
+    setRecipesWithPagination([]);
     setError(null);
     setDebugResponse(null);
     const searchIngredients = [...ingredients, ...recognizedIngredients].join(',');
@@ -87,13 +103,13 @@ export default function AiRecipePage() {
         if (data.error) errorMsg = data.error;
         else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
         setError(errorMsg);
-        setRecipes([]);
+        setRecipesWithPagination([]);
         return;
       }
-      setRecipes(data.recipes || []);
+      setRecipesWithPagination(data.recipes || []);
     } catch (err) {
       setError('Server error. Please try again later.');
-      setRecipes([]);
+      setRecipesWithPagination([]);
       setDebugResponse({ status: 500, error: err });
     }
   };
@@ -125,14 +141,14 @@ export default function AiRecipePage() {
           if (data.error) errorMsg = data.error;
           else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
           setError(errorMsg);
-          setRecipes([]);
+          setRecipesWithPagination([]);
           return;
         }
-        setRecipes(data.recipes || []);
+        setRecipesWithPagination(data.recipes || []);
       })
       .catch((err) => {
         setError('Server error. Please try again later.');
-        setRecipes([]);
+        setRecipesWithPagination([]);
         setDebugResponse({ status: 500, error: err });
       });
   };
@@ -142,9 +158,26 @@ export default function AiRecipePage() {
     setImage(null);
     setRecognizedIngredients([]);
     setAnalyzing(false);
-    setRecipes([]);
+    setRecipesWithPagination([]);
     setShowConfirm(false);
     setError(null);
+  };
+
+  // Pagination Navigation Functions
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToPage = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
   };
 
   return (
@@ -294,13 +327,72 @@ export default function AiRecipePage() {
           </div>
         )}
         
-        {/* Recipe results */}
+        {/* Recipe results with pagination */}
         {recipes.length > 0 && (
           <>
             <div className="text-center text-green-400 text-sm mt-2 mb-6">
               🎉 {recipes.length} Rezepte gefunden! Perfekt für Ihre Zutaten.
+              {totalPages > 1 && (
+                <span className="block text-gray-400 text-xs mt-1">
+                  Seite {currentPage} von {totalPages} (Zeige {currentRecipes.length} von {recipes.length} Rezepten)
+                </span>
+              )}
             </div>
-            <RecipeResults recipes={recipes} />
+            
+            {/* Display current page recipes */}
+            <RecipeResults recipes={currentRecipes} />
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 mt-8 mb-6">
+                {/* Previous Button */}
+                <button
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                  className={cn(
+                    "px-4 py-2 rounded-lg font-semibold transition",
+                    currentPage === 1
+                      ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                      : "bg-gray-600 text-white hover:bg-gray-500"
+                  )}
+                >
+                  ← Zurück
+                </button>
+
+                {/* Page Numbers */}
+                <div className="flex gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => goToPage(pageNum)}
+                      className={cn(
+                        "w-10 h-10 rounded-lg font-semibold transition",
+                        currentPage === pageNum
+                          ? "bg-primary text-white"
+                          : "bg-gray-600 text-white hover:bg-gray-500"
+                      )}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  className={cn(
+                    "px-4 py-2 rounded-lg font-semibold transition",
+                    currentPage === totalPages
+                      ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                      : "bg-gray-600 text-white hover:bg-gray-500"
+                  )}
+                >
+                  Weiter →
+                </button>
+              </div>
+            )}
+            
             <div className="flex justify-center mt-8">
               <button
                 className="px-6 py-3 rounded-xl bg-accent text-white font-bold hover:bg-accent/80 transition"

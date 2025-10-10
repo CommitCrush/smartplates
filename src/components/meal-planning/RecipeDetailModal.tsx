@@ -36,12 +36,17 @@ export function RecipeDetailModal({ isOpen, meal, onClose }: RecipeDetailModalPr
         <div className="space-y-4">
           {meal.image && (
             <Image 
-              src={meal.image} 
+              src={meal.image || '/placeholder-recipe.svg'} 
               alt={meal.recipeName || 'Recipe'} 
               width={400}
               height={192}
               className="w-full h-48 object-cover rounded-lg"
               sizes="(max-width: 768px) 100vw, 400px"
+              unoptimized={meal.image?.includes('spoonacular.com')}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/placeholder-recipe.svg';
+              }}
             />
           )}
           

@@ -1,220 +1,195 @@
-/**
- * Quick Add Recipe Modal
- * 
- * Modal for searching and adding recipes to meal slots
- * Uses mock recipe service until real recipe system is ready
- */
-
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import Image from 'next/image';
-import { 
-  Search, 
-  Clock, 
-  Users, 
-  Filter, 
-  Plus,
-  Star,
-  Utensils 
-} from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-// Removed mockRecipeService; use unified /api/recipes endpoint
+import { useAllRecipes } from '@/hooks/useRecipes';
 import { Recipe } from '@/types/recipe';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
-// ========================================
-// Types
-// ========================================
-
-// Using central Recipe type from @/types/recipe
+import { Search, Plus, ChevronDown, Clock, Users } from 'lucide-react';
+import Image from 'next/image';
+import { Pagination } from '@/components/ui/pagination';
 
 interface QuickAddRecipeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddRecipe: (recipeId: string, recipeName: string, servings?: number, cookingTime?: number, image?: string) => void;
-  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snacks';
-  dayName?: string;
+  onAddRecipe: (id: string, title: string, servings: number, cookTime: number, image?: string) => void;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks';
+  dayName: string;
   className?: string;
 }
-
-// ========================================
-// Main Component
-// ========================================
 
 export function QuickAddRecipeModal({
   isOpen,
   onClose,
   onAddRecipe,
-  mealType = 'breakfast',
-  dayName = 'today',
-  className
+  mealType,
+  dayName,
+  className,
 }: QuickAddRecipeModalProps) {
-  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [maxCookingTime, setMaxCookingTime] = useState<string>('all');
-  const [selectedDiet, setSelectedDiet] = useState<string>('all');
-  const [selectedAllergy, setSelectedAllergy] = useState<string>('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
-  const [tagsFilter, setTagsFilter] = useState<string>('');
-  const [quickAndEasy, setQuickAndEasy] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedDiet, setSelectedDiet] = useState('');
+  const [selectedAllergy, setSelectedAllergy] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const [maxReadyTime, setMaxReadyTime] = useState<string | undefined>(undefined);
+  const [page, setPage] = useState(1);
 
-  // Debounce search query
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [difficultyDropdownOpen, setDifficultyDropdownOpen] = useState(false);
+  const [dietDropdownOpen, setDietDropdownOpen] = useState(false);
+  const [allergyDropdownOpen, setAllergyDropdownOpen] = useState(false);
+
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const difficultyDropdownRef = useRef<HTMLDivElement>(null);
+  const dietDropdownRef = useRef<HTMLDivElement>(null);
+  const allergyDropdownRef = useRef<HTMLDivElement>(null);
+
+  const categories = [
+    { value: '', label: 'All Categories' },
+    { value: 'breakfast', label: 'Breakfast' },
+    { value: 'main course', label: 'Lunch' },
+    { value: 'dinner', label: 'Dinner' },
+    { value: 'dessert', label: 'Dessert' },
+    { value: 'soup', label: 'Soup' },
+  ];
+
+  const difficulties = [
+    { value: '', label: 'All Difficulties' },
+    { value: 'easy', label: 'Easy' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'hard', label: 'Hard' },
+  ];
+
+  const diets = [
+    { value: '', label: 'All Diets' },
+    { value: 'vegetarian', label: 'Vegetarian' },
+    { value: 'vegan', label: 'Vegan' },
+    { value: 'gluten free', label: 'Gluten-Free' },
+    { value: 'ketogenic', label: 'Ketogenic' },
+    { value: 'paleo', label: 'Paleo' },
+    { value: 'primal', label: 'Primal' },
+    { value: 'whole30', label: 'Whole30' },
+  ];
+
+  const allergies = [
+    { value: '', label: 'Allergies (None)' },
+    { value: 'dairy', label: 'Dairy' },
+    { value: 'egg', label: 'Egg' },
+    { value: 'gluten', label: 'Gluten' },
+    { value: 'peanut', label: 'Peanut' },
+    { value: 'seafood', label: 'Seafood' },
+    { value: 'sesame', label: 'Sesame' },
+    { value: 'soy', label: 'Soy' },
+    { value: 'sulfite', label: 'Sulfite' },
+    { value: 'tree nut', label: 'Tree Nut' },
+    { value: 'wheat', label: 'Wheat' },
+  ];
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 300);
+    if (selectedDifficulty === 'easy') {
+      setMaxReadyTime('15');
+    } else if (selectedDifficulty === 'medium') {
+      setMaxReadyTime('30');
+    } else {
+      setMaxReadyTime(undefined);
+    }
+    setPage(1);
+  }, [selectedDifficulty]);
 
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-  const mealTypeEmoji: Record<string, string> = {
-    breakfast: '🍳',
-    lunch: '🥪',
-    dinner: '🍽️',
-    snacks: '🍪',
-  };
-
-  // Fetch from unified recipes API (Mongo-first with server fallback)
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   useEffect(() => {
-    const fetchRecipes = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-        if (debouncedSearchQuery) params.set('search', debouncedSearchQuery);
-        if (selectedCategory !== 'all') params.set('type', selectedCategory);
-        if (selectedDiet !== 'all') params.set('diet', selectedDiet);
-        if (selectedAllergy !== 'all') params.set('intolerances', selectedAllergy);
-        if (maxCookingTime !== 'all') params.set('maxReadyTime', String(maxCookingTime));
-        params.set('limit', '24');
-        const res = await fetch(`/api/recipes?${params.toString()}`);
-        if (!res.ok) throw new Error(`Failed: ${res.status}`);
-        const data = await res.json();
-        setRecipes(Array.isArray(data.recipes) ? data.recipes : []);
-      } catch {
-        setRecipes([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRecipes();
-  }, [debouncedSearchQuery, selectedCategory, selectedDiet, selectedAllergy, maxCookingTime]);
-  type ExtendedRecipe = Recipe & { _id?: string; difficulty?: string; cookingMinutes?: number; spoonacularScore?: number };
+    setPage(1);
+  }, [searchQuery, selectedCategory, selectedDiet, selectedAllergy]);
 
-  // Apply client-side filters that aren't handled by server
-  useEffect(() => {
-    if (!recipes || recipes.length === 0) {
-      setFilteredRecipes([]);
-      return;
-    }
+  const fetchOptions = useMemo(
+    () => ({
+      type: selectedCategory,
+      diet: selectedDiet,
+      intolerances: selectedAllergy,
+      ...(maxReadyTime && { maxReadyTime }),
+      number: '15',
+      page: String(page),
+    }),
+    [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, page]
+  );
+
+  const { recipes, loading, error, total } = useAllRecipes(searchQuery, fetchOptions);
+
+  const filteredRecipes = useMemo(() => {
+    if (!selectedDifficulty) return recipes;
     
-  let filtered: ExtendedRecipe[] = [...(recipes as ExtendedRecipe[])];
-    
-    // Filter by meal type using dishTypes from Spoonacular (client-side as fallback)
-    if (mealType && mealType !== 'snacks') {
-      filtered = filtered.filter(recipe => 
-        recipe.dishTypes?.some((type: string) => 
-          type.toLowerCase().includes(mealType) ||
-          (mealType === 'breakfast' && (type.toLowerCase().includes('morning meal') || type.toLowerCase().includes('brunch'))) ||
-          (mealType === 'lunch' && (type.toLowerCase().includes('main course') || type.toLowerCase().includes('lunch'))) ||
-          (mealType === 'dinner' && (type.toLowerCase().includes('main course') || type.toLowerCase().includes('dinner')))
-        ) || !recipe.dishTypes || recipe.dishTypes.length === 0
-      );
-    }
+    return recipes.filter((recipe) => {
+      const cookTime = recipe.readyInMinutes || 0;
+      
+      if (selectedDifficulty === 'easy') return true;
+      if (selectedDifficulty === 'medium') return cookTime >= 15 && cookTime <= 30;
+      if (selectedDifficulty === 'hard') return cookTime > 30;
+      
+      return true;
+    });
+  }, [recipes, selectedDifficulty]);
 
-
-    // Filter by difficulty (client-side)
-    if (selectedDifficulty !== 'all') {
-      filtered = filtered.filter((recipe) => {
-        const diff = recipe.difficulty as string | undefined;
-        return diff?.toLowerCase() === selectedDifficulty.toLowerCase() || (!diff && selectedDifficulty === 'easy');
-      });
-    }
-    
-    // Filter by tags (client-side)
-    if (tagsFilter.trim()) {
-      const tags = tagsFilter.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean);
-      filtered = filtered.filter(recipe => 
-        tags.some(tag => 
-          recipe.title?.toLowerCase().includes(tag) ||
-          recipe.summary?.toLowerCase().includes(tag) ||
-          recipe.dishTypes?.some((type: string) => type.toLowerCase().includes(tag)) ||
-          recipe.diets?.some((diet: string) => diet.toLowerCase().includes(tag))
-        )
-      );
-    }
-    
-    // Filter for quick & easy (client-side as fallback)
-    if (quickAndEasy) {
-      filtered = filtered.filter((recipe) => {
-        const cooking = recipe.cookingMinutes as number | undefined;
-        return (
-          (recipe.readyInMinutes && recipe.readyInMinutes <= 30) ||
-          (typeof cooking === 'number' && cooking <= 30) ||
-          (!recipe.readyInMinutes && cooking == null)
-        );
-      });
-    }
-    
-  setFilteredRecipes(filtered);
-  }, [recipes, selectedAllergy, selectedDifficulty, tagsFilter, quickAndEasy, mealType]);
-
-  // Helper: Clear all filters
-  const clearFilters = () => {
-    setSearchQuery('');
-    setDebouncedSearchQuery('');
-    setSelectedCategory('all');
-    setMaxCookingTime('all');
-    setSelectedDiet('all');
-    setSelectedAllergy('all');
-    setSelectedDifficulty('all');
-    setTagsFilter('');
-    setQuickAndEasy(false);
-  };
-
-  // Helper: Suggest top 5 recipes
-  const suggestedRecipes = useMemo<ExtendedRecipe[]>(() => {
-    return (recipes as ExtendedRecipe[]).slice(0, 5);
-  }, [recipes]);
-
-  // Helper: Add recipe
-  const handleAddRecipe = (recipe: ExtendedRecipe) => {
-    console.log('Adding recipe to calendar:', recipe.title);
+  const handleAddRecipe = (recipe: Recipe) => {
+    const recipeId = recipe.spoonacularId ? String(recipe.spoonacularId) : recipe.title;
     onAddRecipe(
-      String(recipe._id || ''),
+      recipeId,
       recipe.title,
-      recipe.servings || 4,
-      recipe.readyInMinutes || recipe.cookingMinutes || 30,
+      recipe.servings || 2,
+      recipe.readyInMinutes || 30,
       recipe.image
     );
     onClose();
   };
 
+  function getRecipeImage(url?: string) {
+    if (!url || typeof url !== 'string') {
+      return { src: '/placeholder-recipe.svg', useNextImage: true };
+    }
+    
+    if (url.includes('spoonacular.com')) {
+      return { src: url, useNextImage: false };
+    }
+    
+    return { src: url, useNextImage: true };
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setCategoryDropdownOpen(false);
+      }
+      if (difficultyDropdownRef.current && !difficultyDropdownRef.current.contains(event.target as Node)) {
+        setDifficultyDropdownOpen(false);
+      }
+      if (dietDropdownRef.current && !dietDropdownRef.current.contains(event.target as Node)) {
+        setDietDropdownOpen(false);
+      }
+      if (allergyDropdownRef.current && !allergyDropdownRef.current.contains(event.target as Node)) {
+        setAllergyDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('');
+    setSelectedDiet('');
+    setSelectedAllergy('');
+    setSelectedDifficulty('');
+    setPage(1);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={cn('max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col', className)}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="text-xl">{mealTypeEmoji[mealType]}</span>
+      <DialogContent className={cn("max-w-6xl h-[80vh] flex flex-col", className)}>
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <Plus className="h-5 w-5 text-primary" />
             Add Recipe to {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
           </DialogTitle>
           <DialogDescription>
@@ -222,259 +197,228 @@ export function QuickAddRecipeModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col gap-4 min-h-0">
-          {/* Search and Filters */}
-          <div className="flex-shrink-0 space-y-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search recipes, ingredients, or tags..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3">
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-40 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="all" className="hover:bg-gray-50">All Categories</SelectItem>
-                  <SelectItem value="breakfast" className="hover:bg-gray-50">Breakfast</SelectItem>
-                  <SelectItem value="lunch" className="hover:bg-gray-50">Lunch</SelectItem>
-                  <SelectItem value="dinner" className="hover:bg-gray-50">Dinner</SelectItem>
-                  <SelectItem value="dessert" className="hover:bg-gray-50">Dessert</SelectItem>
-                  <SelectItem value="snack" className="hover:bg-gray-50">Snack</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                <SelectTrigger className="w-40 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="All Difficulties" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="all" className="hover:bg-gray-50">All Difficulties</SelectItem>
-                  <SelectItem value="easy" className="hover:bg-gray-50">Easy</SelectItem>
-                  <SelectItem value="medium" className="hover:bg-gray-50">Medium</SelectItem>
-                  <SelectItem value="hard" className="hover:bg-gray-50">Hard</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={maxCookingTime} onValueChange={setMaxCookingTime}>
-                <SelectTrigger className="w-40 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="Max Time" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="all" className="hover:bg-gray-50">Any Time</SelectItem>
-                  <SelectItem value="15" className="hover:bg-gray-50">Under 15 min</SelectItem>
-                  <SelectItem value="30" className="hover:bg-gray-50">Under 30 min</SelectItem>
-                  <SelectItem value="60" className="hover:bg-gray-50">Under 1 hour</SelectItem>
-                  <SelectItem value="120" className="hover:bg-gray-50">Under 2 hours</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedDiet} onValueChange={setSelectedDiet}>
-                <SelectTrigger className="w-36 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="All Diets" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="all" className="hover:bg-gray-50">All Diets</SelectItem>
-                  <SelectItem value="vegetarian" className="hover:bg-gray-50">Vegetarian</SelectItem>
-                  <SelectItem value="vegan" className="hover:bg-gray-50">Vegan</SelectItem>
-                  <SelectItem value="gluten free" className="hover:bg-gray-50">Gluten-Free</SelectItem>
-                  <SelectItem value="ketogenic" className="hover:bg-gray-50">Ketogenic</SelectItem>
-                  <SelectItem value="paleo" className="hover:bg-gray-50">Paleo</SelectItem>
-                  <SelectItem value="primal" className="hover:bg-gray-50">Primal</SelectItem>
-                  <SelectItem value="whole30" className="hover:bg-gray-50">Whole30</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedAllergy} onValueChange={setSelectedAllergy}>
-                <SelectTrigger className="w-40 bg-white border-gray-300 hover:border-gray-400 focus:border-primary">
-                  <SelectValue placeholder="Allergies (None)" />
-                </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
-                  <SelectItem value="all" className="hover:bg-gray-50">Allergies (None)</SelectItem>
-                  <SelectItem value="dairy" className="hover:bg-gray-50">Dairy</SelectItem>
-                  <SelectItem value="egg" className="hover:bg-gray-50">Egg</SelectItem>
-                  <SelectItem value="gluten" className="hover:bg-gray-50">Gluten</SelectItem>
-                  <SelectItem value="peanut" className="hover:bg-gray-50">Peanut</SelectItem>
-                  <SelectItem value="seafood" className="hover:bg-gray-50">Seafood</SelectItem>
-                  <SelectItem value="sesame" className="hover:bg-gray-50">Sesame</SelectItem>
-                  <SelectItem value="soy" className="hover:bg-gray-50">Soy</SelectItem>
-                  <SelectItem value="sulfite" className="hover:bg-gray-50">Sulfite</SelectItem>
-                  <SelectItem value="tree nut" className="hover:bg-gray-50">Tree Nut</SelectItem>
-                  <SelectItem value="wheat" className="hover:bg-gray-50">Wheat</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                <Filter className="h-4 w-4 mr-1" />
-                Clear
-              </Button>
-            </div>
-
-            {/* Additional Filters Row */}
-            <div className="flex flex-wrap gap-3 items-center">
-              <Input
-                placeholder="Tags (comma separated)"
-                value={tagsFilter}
-                onChange={(e) => setTagsFilter(e.target.value)}
-                className="w-48 bg-white border-gray-300 hover:border-gray-400 focus:border-primary"
-              />
-              
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={quickAndEasy}
-                  onChange={(e) => setQuickAndEasy(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                Quick & Easy
-              </label>
-            </div>
+        <div className="space-y-4 pb-4 border-b border-gray-200">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search recipes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
 
-          {/* Quick Suggestions */}
-          {suggestedRecipes.length > 0 && !searchQuery && selectedCategory === 'all' && selectedDiet === 'all' && !tagsFilter.trim() && !quickAndEasy && (
-            <div className="flex-shrink-0">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
-                Popular {mealType} recipes
-              </h3>
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {suggestedRecipes.map((recipe, i) => (
-                  <Button
-                    key={`${recipe.id ?? recipe.title ?? i}`}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAddRecipe(recipe)}
-                    className="flex-shrink-0 whitespace-nowrap"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    {recipe.title}
-                  </Button>
-                ))}
-              </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative" ref={categoryDropdownRef}>
+              <Button
+                variant="outline"
+                onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+                className="flex items-center gap-2"
+              >
+                {categories.find(c => c.value === selectedCategory)?.label || 'All Categories'}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+              {categoryDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 z-50 bg-white border rounded-md shadow-lg min-w-40">
+                  {categories.map((category) => (
+                    <button
+                      key={category.value}
+                      onClick={() => {
+                        setSelectedCategory(category.value);
+                        setCategoryDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
+                    >
+                      {category.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Recipe Results */}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-center">
-                  <Utensils className="h-8 w-8 text-gray-400 mx-auto mb-2 animate-pulse" />
-                  <p className="text-sm text-gray-500">Loading recipes...</p>
+            <div className="relative" ref={difficultyDropdownRef}>
+              <Button
+                variant="outline"
+                onClick={() => setDifficultyDropdownOpen(!difficultyDropdownOpen)}
+                className="flex items-center gap-2"
+              >
+                {difficulties.find(d => d.value === selectedDifficulty)?.label || 'All Difficulties'}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+              {difficultyDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 z-50 bg-white border rounded-md shadow-lg min-w-40">
+                  {difficulties.map((difficulty) => (
+                    <button
+                      key={difficulty.value}
+                      onClick={() => {
+                        setSelectedDifficulty(difficulty.value);
+                        setDifficultyDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
+                    >
+                      {difficulty.label}
+                    </button>
+                  ))}
                 </div>
-              </div>
-            ) : filteredRecipes.length === 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-center">
-                  <Search className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 mb-2">No recipes found</p>
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
-                    Clear Filters
-                  </Button>
+              )}
+            </div>
+
+            <div className="relative" ref={dietDropdownRef}>
+              <Button
+                variant="outline"
+                onClick={() => setDietDropdownOpen(!dietDropdownOpen)}
+                className="flex items-center gap-2"
+              >
+                {diets.find(d => d.value === selectedDiet)?.label || 'All Diets'}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+              {dietDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 z-50 bg-white border rounded-md shadow-lg min-w-40">
+                  {diets.map((diet) => (
+                    <button
+                      key={diet.value}
+                      onClick={() => {
+                        setSelectedDiet(diet.value);
+                        setDietDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
+                    >
+                      {diet.label}
+                    </button>
+                  ))}
                 </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {(filteredRecipes as unknown as ExtendedRecipe[]).map((recipe) => (
-                  <div
-                              key={String(recipe._id || recipe.title)}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-primary/40 hover:shadow-md transition-all group bg-background-card"
-                  >
-                    {/* Recipe Image */}
-                    <div className="w-full h-40 bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      {recipe.image ? (
-                        <Image
-                          src={recipe.image}
-                          alt={recipe.title}
-                          width={600}
-                          height={300}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="text-4xl opacity-30">🍽️</div>
-                      )}
-                    </div>
+              )}
+            </div>
 
-                    {/* Title & Add Button */}
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-base leading-tight pr-2 flex-1">
-                        {recipe.title}
-                      </h4>
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddRecipe(recipe)}
-                        className="opacity-100 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
-                        aria-label={`Add ${recipe.title}`}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+            <div className="relative" ref={allergyDropdownRef}>
+              <Button
+                variant="outline"
+                onClick={() => setAllergyDropdownOpen(!allergyDropdownOpen)}
+                className="flex items-center gap-2"
+              >
+                {allergies.find(a => a.value === selectedAllergy)?.label || 'Allergies (None)'}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+              {allergyDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 z-50 bg-white border rounded-md shadow-lg min-w-40">
+                  {allergies.map((allergy) => (
+                    <button
+                      key={allergy.value}
+                      onClick={() => {
+                        setSelectedAllergy(allergy.value);
+                        setAllergyDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
+                    >
+                      {allergy.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                    {/* Description */}
-                    <p className="text-xs text-gray-600 mb-2 line-clamp-3">
-                      {recipe.summary && recipe.summary.replace(/<[^>]*>/g, '')}
-                    </p>
-
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1 mb-2">
-                      {recipe.diets?.slice(0, 3).map((diet: string, i: number) => (
-                        <Badge key={`diet-${diet}-${i}`} variant="secondary" className="text-xs px-2 py-0">
-                          {diet}
-                        </Badge>
-                      ))}
-                      {recipe.dishTypes?.slice(0, 2).map((type: string, i: number) => (
-                        <Badge key={`type-${type}-${i}`} variant="outline" className="text-xs px-2 py-0">
-                          {type}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* Details */}
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{recipe.readyInMinutes || recipe.cookingMinutes || 30} min</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Users className="h-3 w-3" />
-                          <span>{recipe.servings || 4}</span>
-                        </div>
-                      </div>
-                      {typeof recipe.spoonacularScore === 'number' && (
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>{Math.round((recipe.spoonacularScore as number) / 20)}/5</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <Button variant="outline" onClick={clearFilters}>
+              Clear
+            </Button>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
-          <p className="text-sm text-gray-500">
-            {filteredRecipes.length} recipe{filteredRecipes.length !== 1 ? 's' : ''} found
-          </p>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {loading && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex-1 flex items-center justify-center text-red-600">
+              <p>{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && (
+            <>
+              <div className="flex-1 overflow-y-auto pr-2">
+                <div className="grid grid-cols-3 gap-4 pb-4">
+                  {filteredRecipes.slice(0, 15).map((recipe) => {
+                    const safeKey = recipe.spoonacularId ? String(recipe.spoonacularId) : recipe.title;
+                    const imageConfig = getRecipeImage(recipe.image);
+
+                    return (
+                      <div
+                        key={safeKey}
+                        className="group bg-white border rounded-lg hover:shadow-md transition-all duration-200 overflow-hidden"
+                      >
+                        <div className="w-full h-40 bg-gray-100 overflow-hidden">
+                          {recipe.image ? (
+                            imageConfig.useNextImage ? (
+                              <Image
+                                src={imageConfig.src}
+                                alt={recipe.title}
+                                width={300}
+                                height={160}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <img
+                                src={imageConfig.src}
+                                alt={recipe.title}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            )
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl opacity-30">
+                              🍽️
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold text-sm leading-tight pr-2 flex-1">
+                              {recipe.title}
+                            </h4>
+                            <Button
+                              size="sm"
+                              onClick={() => handleAddRecipe(recipe)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{recipe.readyInMinutes || 30} min</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              <span>{recipe.servings || 2}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {filteredRecipes.length > 0 && (
+                <div className="pt-4 border-t border-gray-200">
+                  <Pagination
+                    currentPage={page}
+                    totalPages={Math.ceil((total || filteredRecipes.length) / 15)}
+                    onPageChange={setPage}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-
-export default QuickAddRecipeModal;

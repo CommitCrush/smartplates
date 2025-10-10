@@ -24,6 +24,10 @@ interface Recipe {
   isPublic: boolean;
   createdAt: string;
   plannedDate?: string;
+  weekRange?: string;
+  mealType?: string;
+  servings?: number;
+  notes?: string;
 }
 
 type TabType = 'uploaded' | 'saved' | 'planned';
@@ -59,7 +63,33 @@ export default function MyRecipesPage() {
   const loadUserRecipes = async () => {
     setLoading(true);
     try {
-      // Mock data - replace with actual API calls
+      // Load planned recipes from API
+      let plannedRecipes: Recipe[] = [];
+      
+      try {
+        const plannedResponse = await fetch('/api/users/planned-recipes');
+        if (plannedResponse.ok) {
+          const plannedData = await plannedResponse.json();
+          let rawPlannedRecipes = plannedData.data || [];
+          
+          // Deduplicate recipes by ID to prevent duplicate key errors
+          const seenIds = new Set();
+          plannedRecipes = rawPlannedRecipes.filter((recipe: Recipe) => {
+            if (seenIds.has(recipe.id)) {
+              console.warn(`Duplicate recipe ID found: ${recipe.id}, skipping duplicate`);
+              return false;
+            }
+            seenIds.add(recipe.id);
+            return true;
+          });
+          
+          console.log('Loaded planned recipes:', plannedRecipes.length);
+        }
+      } catch (error) {
+        console.error('Error loading planned recipes:', error);
+      }
+
+      // Mock data for uploaded and saved recipes - replace with actual API calls
       const mockRecipes = {
         uploaded: [
           {
@@ -109,21 +139,9 @@ export default function MyRecipesPage() {
             createdAt: '2024-09-17'
           }
         ],
-        planned: [
-          {
-            id: '5',
-            title: 'Greek Salad',
-            description: 'Fresh Mediterranean salad with feta',
-            image: '/placeholder-recipe.svg',
-            cookingTime: 10,
-            difficulty: 'easy' as const,
-            category: 'Mediterranean',
-            isPublic: true,
-            createdAt: '2024-09-16',
-            plannedDate: '2024-09-25'
-          }
-        ]
+        planned: plannedRecipes
       };
+      
       setRecipes(mockRecipes);
     } catch (error) {
       console.error('Error loading recipes:', error);
@@ -265,16 +283,30 @@ export default function MyRecipesPage() {
                   </div>
                 )}
                 {activeTab === 'planned' && recipe.plannedDate && (
-                  <div className="absolute top-2 right-2">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                  <div className="absolute top-2 right-2 space-y-1">
+                    <span className="block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                       {new Date(recipe.plannedDate).toLocaleDateString()}
                     </span>
+                    {recipe.mealType && (
+                      <span className="block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                        {recipe.mealType}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
               <div className="p-4">
                 <h3 className="font-semibold text-lg mb-2 line-clamp-1">{recipe.title}</h3>
                 <p className="text-gray-600 text-sm mb-3 line-clamp-2">{recipe.description}</p>
+                
+                {/* Show notes for planned recipes */}
+                {activeTab === 'planned' && recipe.notes && (
+                  <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                    <span className="font-medium text-yellow-800">Note:</span>
+                    <span className="text-yellow-700 ml-1">{recipe.notes}</span>
+                  </div>
+                )}
+                
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center space-x-3">
                     <span className="text-gray-500">{recipe.cookingTime} min</span>
@@ -285,9 +317,21 @@ export default function MyRecipesPage() {
                   <span className="text-primary font-medium">{recipe.category}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t flex justify-between items-center">
-                  <span className="text-xs text-gray-500">
-                    Added {new Date(recipe.createdAt).toLocaleDateString()}
-                  </span>
+                  <div className="text-xs text-gray-500">
+                    {activeTab === 'planned' && recipe.weekRange ? (
+                      <div>
+                        <div>{recipe.weekRange}</div>
+                        <div>Added {new Date(recipe.createdAt).toLocaleDateString()}</div>
+                        {recipe.servings && (
+                          <div className="mt-1 text-blue-600">
+                            {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span>Added {new Date(recipe.createdAt).toLocaleDateString()}</span>
+                    )}
+                  </div>
                   <Link
                     href={`/recipe/${recipe.id}`}
                     className="text-primary hover:text-primary/80 text-sm font-medium"
@@ -326,6 +370,15 @@ export default function MyRecipesPage() {
             >
               <Search className="h-4 w-4" />
               <span>Explore Recipes</span>
+            </Link>
+          )}
+          {activeTab === 'planned' && (
+            <Link
+              href="/user/meal-plan/current"
+              className="inline-flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Start Meal Planning</span>
             </Link>
           )}
         </div>

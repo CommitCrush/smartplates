@@ -10,8 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import MealPlan from '@/models/MealPlan';
-import { connectToDatabase } from '@/lib/mongodb';
+import { MealPlanService } from '@/models/MealPlan';
 
 // ========================================
 // GET /api/meal-plans/[id]
@@ -23,7 +22,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user?.id && !session?.user?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -33,34 +32,28 @@ export async function GET(
     const params = await context.params;
     const { id } = params;
     
-    await connectToDatabase();
+    // Use email as fallback for userId if id is not available
+    const userId = session.user.id || session.user.email!;
 
-    // Check if id is a valid ObjectId or handle it as a string
-    let mealPlan;
-    try {
-      mealPlan = await MealPlan.findOne({
-        _id: id,
-        userId: session.user.id
-      }).exec();
-    } catch (mongoError) {
-      // If ObjectId is invalid, return 404
-      console.error('Invalid ObjectId:', id, mongoError);
+    // Get meal plan by ID
+    const mealPlan = await MealPlanService.findById(id);
+
+    if (!mealPlan || mealPlan.userId !== userId) {
       return NextResponse.json(
         { error: 'Meal plan not found' },
         { status: 404 }
       );
     }
 
-    if (!mealPlan) {
-      return NextResponse.json(
-        { error: 'Meal plan not found' },
-        { status: 404 }
-      );
-    }
+    // Enrich meal plan with recipe information
+    const enrichedMealPlan = await MealPlanService.enrichMealPlanWithRecipes(mealPlan);
 
     return NextResponse.json({
       success: true,
-      data: mealPlan
+      data: {
+        ...enrichedMealPlan,
+        _id: enrichedMealPlan._id?.toString()
+      }
     });
 
   } catch (error) {
@@ -85,7 +78,14 @@ export async function PUT(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    console.log('🔍 PUT /api/meal-plans/[id] - Session check:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email
+    });
+    
+    if (!session?.user?.id && !session?.user?.email) {
+      console.error('❌ PUT Authentication failed - no valid session');
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -94,41 +94,68 @@ export async function PUT(
 
     const params = await context.params;
     const body = await request.json();
+    
+    console.log('📝 PUT Request details:', {
+      mealPlanId: params.id,
+      hasBody: !!body,
+      bodyKeys: Object.keys(body),
+      daysLength: body.days?.length
+    });
+    
     const { days, title, tags, totalCalories, shoppingListGenerated } = body;
 
-    await connectToDatabase();
+    // Use email as fallback for userId if id is not available
+    const userId = session.user.id || session.user.email!;
+    console.log('👤 PUT Using userId:', userId);
 
-    const mealPlan = await MealPlan.findOne({
-      _id: params.id,
-      userId: session.user.id
-    }).exec();
+    // Check if meal plan exists and belongs to user
+    const existingMealPlan = await MealPlanService.findById(params.id);
 
-    if (!mealPlan) {
+    console.log('📋 PUT Meal plan lookup result:', {
+      found: !!existingMealPlan,
+      mealPlanId: existingMealPlan?._id,
+      mealPlanUserId: existingMealPlan?.userId
+    });
+
+    if (!existingMealPlan || existingMealPlan.userId !== userId) {
       return NextResponse.json(
         { error: 'Meal plan not found' },
         { status: 404 }
       );
     }
 
-    // Update meal plan fields
-    if (days) mealPlan.days = days;
-    if (title !== undefined) mealPlan.title = title;
-    if (tags) mealPlan.tags = tags;
-    if (totalCalories !== undefined) mealPlan.totalCalories = totalCalories;
-    if (shoppingListGenerated !== undefined) mealPlan.shoppingListGenerated = shoppingListGenerated;
-    
-    mealPlan.updatedAt = new Date();
+    // Prepare update data
+    const updateData: any = {};
+    if (days) updateData.days = days;
+    if (title !== undefined) updateData.title = title;
+    if (tags) updateData.tags = tags;
+    if (totalCalories !== undefined) updateData.totalCalories = totalCalories;
+    if (shoppingListGenerated !== undefined) updateData.shoppingListGenerated = shoppingListGenerated;
 
-    const updatedMealPlan = await mealPlan.save();
+    // Update meal plan
+    const updatedMealPlan = await MealPlanService.updateById(params.id, updateData);
+
+    console.log('✅ PUT Meal plan updated successfully:', {
+      id: updatedMealPlan?._id,
+      title: updatedMealPlan?.title,
+      daysCount: updatedMealPlan?.days?.length
+    });
 
     return NextResponse.json({
       success: true,
-      data: updatedMealPlan,
+      data: {
+        ...updatedMealPlan,
+        _id: updatedMealPlan?._id?.toString()
+      },
       message: 'Meal plan updated successfully'
     });
 
   } catch (error) {
-    console.error('PUT /api/meal-plans/[id] error:', error);
+    console.error('❌ PUT /api/meal-plans/[id] error:', {
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined
+    });
+    
     return NextResponse.json(
       { 
         error: 'Failed to update meal plan',
@@ -149,7 +176,7 @@ export async function DELETE(
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user?.id && !session?.user?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -157,17 +184,27 @@ export async function DELETE(
     }
 
     const params = await context.params;
-    await connectToDatabase();
 
-    const deletedMealPlan = await MealPlan.findOneAndDelete({
-      _id: params.id,
-      userId: session.user.id
-    }).exec();
+    // Use email as fallback for userId if id is not available
+    const userId = session.user.id || session.user.email!;
 
-    if (!deletedMealPlan) {
+    // Check if meal plan exists and belongs to user
+    const existingMealPlan = await MealPlanService.findById(params.id);
+
+    if (!existingMealPlan || existingMealPlan.userId !== userId) {
       return NextResponse.json(
         { error: 'Meal plan not found' },
         { status: 404 }
+      );
+    }
+
+    // Delete meal plan
+    const deleted = await MealPlanService.deleteById(params.id);
+
+    if (!deleted) {
+      return NextResponse.json(
+        { error: 'Failed to delete meal plan' },
+        { status: 500 }
       );
     }
 

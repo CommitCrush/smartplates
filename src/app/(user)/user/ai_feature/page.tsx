@@ -21,6 +21,15 @@ export default function AiRecipePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const recipesPerPage = 6;
 
+  // ✅ Neue States für Refresh und Notifications
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    type: 'success' | 'error' | 'info';
+    message: string;
+  }>>([]);
+
   // Pagination Logic
   const totalPages = Math.ceil(recipes.length / recipesPerPage);
   const startIndex = (currentPage - 1) * recipesPerPage;
@@ -31,6 +40,21 @@ export default function AiRecipePage() {
   const setRecipesWithPagination = (newRecipes: any[]) => {
     setRecipes(newRecipes);
     setCurrentPage(1); // Reset to first page
+  };
+
+  // ✅ Smart Notification System
+  const addNotification = (type: 'success' | 'error' | 'info', message: string) => {
+    const id = Date.now().toString();
+    setNotifications(prev => [...prev, { id, type, message }]);
+    
+    // Auto-remove nach 4 Sekunden
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 4000);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   // Handle manual ingredient input
@@ -45,6 +69,8 @@ export default function AiRecipePage() {
     setAnalyzing(true);
     setError(null);
     setRecognizedIngredients([]);
+    addNotification('info', '🤖 AI analysiert Ihr Kühlschrank-Foto...');
+    
     try {
       const res = await fetch('/api/ai/analyze-fridge', {
         method: 'POST',
@@ -57,16 +83,19 @@ export default function AiRecipePage() {
         setError(data.error || 'No ingredients recognized.');
         setRecognizedIngredients([]);
         setShowConfirm(false);
+        addNotification('error', '❌ Keine Zutaten erkannt. Versuchen Sie ein klareres Foto.');
       } else {
         // Extract only ingredient names if objects are returned
         const names = data.data.ingredients.map((ing: any) => typeof ing === 'string' ? ing : ing.name).filter(Boolean);
         setRecognizedIngredients(names);
         setShowConfirm(true);
+        addNotification('success', `🎯 ${names.length} Zutaten erfolgreich erkannt!`);
       }
     } catch (err) {
       setError('Image analysis failed. Please try again.');
       setRecognizedIngredients([]);
       setShowConfirm(false);
+      addNotification('error', '🚨 AI-Analyse fehlgeschlagen. Bitte versuchen Sie es erneut.');
     } finally {
       setAnalyzing(false);
     }
@@ -107,21 +136,26 @@ export default function AiRecipePage() {
         return;
       }
       setRecipesWithPagination(data.recipes || []);
+      addNotification('success', `🎉 ${data.recipes?.length || 0} Rezepte gefunden!`);
     } catch (err) {
       setError('Server error. Please try again later.');
       setRecipesWithPagination([]);
       setDebugResponse({ status: 500, error: err });
+      addNotification('error', 'Fehler beim Laden der Rezepte. Bitte versuchen Sie es erneut.');
     }
   };
 
   // Handle filter change - automatische Filterung ohne Button-Klick
-  const handleFilterChange = (newFilters: any) => {
+  const handleFilterChange = async (newFilters: any) => {
     setFilters(newFilters);
     setError(null);
     setDebugResponse(null);
     
     // Nur automatisch filtern wenn bereits Rezepte vorhanden sind
     if (recipes.length === 0) return;
+    
+    setIsFiltering(true);
+    addNotification('info', '🔍 Filter werden angewendet...');
     
     const searchIngredients = recognizedIngredients.length > 0 ? recognizedIngredients.join(',') : ingredients.join(',');
     const params = new URLSearchParams();
@@ -132,25 +166,30 @@ export default function AiRecipePage() {
     if (newFilters.difficulty) params.append('difficulty', newFilters.difficulty);
     
     // Automatische API-Anfrage bei Filter-Änderung
-    fetch(`/api/ai/search-recipes?${params.toString()}`)
-      .then(async res => {
-        const data = await res.json();
-        setDebugResponse({ status: res.status, data });
-        if (!res.ok || data.error) {
-          let errorMsg = 'No recipes found with current filters.';
-          if (data.error) errorMsg = data.error;
-          else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
-          setError(errorMsg);
-          setRecipesWithPagination([]);
-          return;
-        }
-        setRecipesWithPagination(data.recipes || []);
-      })
-      .catch((err) => {
-        setError('Server error. Please try again later.');
+    try {
+      const res = await fetch(`/api/ai/search-recipes?${params.toString()}`);
+      const data = await res.json();
+      setDebugResponse({ status: res.status, data });
+      
+      if (!res.ok || data.error) {
+        let errorMsg = 'No recipes found with current filters.';
+        if (data.error) errorMsg = data.error;
+        else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
+        setError(errorMsg);
         setRecipesWithPagination([]);
-        setDebugResponse({ status: 500, error: err });
-      });
+        addNotification('error', 'Keine Rezepte mit den aktuellen Filtern gefunden.');
+        return;
+      }
+      setRecipesWithPagination(data.recipes || []);
+      addNotification('success', `✅ ${data.recipes?.length || 0} Rezepte mit Filtern gefunden!`);
+    } catch (err) {
+      setError('Server error. Please try again later.');
+      setRecipesWithPagination([]);
+      setDebugResponse({ status: 500, error: err });
+      addNotification('error', 'Fehler beim Filtern. Bitte versuchen Sie es erneut.');
+    } finally {
+      setIsFiltering(false);
+    }
   };
 
   // Reset for new image
@@ -179,6 +218,52 @@ export default function AiRecipePage() {
   const goToPage = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
+
+  // ✅ Intelligenter Refresh mit verbessertem Feedback
+  const handleRefreshRecipes = async () => {
+    setIsRefreshing(true);
+    setError(null);
+    addNotification('info', '🔄 Rezepte werden aktualisiert...');
+    
+    try {
+      await handleSearchRecipes();
+      addNotification('success', '✅ Rezepte erfolgreich aktualisiert!');
+      
+      // Kurze Verzögerung für visuelles Feedback
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 500);
+    } catch (error) {
+      setIsRefreshing(false);
+      addNotification('error', 'Aktualisierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+    }
+  };
+
+  // ✅ Notification Component
+  const NotificationBar = () => (
+    <div className="fixed top-20 right-4 z-50 space-y-2 max-w-sm">
+      {notifications.map(notification => (
+        <div
+          key={notification.id}
+          className={cn(
+            "px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform animate-in slide-in-from-right",
+            "flex items-center justify-between border-l-4",
+            notification.type === 'success' && "bg-green-600/90 text-white border-green-400 backdrop-blur-sm",
+            notification.type === 'error' && "bg-red-600/90 text-white border-red-400 backdrop-blur-sm",
+            notification.type === 'info' && "bg-blue-600/90 text-white border-blue-400 backdrop-blur-sm"
+          )}
+        >
+          <span className="text-sm font-medium">{notification.message}</span>
+          <button
+            onClick={() => removeNotification(notification.id)}
+            className="ml-3 text-white/80 hover:text-white text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#23293a] via-[#181e2a] to-[#232b3e] flex flex-col items-center justify-start">
@@ -393,17 +478,56 @@ export default function AiRecipePage() {
               </div>
             )}
             
-            <div className="flex justify-center mt-8">
+            <div className="flex justify-center mt-8 gap-4">
               <button
-                className="px-6 py-3 rounded-xl bg-accent text-white font-bold hover:bg-accent/80 transition"
-                onClick={handleSearchRecipes}
-                disabled={analyzing}
+                className={cn(
+                  "px-6 py-3 rounded-xl font-bold transition-all duration-200",
+                  isRefreshing 
+                    ? "bg-gray-600 text-gray-300 cursor-not-allowed" 
+                    : "bg-accent text-white hover:bg-accent/80 hover:scale-105"
+                )}
+                onClick={handleRefreshRecipes}
+                disabled={analyzing || isRefreshing}
               >
-                Reload recipes
+                {isRefreshing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-r-transparent inline-block mr-2" />
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    🔄 Refresh Recipes
+                  </>
+                )}
+              </button>
+              
+              <button
+                className="px-6 py-3 rounded-xl bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
+                onClick={() => {
+                  setRecipesWithPagination([]);
+                  setFilters({});
+                  setError(null);
+                  addNotification('info', '🗑️ Alle Filter und Ergebnisse gelöscht');
+                }}
+              >
+                🗑️ Clear All
               </button>
             </div>
           </>
         )}
+
+        {/* ✅ Filter Loading Anzeige */}
+        {isFiltering && (
+          <div className="flex justify-center mb-4">
+            <div className="flex items-center gap-2 text-gray-400 text-sm bg-gray-800/50 px-4 py-2 rounded-lg">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-r-transparent" />
+              Filter werden angewendet...
+            </div>
+          </div>
+        )}
+
+        {/* ✅ Notification Bar */}
+        <NotificationBar />
       </div>
     </div>
   );

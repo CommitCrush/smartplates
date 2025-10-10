@@ -98,24 +98,30 @@ export default function AiRecipePage() {
     }
   };
 
-  // Handle filter change
+  // Handle filter change - automatische Filterung ohne Button-Klick
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
     setError(null);
     setDebugResponse(null);
+    
+    // Nur automatisch filtern wenn bereits Rezepte vorhanden sind
+    if (recipes.length === 0) return;
+    
     const searchIngredients = recognizedIngredients.length > 0 ? recognizedIngredients.join(',') : ingredients.join(',');
     const params = new URLSearchParams();
     if (searchIngredients) params.append('search', searchIngredients);
-    if (newFilters.category) params.append('category', newFilters.category);
-    if (newFilters.diet) params.append('dietaryRestrictions', newFilters.diet);
+    if (newFilters.category) params.append('type', newFilters.category);
+    if (newFilters.diet) params.append('diet', newFilters.diet);
     if (newFilters.allergy) params.append('intolerances', newFilters.allergy);
     if (newFilters.difficulty) params.append('difficulty', newFilters.difficulty);
-    fetch(`/api/recipes?${params.toString()}`)
+    
+    // Automatische API-Anfrage bei Filter-Änderung
+    fetch(`/api/ai/search-recipes?${params.toString()}`)
       .then(async res => {
         const data = await res.json();
         setDebugResponse({ status: res.status, data });
         if (!res.ok || data.error) {
-          let errorMsg = 'No recipes found.';
+          let errorMsg = 'No recipes found with current filters.';
           if (data.error) errorMsg = data.error;
           else if (res.status === 500) errorMsg = 'Internal server error. Please try again later.';
           setError(errorMsg);
@@ -254,10 +260,41 @@ export default function AiRecipePage() {
             FIND RECIPES
           </button>
         </div>
-        <div className="text-center text-gray-400 text-sm mt-2">Upload ingredients to get started! Your next meal idea is waiting.</div>
+        
+        {/* Conditional text based on recipe state */}
+        {recipes.length === 0 && !error && (
+          <div className="text-center text-gray-400 text-sm mt-2">
+            Upload ingredients to get started! Your next meal idea is waiting.
+          </div>
+        )}
+        
+        {/* No recipes found message */}
+        {recipes.length === 0 && error && (
+          <div className="text-center mt-6 p-6 rounded-xl bg-yellow-900/30 border border-yellow-600">
+            <div className="text-yellow-200 text-lg font-semibold mb-2">
+              😔 Keine Rezepte gefunden
+            </div>
+            <div className="text-yellow-300 text-sm mb-4">
+              Versuchen Sie andere Zutaten oder weniger Filter. Möglicherweise sind Ihre Zutaten sehr spezifisch.
+            </div>
+            <button
+              className="px-4 py-2 bg-yellow-600 text-yellow-900 rounded-lg font-semibold hover:bg-yellow-500 transition"
+              onClick={() => {
+                setFilters({});
+                setError(null);
+              }}
+            >
+              Filter zurücksetzen
+            </button>
+          </div>
+        )}
+        
         {/* Recipe results */}
         {recipes.length > 0 && (
           <>
+            <div className="text-center text-green-400 text-sm mt-2 mb-6">
+              🎉 {recipes.length} Rezepte gefunden! Perfekt für Ihre Zutaten.
+            </div>
             <RecipeResults recipes={recipes} />
             <div className="flex justify-center mt-8">
               <button

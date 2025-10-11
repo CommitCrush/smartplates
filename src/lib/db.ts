@@ -113,7 +113,7 @@ export const COLLECTIONS = {
   USERS: 'users',
   RECIPES: 'recipes',
   CATEGORIES: 'categories',
-  MEAL_PLANS: 'mealPlans',
+  MEAL_PLANS: 'mealplans', // Changed to match existing collection
   GROCERY_LISTS: 'groceryLists',
 } as const;
 

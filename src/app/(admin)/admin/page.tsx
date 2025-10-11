@@ -96,19 +96,12 @@ export default function AdminPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold">Statistics</h1>
           <p className="text-muted-foreground mt-1">
             SmartPlates system management and overview
           </p>
         </div>
-        <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Button variant="outline" asChild>
-            <Link href="/admin/settings">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Link>
-          </Button>
-        </div>
+     
       </div>
 
       {/* Statistics Section */}

@@ -24,10 +24,55 @@ interface ActivityEvent {
 export default function AdminPage() {
   const [recentActivities, setRecentActivities] = useState<ActivityEvent[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
+  const [communityRecipes, setCommunityRecipes] = useState<number>(0);
+  const [communityRecipesLoading, setCommunityRecipesLoading] = useState(true);
+  const [onlineUsers, setOnlineUsers] = useState<number>(0);
+  const [onlineUsersLoading, setOnlineUsersLoading] = useState(true);
 
   useEffect(() => {
     fetchRecentActivities();
+    fetchCommunityRecipes();
+    fetchOnlineUsers();
+
+    // Update online users every minute
+    const interval = setInterval(fetchOnlineUsers, 60000);
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchOnlineUsers = async () => {
+    try {
+      setOnlineUsersLoading(true);
+      const response = await fetch('/api/admin/users/online');
+      if (response.ok) {
+        const data = await response.json();
+        setOnlineUsers(data.onlineCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch online users:', error);
+    } finally {
+      setOnlineUsersLoading(false);
+    }
+  };
+
+  const fetchCommunityRecipes = async () => {
+    try {
+      setCommunityRecipesLoading(true);
+      const response = await fetch('/api/admin/recipes');
+      if (response.ok) {
+        const data = await response.json();
+        // Count recipes from admin_upload and user_upload sources
+        const communityCount = data.recipes ? 
+          data.recipes.filter((recipe: any) => 
+            recipe.source === 'admin_upload' || recipe.source === 'user_upload'
+          ).length : 0;
+        setCommunityRecipes(communityCount);
+      }
+    } catch (error) {
+      console.error('Failed to fetch community recipes:', error);
+    } finally {
+      setCommunityRecipesLoading(false);
+    }
+  };
 
   const fetchRecentActivities = async () => {
     try {
@@ -101,13 +146,13 @@ export default function AdminPage() {
           <h2 className="text-xl font-semibold">System Overview</h2>
         </div>
         {/* System Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Users</p>
                 <p className="text-2xl font-bold">{/* TODO: fetch from API */}11</p>
-                <p className="text-xs text-green-600">+11 active</p>
+               
               </div>
               <Users className="h-8 w-8 text-blue-500" />
             </div>
@@ -115,12 +160,21 @@ export default function AdminPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Online</p>
-                <p className="text-2xl font-bold text-green-600">0</p>
-                <p className="text-xs text-muted-foreground">Last 24h</p>
+                <p className="text-sm font-medium text-muted-foreground">Online Now</p>
+                {onlineUsersLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-6 w-8 bg-gray-200 rounded mb-1"></div>
+                    <div className="h-3 w-16 bg-gray-200 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold text-green-600">{onlineUsers}</p>
+                    <p className="text-xs text-green-600">Active in last 5min</p>
+                  </>
+                )}
               </div>
               <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                <div className={`h-3 w-3 rounded-full ${onlineUsers > 0 ? 'bg-green-500' : 'bg-gray-400'}`}></div>
               </div>
             </div>
           </Card>
@@ -132,6 +186,25 @@ export default function AdminPage() {
                 <p className="text-xs text-orange-600">0 pending</p>
               </div>
               <ChefHat className="h-8 w-8 text-green-500" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Community Recipes</p>
+                {communityRecipesLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-6 w-12 bg-gray-200 rounded mb-1"></div>
+                    <div className="h-3 w-20 bg-gray-200 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold text-purple-600">{communityRecipes.toLocaleString()}</p>
+                   
+                  </>
+                )}
+              </div>
+              <ChefHat className="h-8 w-8 text-purple-500" />
             </div>
           </Card>
           <Card className="p-4">

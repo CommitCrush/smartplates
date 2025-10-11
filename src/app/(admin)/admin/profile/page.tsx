@@ -433,7 +433,7 @@ export default function AdminProfilePage() {
         {/* Statistics and Activity - Right Columns */}
         <div className="lg:col-span-2 space-y-6">
           {/* Statistics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -447,40 +447,6 @@ export default function AdminProfilePage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Recipes in system
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Users
-                </CardTitle>
-                <Users className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
-                  {profileData?.totalUsers.toLocaleString() || 0}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Registered users
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Meal Plans
-                </CardTitle>
-                <Calendar className="h-4 w-4 text-purple-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-600">
-                  {profileData?.totalMealPlans.toLocaleString() || 0}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Active meal plans
                 </p>
               </CardContent>
             </Card>
@@ -535,26 +501,6 @@ export default function AdminProfilePage() {
                     }) : 'N/A'}
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-blue-600" />
-                Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {profileData?.recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <span className="text-sm">{activity.action}</span>
-                    <span className="font-medium text-blue-600">{activity.count}</span>
-                  </div>
-                ))}
               </div>
             </CardContent>
           </Card>

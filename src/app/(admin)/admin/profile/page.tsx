@@ -15,7 +15,6 @@ import {
   ChefHat,
   Users,
   Calendar,
-  Star,
   Shield,
   Activity,
   Camera,
@@ -29,7 +28,6 @@ import {
 
 interface AdminProfileData {
   totalRecipes: number;
-  totalReviews: number;
   lastLogin: string;
   accountCreated: string;
   recentActivity: Array<{
@@ -87,11 +85,9 @@ export default function AdminProfilePage() {
       }
 
       // Generate realistic statistics based on available data
-      const realisticReviews = Math.max(10, Math.min(totalRecipes * 3, totalRecipes * 5));
 
       const adminData: AdminProfileData = {
         totalRecipes: Math.max(totalRecipes, 15),
-        totalReviews: Math.max(0, realisticReviews),
         lastLogin: new Date().toISOString(),
         accountCreated: new Date().toISOString(),
         recentActivity: [
@@ -106,7 +102,6 @@ export default function AdminProfilePage() {
       // Fallback to basic data
       setProfileData({
         totalRecipes: 0,
-        totalReviews: 0,
         lastLogin: new Date().toISOString(),
         accountCreated: new Date().toISOString(),
         recentActivity: [
@@ -414,23 +409,6 @@ export default function AdminProfilePage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Recipes in system
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Reviews
-                </CardTitle>
-                <Star className="h-4 w-4 text-yellow-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">
-                  {profileData?.totalReviews.toLocaleString() || 0}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Total reviews
                 </p>
               </CardContent>
             </Card>

@@ -10,7 +10,6 @@ import {
   Settings,
   UserCog,
   Package,
-  Star,
   AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
@@ -133,15 +132,6 @@ export default function AdminPage() {
                 <p className="text-xs text-orange-600">0 pending</p>
               </div>
               <ChefHat className="h-8 w-8 text-green-500" />
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Reviews</p>
-                <p className="text-2xl font-bold">0</p>
-              </div>
-              <Star className="h-8 w-8 text-yellow-500" />
             </div>
           </Card>
           <Card className="p-4">

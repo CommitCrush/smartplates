@@ -12,7 +12,12 @@ export default function AiRecipePage() {
   const [image, setImage] = useState<File | null>(null);
   const [recognizedIngredients, setRecognizedIngredients] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<any[]>([]);
-  const [filters, setFilters] = useState<{ category?: string; diet?: string; allergy?: string; difficulty?: string }>({});
+  const [filters, setFilters] = useState<{ category?: string; diet?: string; allergy?: string; difficulty?: string }>({
+    category: '',
+    diet: '',
+    allergy: '',
+    difficulty: ''
+  });
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -149,7 +154,8 @@ export default function AiRecipePage() {
       }, 1500); // 1.5 second delay after ingredient change
       
       setAutoGenerateTimer(timer);
-      addNotification('info', '🤖 Auto-generating new recipes...', 'recipes');
+      // ✅ Auto-generate ohne störende Notification
+      // addNotification('info', '🤖 Auto-generating new recipes...', 'recipes');
     }
   };
 
@@ -202,7 +208,7 @@ export default function AiRecipePage() {
   };
 
   // Handle recipe search (manual or confirmed ingredients)
-  const handleSearchRecipes = async () => {
+  const handleSearchRecipes = async (randomize = false) => {
     setRecipesWithPagination([]);
     setError(null);
     setDebugResponse(null);
@@ -211,10 +217,18 @@ export default function AiRecipePage() {
     const searchIngredients = [...ingredients, ...recognizedIngredients].join(',');
     const params = new URLSearchParams();
     if (searchIngredients) params.append('search', searchIngredients);
-    if (filters.category) params.append('type', filters.category);
-    if (filters.diet) params.append('diet', filters.diet);
-    if (filters.allergy) params.append('intolerances', filters.allergy);
-    if (filters.difficulty) params.append('difficulty', filters.difficulty);
+    
+    // ✅ Filter nur anwenden wenn NICHT randomize
+    if (!randomize) {
+      if (filters.category) params.append('type', filters.category);
+      if (filters.diet) params.append('diet', filters.diet);
+      if (filters.allergy) params.append('intolerances', filters.allergy);
+      if (filters.difficulty) params.append('difficulty', filters.difficulty);
+    }
+    
+    // ✅ Random Parameter für zufällige Rezepte
+    if (randomize) params.append('randomize', 'true');
+    
     try {
       const res = await fetch(`/api/ai/search-recipes?${params.toString()}`);
       const data = await res.json();
@@ -228,7 +242,8 @@ export default function AiRecipePage() {
         return;
       }
       setRecipesWithPagination(data.recipes || []);
-      addNotification('success', `🎉 ${data.recipes?.length || 0} recipes found!`, 'recipes');
+      const messagePrefix = randomize ? '🎲' : '🎉';
+      addNotification('success', `${messagePrefix} ${data.recipes?.length || 0} recipes found!`, 'recipes');
     } catch (err) {
       setError('Server error. Please try again later.');
       setRecipesWithPagination([]);
@@ -293,7 +308,8 @@ export default function AiRecipePage() {
     
     // ✅ Wenn Filter zurückgesetzt und wir bereits Rezepte generiert haben
     if (isFilterReset && hadFilters && hasInitialGeneration && (ingredients.length > 0 || recognizedIngredients.length > 0)) {
-      addNotification('info', '🔄 Filters cleared. Regenerating recipes...', 'recipes');
+      // ✅ Filter-Reset ohne störende Notification
+      // addNotification('info', '🔄 Filters cleared. Regenerating recipes...', 'recipes');
       // Die automatische Generierung wird durch useEffect ausgelöst
       return;
     }
@@ -302,7 +318,8 @@ export default function AiRecipePage() {
     if (recipes.length === 0) return;
     
     setIsFiltering(true);
-    addNotification('info', '🔍 Applying filters...', 'recipes');
+    // ✅ Filter-Anwendung ohne störende Notification
+    // addNotification('info', '🔍 Applying filters...', 'recipes');
     
     const searchIngredients = recognizedIngredients.length > 0 ? recognizedIngredients.join(',') : ingredients.join(',');
     const params = new URLSearchParams();
@@ -377,11 +394,23 @@ export default function AiRecipePage() {
   const handleRefreshRecipes = async () => {
     setIsRefreshing(true);
     setError(null);
-    addNotification('info', '🔄 Refreshing recipes...');
+    
+    // ✅ Alle Filter explizit zurücksetzen beim Refresh (leere Strings für Dropdown-Reset)
+    const resetFilters = {
+      category: '',
+      diet: '',
+      allergy: '',
+      difficulty: ''
+    };
+    setFilters(resetFilters);
+    
+    // ✅ Kurze Verzögerung um sicherzustellen, dass UI-Update vor API-Call erfolgt
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     try {
-      await handleSearchRecipes();
-      addNotification('success', '✅ Recipes successfully refreshed!');
+      // ✅ Random Rezepte beim Refresh holen (ohne Filter)
+      await handleSearchRecipes(true);
+      addNotification('success', '✅ Random recipes loaded and all filters cleared!', 'recipes');
       
       // Kurze Verzögerung für visuelles Feedback
       setTimeout(() => {
@@ -389,7 +418,7 @@ export default function AiRecipePage() {
       }, 500);
     } catch (error) {
       setIsRefreshing(false);
-      addNotification('error', 'Refresh failed. Please try again.');
+      addNotification('error', 'Refresh failed. Please try again.', 'recipes');
     }
   };
 
@@ -508,8 +537,8 @@ export default function AiRecipePage() {
           </div>
         )}
         
-        {/* Main recipe search button - nur anzeigen wenn keine Rezepte vorhanden */}
-        {recipes.length === 0 && (
+        {/* Main recipe search button - nur anzeigen wenn keine Rezepte UND kein Error UND Zutaten vorhanden */}
+        {recipes.length === 0 && !error && (ingredients.length > 0 || recognizedIngredients.length > 0) && (
           <div className="flex justify-center mb-4">
             <button
               className={cn(
@@ -518,7 +547,7 @@ export default function AiRecipePage() {
                 "hover:bg-lime-500 hover:shadow-xl transition-all duration-150",
                 analyzing ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
               )}
-              onClick={handleSearchRecipes}
+              onClick={() => handleSearchRecipes(false)}
               disabled={analyzing}
             >
               FIND RECIPES
@@ -527,7 +556,7 @@ export default function AiRecipePage() {
         )}
         
         {/* Conditional text based on recipe state */}
-        {recipes.length === 0 && !error && (
+        {recipes.length === 0 && !error && (ingredients.length === 0 && recognizedIngredients.length === 0) && (
           <div className="text-center text-gray-400 text-sm mt-2">
             Upload ingredients to get started! Your next meal idea is waiting.
           </div>
@@ -566,15 +595,41 @@ export default function AiRecipePage() {
             <div className="text-yellow-300 text-sm mb-4">
               Try different ingredients or fewer filters. Your ingredients might be very specific.
             </div>
-            <button
-              className="px-4 py-2 bg-yellow-600 text-yellow-900 rounded-lg font-semibold hover:bg-yellow-500 transition"
-              onClick={() => {
-                setFilters({});
-                setError(null);
-              }}
-            >
-              Reset filters
-            </button>
+            
+            {/* ✅ Action Buttons für No Results Scenario */}
+            <div className="flex gap-3 justify-center">
+              <button
+                className={cn(
+                  "px-6 py-3 rounded-xl font-bold transition-all duration-200",
+                  isRefreshing 
+                    ? "bg-gray-600 text-gray-300 cursor-not-allowed" 
+                    : "bg-accent text-white hover:bg-accent/80"
+                )}
+                onClick={handleRefreshRecipes}
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-r-transparent inline-block mr-2" />
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    🎲 Get New Recipes (No Filters)
+                  </>
+                )}
+              </button>
+              
+              <button
+                className="px-6 py-3 rounded-xl bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
+                onClick={() => {
+                  // ✅ Complete page refresh - reset ALL state
+                  window.location.reload();
+                }}
+              >
+                🗑️ Start Fresh
+              </button>
+            </div>
           </div>
         )}
         
@@ -676,8 +731,9 @@ export default function AiRecipePage() {
             )}
             
             {/* Action buttons - nur wenn Rezepte vorhanden */}
-            <div className="flex justify-center mt-8 gap-4">
-              <button
+            {recipes.length > 0 && (
+              <div className="flex justify-center mt-8 gap-4">
+                <button
                 className={cn(
                   "px-6 py-3 rounded-xl font-bold transition-all duration-200",
                   isRefreshing 
@@ -694,7 +750,7 @@ export default function AiRecipePage() {
                   </>
                 ) : (
                   <>
-                    🔄 Refresh Recipes
+                    🔄 Clear Filters & Get Random Recipes
                   </>
                 )}
               </button>
@@ -708,7 +764,8 @@ export default function AiRecipePage() {
               >
                 🗑️ Clear All
               </button>
-            </div>
+              </div>
+            )}
           </>
         )}
 

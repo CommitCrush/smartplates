@@ -3,20 +3,47 @@ import { analyzeFridge } from '@/ai/flows/analyze-fridge';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const contentType = request.headers.get('content-type');
     
-    // Validate required fields
-    if (!body.imageData) {
-      return NextResponse.json(
-        { error: 'Image data is required' },
-        { status: 400 }
-      );
+    let imageData: string;
+    let userPreferences: any = {};
+    
+    if (contentType?.includes('multipart/form-data')) {
+      // Handle FormData upload
+      const formData = await request.formData();
+      const imageFile = formData.get('image') as File;
+      
+      if (!imageFile) {
+        return NextResponse.json(
+          { error: 'Image file is required' },
+          { status: 400 }
+        );
+      }
+      
+      // Convert file to base64
+      const bytes = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      imageData = `data:${imageFile.type};base64,${buffer.toString('base64')}`;
+      
+    } else {
+      // Handle JSON upload
+      const body = await request.json();
+      
+      if (!body.imageData) {
+        return NextResponse.json(
+          { error: 'Image data is required' },
+          { status: 400 }
+        );
+      }
+      
+      imageData = body.imageData;
+      userPreferences = body.userPreferences || {};
     }
     
     // Call the AI flow
     const result = await analyzeFridge({
-      imageData: body.imageData,
-      userPreferences: body.userPreferences,
+      imageData,
+      userPreferences,
     });
     
     return NextResponse.json({

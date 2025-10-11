@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
       type: searchParams.get('type') || undefined,
       diet: searchParams.get('diet') || undefined,
       intolerances: searchParams.get('intolerances') || undefined,
+      difficulty: searchParams.get('difficulty') || undefined,
       maxReadyTime: searchParams.get('maxReadyTime') ? parseInt(searchParams.get('maxReadyTime') as string, 10) : undefined,
     };
     const page = parseInt(searchParams.get('page') || '1', 10);

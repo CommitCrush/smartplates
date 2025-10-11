@@ -7,6 +7,7 @@ export type SearchFilters = {
   type?: string;
   diet?: string;
   intolerances?: string;
+  difficulty?: string;
   maxReadyTime?: number;
   authorId?: string;
 };
@@ -52,6 +53,25 @@ export async function searchRecipesMongoAI(filters: SearchFilters = {}, paginati
   }
   if (typeof filters.maxReadyTime === 'number') {
     query.readyInMinutes = { $lte: filters.maxReadyTime };
+  }
+  if (filters.difficulty) {
+    // Map difficulty levels to cooking time ranges
+    const difficultyMapping: Record<string, { $lte?: number; $gte?: number }> = {
+      'easy': { $lte: 15 },      // Easy: <= 15 minutes
+      'medium': { $gte: 16, $lte: 30 }, // Medium: 31-60 minutes  
+      'hard': { $gte: 31 }       // Hard: > 60 minutes
+    };
+    
+    const timeFilter = difficultyMapping[filters.difficulty.toLowerCase()];
+    if (timeFilter) {
+      if (timeFilter.$lte && timeFilter.$gte) {
+        query.readyInMinutes = { $gte: timeFilter.$gte, $lte: timeFilter.$lte };
+      } else if (timeFilter.$lte) {
+        query.readyInMinutes = { $lte: timeFilter.$lte };
+      } else if (timeFilter.$gte) {
+        query.readyInMinutes = { $gte: timeFilter.$gte };
+      }
+    }
   }
   if (filters.intolerances) {
     const intoleranceKey = filters.intolerances.toLowerCase();

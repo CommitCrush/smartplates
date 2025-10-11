@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import IngredientInput from '@/components/ai/IngredientInput';
 import ImageUpload from '@/components/ai/ImageUpload';
 import RecipeResults from '@/components/ai/RecipeResults';
@@ -17,6 +17,10 @@ export default function AiRecipePage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   
+  // ✅ Neue States für automatische Rezept-Generierung
+  const [hasInitialGeneration, setHasInitialGeneration] = useState(false);
+  const [autoGenerateTimer, setAutoGenerateTimer] = useState<NodeJS.Timeout | null>(null);
+  
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
   const recipesPerPage = 6;
@@ -28,6 +32,7 @@ export default function AiRecipePage() {
     id: string;
     type: 'success' | 'error' | 'info';
     message: string;
+    category: 'ingredients' | 'recipes' | 'general'; // ✅ NEW: Kategorie für kontextuelle Platzierung
   }>>([]);
 
   // Pagination Logic
@@ -42,25 +47,110 @@ export default function AiRecipePage() {
     setCurrentPage(1); // Reset to first page
   };
 
-  // ✅ Smart Notification System
-  const addNotification = (type: 'success' | 'error' | 'info', message: string) => {
+  // ✅ Smart Notification System mit Kategorien
+  const addNotification = (
+    type: 'success' | 'error' | 'info', 
+    message: string, 
+    category: 'ingredients' | 'recipes' | 'general' = 'general'
+  ) => {
     const id = Date.now().toString();
-    setNotifications(prev => [...prev, { id, type, message }]);
+    setNotifications(prev => [...prev, { id, type, message, category }]);
     
-    // Auto-remove nach 4 Sekunden
+    // ✅ Auto-remove nach 7 Sekunden (verlängert für bessere Lesbarkeit)
     setTimeout(() => {
       setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 4000);
+    }, 7000);
   };
 
   const removeNotification = (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
+  // ✅ Komponente für kontextuelle Notifications
+  const ContextualNotifications = ({ category }: { category: 'ingredients' | 'recipes' }) => {
+    const categoryNotifications = notifications.filter(n => n.category === category);
+    
+    if (categoryNotifications.length === 0) return null;
+    
+    return (
+      <div className="mb-4 space-y-2">
+        {categoryNotifications.map(notification => (
+          <div
+            key={notification.id}
+            className={cn(
+              "px-3 py-2 rounded-lg shadow-md transition-all duration-300 transform animate-in slide-in-from-top",
+              "flex items-center justify-between border-l-4 text-sm",
+              notification.type === 'success' && "bg-green-600/90 text-white border-green-400",
+              notification.type === 'error' && "bg-red-600/90 text-white border-red-400",
+              notification.type === 'info' && "bg-blue-600/90 text-white border-blue-400"
+            )}
+          >
+            <span className="font-medium">{notification.message}</span>
+            <button
+              onClick={() => removeNotification(notification.id)}
+              className="ml-2 text-white/80 hover:text-white text-lg leading-none"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ✅ Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoGenerateTimer) {
+        clearTimeout(autoGenerateTimer);
+      }
+    };
+  }, [autoGenerateTimer]);
+
+  // ✅ Auto-generate recipes when filters change (after initial generation)
+  useEffect(() => {
+    if (!hasInitialGeneration) return;
+    
+    const allIngredients = [...ingredients, ...recognizedIngredients];
+    if (allIngredients.length === 0) return;
+
+    // Clear existing timer
+    if (autoGenerateTimer) {
+      clearTimeout(autoGenerateTimer);
+    }
+
+    // Set new timer for auto-generation (debounced)
+    const timer = setTimeout(() => {
+      handleAutoSearchRecipes();
+    }, 1000); // 1 second delay
+
+    setAutoGenerateTimer(timer);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [filters, hasInitialGeneration]); // ✅ filters als dependency hinzugefügt
+
   // Handle manual ingredient input
   const handleIngredientsChange = (newIngredients: string[]) => {
     setIngredients(newIngredients);
     setShowConfirm(false);
+    
+    // ✅ Auto-generate recipes if initial generation already happened
+    if (hasInitialGeneration && newIngredients.length > 0) {
+      // Clear existing timer
+      if (autoGenerateTimer) {
+        clearTimeout(autoGenerateTimer);
+      }
+      
+      // Set new timer for auto-generation (debounced)
+      const timer = setTimeout(() => {
+        handleAutoSearchRecipes();
+      }, 1500); // 1.5 second delay after ingredient change
+      
+      setAutoGenerateTimer(timer);
+      addNotification('info', '🤖 Auto-generating new recipes...', 'recipes');
+    }
   };
 
   // Handle image upload and OpenAI Vision analysis
@@ -69,7 +159,7 @@ export default function AiRecipePage() {
     setAnalyzing(true);
     setError(null);
     setRecognizedIngredients([]);
-    addNotification('info', '🤖 AI is analyzing your fridge photo...');
+    addNotification('info', '🤖 AI is analyzing your fridge photo...', 'ingredients');
     
     try {
       const res = await fetch('/api/ai/analyze-fridge', {
@@ -83,19 +173,19 @@ export default function AiRecipePage() {
         setError(data.error || 'No ingredients recognized.');
         setRecognizedIngredients([]);
         setShowConfirm(false);
-        addNotification('error', '❌ No ingredients detected. Try a clearer photo.');
+        addNotification('error', '❌ No ingredients detected. Try a clearer photo.', 'ingredients');
       } else {
         // Extract only ingredient names if objects are returned
         const names = data.data.ingredients.map((ing: any) => typeof ing === 'string' ? ing : ing.name).filter(Boolean);
         setRecognizedIngredients(names);
         setShowConfirm(true);
-        addNotification('success', `🎯 ${names.length} ingredients successfully detected!`);
+        addNotification('success', `🎯 ${names.length} ingredients successfully detected!`, 'ingredients');
       }
     } catch (err) {
       setError('Image analysis failed. Please try again.');
       setRecognizedIngredients([]);
       setShowConfirm(false);
-      addNotification('error', '🚨 AI analysis failed. Please try again.');
+      addNotification('error', '🚨 AI analysis failed. Please try again.', 'ingredients');
     } finally {
       setAnalyzing(false);
     }
@@ -116,6 +206,8 @@ export default function AiRecipePage() {
     setRecipesWithPagination([]);
     setError(null);
     setDebugResponse(null);
+    setHasInitialGeneration(true); // ✅ Mark initial generation as done
+    
     const searchIngredients = [...ingredients, ...recognizedIngredients].join(',');
     const params = new URLSearchParams();
     if (searchIngredients) params.append('search', searchIngredients);
@@ -136,26 +228,81 @@ export default function AiRecipePage() {
         return;
       }
       setRecipesWithPagination(data.recipes || []);
-      addNotification('success', `🎉 ${data.recipes?.length || 0} recipes found!`);
+      addNotification('success', `🎉 ${data.recipes?.length || 0} recipes found!`, 'recipes');
     } catch (err) {
       setError('Server error. Please try again later.');
       setRecipesWithPagination([]);
       setDebugResponse({ status: 500, error: err });
-      addNotification('error', 'Error loading recipes. Please try again.');
+      addNotification('error', 'Error loading recipes. Please try again.', 'recipes');
+    }
+  };
+
+  // ✅ Auto-search function for automatic recipe generation
+  const handleAutoSearchRecipes = async () => {
+    if (!hasInitialGeneration) return;
+    
+    setError(null);
+    setDebugResponse(null);
+    
+    const searchIngredients = [...ingredients, ...recognizedIngredients].join(',');
+    if (!searchIngredients) {
+      setRecipesWithPagination([]);
+      return;
+    }
+    
+    const params = new URLSearchParams();
+    params.append('search', searchIngredients);
+    if (filters.category) params.append('type', filters.category);
+    if (filters.diet) params.append('diet', filters.diet);
+    if (filters.allergy) params.append('intolerances', filters.allergy);
+    if (filters.difficulty) params.append('difficulty', filters.difficulty);
+    
+    try {
+      const res = await fetch(`/api/ai/search-recipes?${params.toString()}`);
+      const data = await res.json();
+      setDebugResponse({ status: res.status, data });
+      if (!res.ok || data.error) {
+        let errorMsg = 'No recipes found.';
+        if (data.error) errorMsg = data.error;
+        setError(errorMsg);
+        setRecipesWithPagination([]);
+        addNotification('error', 'No recipes found with new ingredients.', 'recipes');
+        return;
+      }
+      setRecipesWithPagination(data.recipes || []);
+      addNotification('success', `✨ ${data.recipes?.length || 0} new recipes auto-generated!`, 'recipes');
+    } catch (err) {
+      setError('Server error. Please try again later.');
+      setRecipesWithPagination([]);
+      addNotification('error', 'Error auto-generating recipes.', 'recipes');
     }
   };
 
   // Handle filter change - automatische Filterung ohne Button-Klick
   const handleFilterChange = async (newFilters: any) => {
+    const hadFilters = Object.keys(filters).some(key => filters[key as keyof typeof filters] && filters[key as keyof typeof filters] !== 'all' && filters[key as keyof typeof filters] !== 'none');
+    
     setFilters(newFilters);
     setError(null);
     setDebugResponse(null);
+    
+    // ✅ Prüfen ob Filter zurückgesetzt wurden
+    const isFilterReset = Object.keys(newFilters).every(key => 
+      !newFilters[key] || newFilters[key] === 'all' || newFilters[key] === 'none'
+    );
+    
+    // ✅ Wenn Filter zurückgesetzt und wir bereits Rezepte generiert haben
+    if (isFilterReset && hadFilters && hasInitialGeneration && (ingredients.length > 0 || recognizedIngredients.length > 0)) {
+      addNotification('info', '🔄 Filters cleared. Regenerating recipes...', 'recipes');
+      // Die automatische Generierung wird durch useEffect ausgelöst
+      return;
+    }
     
     // Nur automatisch filtern wenn bereits Rezepte vorhanden sind
     if (recipes.length === 0) return;
     
     setIsFiltering(true);
-    addNotification('info', '🔍 Applying filters...');
+    addNotification('info', '🔍 Applying filters...', 'recipes');
     
     const searchIngredients = recognizedIngredients.length > 0 ? recognizedIngredients.join(',') : ingredients.join(',');
     const params = new URLSearchParams();
@@ -200,6 +347,13 @@ export default function AiRecipePage() {
     setRecipesWithPagination([]);
     setShowConfirm(false);
     setError(null);
+    setHasInitialGeneration(false); // ✅ Reset auto-generation state
+    
+    // Clear any pending timers
+    if (autoGenerateTimer) {
+      clearTimeout(autoGenerateTimer);
+      setAutoGenerateTimer(null);
+    }
   };
 
   // Pagination Navigation Functions
@@ -272,7 +426,14 @@ export default function AiRecipePage() {
       </div>
             <div className="w-full max-w-4xl mx-auto px-0 py-10">
         {/* Section 1: Input options */}
-        <h2 className="text-2xl font-bold text-white mb-6">Add your ingredients</h2>
+        <h2 className="text-2xl font-bold text-white mb-6">
+          Add your ingredients
+          {hasInitialGeneration && (
+            <span className="ml-3 text-lg text-primary font-normal">
+              ✨ Auto-generating recipes as you add ingredients
+            </span>
+          )}
+        </h2>
         <div className="flex gap-6 mb-8">
           <div className="flex-1 bg-[#232b3e] rounded-xl border border-gray-700 flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
             <div className="mb-2 text-3xl text-primary"><i className="lucide lucide-image" /></div>
@@ -288,6 +449,10 @@ export default function AiRecipePage() {
           </div>
           
         </div>
+        
+        {/* ✅ Zutaten-bezogene Notifications */}
+        <ContextualNotifications category="ingredients" />
+        
         <div className="border-t border-gray-700 my-8" />
         {/* Section 2: Ingredient list and filters */}
         <h2 className="text-2xl font-bold text-white mb-6">Your current ingredients</h2>
@@ -423,17 +588,19 @@ export default function AiRecipePage() {
               </div>
             )}
             
-            {/* ✅ Layout mit Notifications neben Rezepten */}
+            {/* ✅ Layout mit kontextuellen Notifications */}
             <div className="flex gap-6 items-start">
               {/* Recipe Results - Hauptinhalt */}
               <div className="flex-1">
+                {/* ✅ Rezept-bezogene Notifications direkt vor den Rezepten */}
+                <ContextualNotifications category="recipes" />
                 <RecipeResults recipes={currentRecipes} />
               </div>
               
-              {/* Notifications Sidebar - Neben den Rezepten */}
-              {notifications.length > 0 && (
+              {/* General Notifications Sidebar - Nur für allgemeine Meldungen */}
+              {notifications.filter(n => n.category === 'general').length > 0 && (
                 <div className="w-80 space-y-2 sticky top-20">
-                  {notifications.map(notification => (
+                  {notifications.filter(n => n.category === 'general').map(notification => (
                     <div
                       key={notification.id}
                       className={cn(
@@ -535,10 +702,8 @@ export default function AiRecipePage() {
               <button
                 className="px-6 py-3 rounded-xl bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
                 onClick={() => {
-                  setRecipesWithPagination([]);
-                  setFilters({});
-                  setError(null);
-                  addNotification('info', '🗑️ All filters and results cleared');
+                  // ✅ Complete page refresh - reset ALL state
+                  window.location.reload();
                 }}
               >
                 🗑️ Clear All

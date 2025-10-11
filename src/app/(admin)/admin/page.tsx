@@ -3,13 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import AdminStatisticsWidgets from '@/components/admin/AdminStatisticsWidgets';
 import { Button } from '@/components/ui/button';
 import {
   Users,
   ChefHat,
   Settings,
-  BarChart3,
   UserCog,
   Package,
   Star,
@@ -57,21 +55,14 @@ export default function AdminPage() {
     {
       title: 'Manage Recipes',
       description: 'Review and moderate recipes',
-      href: '/admin/manage-recipes',
+      href: '/admin/dashboard/manage-recipes',
       icon: ChefHat,
       color: 'text-green-600'
     },
     {
-      title: 'Analytics',
-      description: 'Detailed system analytics',
-      href: '/admin/statistics',
-      icon: BarChart3,
-      color: 'text-purple-600'
-    },
-    {
       title: 'Cookware Commissions',
       description: 'Manage cookware commissions',
-      href: '/admin/commission-management',
+      href: '/admin/dashboard/manage_cookware_commissions',
       icon: Package,
       color: 'text-orange-600'
     },
@@ -96,7 +87,7 @@ export default function AdminPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Statistics</h1>
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground mt-1">
             SmartPlates system management and overview
           </p>
@@ -104,10 +95,10 @@ export default function AdminPage() {
      
       </div>
 
-      {/* Statistics Section */}
+      {/* Dashboard Overview Section */}
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
+          <Settings className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-semibold">System Overview</h2>
         </div>
         {/* System Status Cards */}

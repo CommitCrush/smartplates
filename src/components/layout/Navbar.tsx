@@ -80,14 +80,6 @@ export default function Navbar() {
                     Commission Management
                   </Link>
                   <Link
-                    href="/admin/dashboard/statistics"
-                    className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                    role="menuitem"
-                    tabIndex={0}
-                  >
-                    Statistics
-                  </Link>
-                  <Link
                     href="/admin/upload-recipe"
                     className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                     role="menuitem"
@@ -384,15 +376,6 @@ export default function Navbar() {
               tabIndex={0}
             >
               Commission Management
-            </Link>
-            <Link
-              href="/admin/dashboard/statistics"
-              className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-              onClick={() => setIsMenuOpen(false)}
-              role="menuitem"
-              tabIndex={0}
-            >
-              Statistics
             </Link>
 
             {/* Mobile Authentication */}

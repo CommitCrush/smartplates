@@ -80,8 +80,8 @@ export const filterRecipesByDifficulty = (recipes: Recipe[], difficulty: string)
     const cookTime = recipe.readyInMinutes || 0;
     
     if (difficulty === 'easy') return cookTime <= 15; // Easy: up to 15 minutes
-    if (difficulty === 'medium') return cookTime >= 15 && cookTime <= 30; // Medium: 15-30 minutes
-    if (difficulty === 'hard') return cookTime > 30; // Hard: over 30 minutes
+    if (difficulty === 'medium') return cookTime > 15 && cookTime < 35; // Medium: 16-34 minutes
+    if (difficulty === 'hard') return cookTime >= 35; // Hard: 35+ minutes
     
     return true;
   });

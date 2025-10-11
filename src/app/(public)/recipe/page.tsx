@@ -51,7 +51,7 @@ export default function RecipePage() {
       if (selectedDifficulty === 'easy') {
         options.maxReadyTime = '15';
       } else if (selectedDifficulty === 'medium') {
-        options.maxReadyTime = '30';
+        options.maxReadyTime = '34';  // Updated: Medium bis 34 Min
       }
 
       if (!isAuthenticated || page === 1) {

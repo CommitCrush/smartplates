@@ -290,8 +290,8 @@ export function searchCachedRecipes(
     results = results.filter(recipe => {
       const time = recipe.readyInMinutes ?? 0;
       if (difficulty === 'easy') return time <= 15;
-      if (difficulty === 'medium') return time > 15 && time <= 30;
-      if (difficulty === 'hard') return time > 30;
+      if (difficulty === 'medium') return time > 15 && time < 35;
+      if (difficulty === 'hard') return time >= 35;
       return true;
     });
   }

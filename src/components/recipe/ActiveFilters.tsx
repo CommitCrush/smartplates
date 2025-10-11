@@ -24,6 +24,19 @@ const DIFFICULTY_LABELS: { [key: string]: string } = {
   'hard': 'Hard',
 };
 
+// Helper function for category display names
+const getCategoryDisplayName = (category: string): string => {
+  const categoryDisplayMap: { [key: string]: string } = {
+    'main course': 'Lunch',     // API value → User-friendly display
+    'dinner': 'Dinner',
+    'breakfast': 'Breakfast', 
+    'dessert': 'Dessert',
+    'snack': 'Snack'
+  };
+  
+  return categoryDisplayMap[category] || category.charAt(0).toUpperCase() + category.slice(1);
+};
+
 // Typo correction for search display
 const getCorrectSpelling = (query: string): string => {
   const commonMisspellings: { [key: string]: string[] } = {
@@ -79,7 +92,7 @@ export function ActiveFilters({
   if (selectedCategory) {
     activeFilters.push({
       id: 'category',
-      label: selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1),
+      label: getCategoryDisplayName(selectedCategory),
       onRemove: onRemoveCategory,
     });
   }

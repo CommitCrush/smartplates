@@ -51,7 +51,7 @@ export default function RecipePage() {
       if (selectedDifficulty === 'easy') {
         options.maxReadyTime = '15';
       } else if (selectedDifficulty === 'medium') {
-        options.maxReadyTime = '30';
+        options.maxReadyTime = '34';  // Updated: Medium bis 34 Min
       }
 
       if (!isAuthenticated || page === 1) {
@@ -145,10 +145,22 @@ export default function RecipePage() {
     return allFilteredRecipes.slice(startIndex, startIndex + RECIPES_PER_PAGE);
   }, [allFilteredRecipes, page, hasSearchQuery]);
 
-  // Reset page when search query changes
+  // Reset page when any filter changes
   useEffect(() => {
     setPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedCategory, selectedDifficulty, selectedDiet, selectedAllergy]);
+
+  // Auto-scroll to top when page changes OR when filters change
+  useEffect(() => {
+    if (page > 1) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [page]);
+
+  // Auto-scroll to top when any filter changes (including search input)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [searchQuery, selectedCategory, selectedDifficulty, selectedDiet, selectedAllergy]);
 
   const handleFilterChange = () => {
     setPage(1);

@@ -33,6 +33,7 @@ export default function AiRecipePage() {
   // ✅ Neue States für Refresh und Notifications
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false); // ✅ NEW: Loading state für Auto-Generation
   const [notifications, setNotifications] = useState<Array<{
     id: string;
     type: 'success' | 'error' | 'info';
@@ -112,12 +113,17 @@ export default function AiRecipePage() {
     };
   }, [autoGenerateTimer]);
 
-  // ✅ Auto-generate recipes when filters change (after initial generation)
+  // ✅ Auto-generate recipes when ingredients or filters change (after initial generation)
   useEffect(() => {
     if (!hasInitialGeneration) return;
     
     const allIngredients = [...ingredients, ...recognizedIngredients];
-    if (allIngredients.length === 0) return;
+    if (allIngredients.length === 0) {
+      // Wenn alle Zutaten entfernt wurden, Rezepte leeren
+      setRecipesWithPagination([]);
+      setError(null);
+      return;
+    }
 
     // Clear existing timer
     if (autoGenerateTimer) {
@@ -134,7 +140,7 @@ export default function AiRecipePage() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [filters, hasInitialGeneration]); // ✅ filters als dependency hinzugefügt
+  }, [filters, hasInitialGeneration, ingredients, recognizedIngredients]); // ✅ Alle dependencies hinzugefügt
 
   // Handle manual ingredient input
   const handleIngredientsChange = (newIngredients: string[]) => {
@@ -258,10 +264,12 @@ export default function AiRecipePage() {
     
     setError(null);
     setDebugResponse(null);
+    setIsAutoGenerating(true); // ✅ Start loading
     
     const searchIngredients = [...ingredients, ...recognizedIngredients].join(',');
     if (!searchIngredients) {
       setRecipesWithPagination([]);
+      setIsAutoGenerating(false);
       return;
     }
     
@@ -281,15 +289,16 @@ export default function AiRecipePage() {
         if (data.error) errorMsg = data.error;
         setError(errorMsg);
         setRecipesWithPagination([]);
-        addNotification('error', 'No recipes found with new ingredients.', 'recipes');
+        // ✅ Keine verwirrende Auto-Generated Notification bei Error
         return;
       }
       setRecipesWithPagination(data.recipes || []);
-      addNotification('success', `✨ ${data.recipes?.length || 0} new recipes auto-generated!`, 'recipes');
+      // ✅ Entferne verwirrende "auto-generated" Notification - Loading-Animation gibt genug Feedback
     } catch (err) {
       setError('Server error. Please try again later.');
       setRecipesWithPagination([]);
-      addNotification('error', 'Error auto-generating recipes.', 'recipes');
+    } finally {
+      setIsAutoGenerating(false); // ✅ Stop loading
     }
   };
 
@@ -499,8 +508,24 @@ export default function AiRecipePage() {
               <button
                 className="ml-2 w-7 h-7 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 transition text-white text-lg font-bold border-2 border-white"
                 onClick={() => {
-                  if (ingredients.includes(ing)) setIngredients(ingredients.filter(i => i !== ing));
-                  if (recognizedIngredients.includes(ing)) setRecognizedIngredients(recognizedIngredients.filter(i => i !== ing));
+                  // ✅ Zutat entfernen und automatische Regenerierung triggern
+                  let wasRemoved = false;
+                  if (ingredients.includes(ing)) {
+                    const newIngredients = ingredients.filter(i => i !== ing);
+                    setIngredients(newIngredients);
+                    wasRemoved = true;
+                  }
+                  if (recognizedIngredients.includes(ing)) {
+                    const newRecognizedIngredients = recognizedIngredients.filter(i => i !== ing);
+                    setRecognizedIngredients(newRecognizedIngredients);
+                    wasRemoved = true;
+                  }
+                  
+                  // ✅ Entferne verwirrende Notification - Loading-Animation ist genug Feedback
+                  // if (wasRemoved && hasInitialGeneration) {
+                  //   addNotification('success', `"${ing}" removed - updating recipes...`, 'ingredients');
+                  // }
+                  // ✅ Das useEffect wird automatisch getriggert durch die State-Änderung
                 }}
                 aria-label="Remove ingredient"
               >
@@ -529,6 +554,17 @@ export default function AiRecipePage() {
         <div className="flex flex-wrap gap-2 mb-6">
           <RecipeFilterDropdown filters={filters} onChange={handleFilterChange} />
         </div>
+        
+        {/* Loading indicator for auto-generation - centered */}
+        {isAutoGenerating && (
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-lg border border-primary/20 shadow-sm">
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm font-medium text-primary">Generating recipes automatically...</span>
+            </div>
+          </div>
+        )}
+        
         {/* Error display */}
         {error && (
           <div className="mb-8 rounded-xl shadow-lg bg-gradient-to-r from-red-900 to-red-800 p-6">

@@ -90,9 +90,9 @@ export default function AdminPage() {
 
   const quickActions = [
     {
-      title: 'Manage Users',
+      title: 'User Management',
       description: 'Manage and moderate user accounts',
-      href: '/admin/manage-users',
+      href: '/admin/dashboard/manage-users',
       icon: Users,
       color: 'text-blue-600'
     },

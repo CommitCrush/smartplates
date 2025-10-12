@@ -59,22 +59,8 @@ export function RecipeCard({
     return 0;
   })();
 
-  // --- CORRECTED LINK GENERATION ---
-  // Create the correct href based on the recipe type (database vs. Spoonacular)
-  const dbId = ('_id' in recipe && recipe._id) ? recipe._id.toString() : null;
-  const spoonacularId = ('id' in recipe && recipe.id) 
-    ? recipe.id.toString() 
-    : (('spoonacularId' in recipe && recipe.spoonacularId) ? recipe.spoonacularId.toString() : null);
-
-  let href = '#'; // Fallback URL
-  if (dbId) {
-    // It's a recipe from our database, use its _id.
-    href = `/recipe/${dbId}`;
-  } else if (spoonacularId) {
-    // It's a recipe from Spoonacular (and not in our DB), use the special prefixed ID.
-    href = `/recipe/spoonacular-${spoonacularId}`;
-  }
-  // --- END OF CORRECTION ---
+  const recipeId = (recipe as any)._id || (recipe as any).id;
+  const href = `/recipe/${recipeId}`;
 
   return (
     <Card className={cn(

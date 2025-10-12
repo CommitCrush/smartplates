@@ -18,9 +18,6 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 		isEmailVerified: user.isEmailVerified || false
 	});
 		const [isActive, setIsActive] = useState((user as any).isActive !== false); // Default true, falls Feld fehlt
-	const [loading, setLoading] = useState(false);
-	const [success, setSuccess] = useState(false);
-	const [error, setError] = useState("");
 
 		const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
 			const { name, value, type } = e.target;
@@ -34,28 +31,6 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 			}));
 		};
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setLoading(true);
-		setError("");
-		setSuccess(false);
-		try {
-			const res = await fetch(`/api/admin/users/${user._id}`, {
-				method: "PATCH",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					name: form.name,
-					isEmailVerified: form.isEmailVerified
-				}),
-			});
-			if (!res.ok) throw new Error("Update failed");
-			setSuccess(true);
-		} catch {
-			setError("Fehler beim Speichern.");
-		} finally {
-			setLoading(false);
-		}
-	};
 
 		// Admin Actions
 		const [actionLoading, setActionLoading] = useState("");
@@ -96,10 +71,11 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 
 		return (
 			<Card className="p-6 space-y-6">
-				<div>
-					<label className="block font-medium mb-1">Name</label>
-					<Input name="name" value={form.name} disabled />
-				</div>
+				   <div>
+					<div className="font-medium text-sm text-gray-500">Username</div>
+					   <div className="text-gray-800 dark:text-gray-200 mb-2">{user.name}</div>
+					   
+				   </div>
 				<div className="flex items-center gap-2">
 					<input
 						type="checkbox"

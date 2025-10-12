@@ -35,10 +35,12 @@ export function RecipeCard({
       return { src: '/placeholder-recipe.svg', useNextImage: true };
     }
     
+    // For Spoonacular URLs: use direct loading to avoid 429 errors
     if (url.includes('spoonacular.com') || url.includes('img.spoonacular.com')) {
       return { src: url, useNextImage: false }; // Direct HTML img tag
     }
     
+    // For other URLs: use Next.js Image optimization
     if (!/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url)) {
       return { src: '/placeholder-recipe.svg', useNextImage: true };
     }
@@ -48,29 +50,37 @@ export function RecipeCard({
 
   const imageConfig = getRecipeImage(recipe.image);
 
-  // Calculate total time
+  // Calculate total time - handle both RecipeCard and Recipe types
   const totalTime = (() => {
-    if ('totalTime' in recipe) return recipe.totalTime;
+    if ('totalTime' in recipe) {
+      return recipe.totalTime;
+    }
+    // For full Recipe objects
     const fullRecipe = recipe as Recipe;
-    if (fullRecipe.readyInMinutes) return fullRecipe.readyInMinutes;
+    if (fullRecipe.readyInMinutes) {
+      return fullRecipe.readyInMinutes;
+    }
     if (fullRecipe.preparationMinutes && fullRecipe.cookingMinutes) {
       return fullRecipe.preparationMinutes + fullRecipe.cookingMinutes;
     }
     return 0;
   })();
 
-  const recipeId = (recipe as any)._id || (recipe as any).id;
-  const href = `/recipe/${recipeId}`;
+  // Get recipe ID - handle both types with proper type guards
+  const recipeId = ('_id' in recipe ? recipe._id?.toString() : '') || 
+                   ('id' in recipe ? recipe.id?.toString() : '') || 
+                   ('spoonacularId' in recipe ? recipe.spoonacularId?.toString() : '');
 
   return (
     <Card className={cn(
       "group cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
       className
     )}>
-      <Link href={href}>
+      <Link href={`/recipe/${recipeId}`}>
         {/* Recipe Image */}
         <div className="relative aspect-[4/3] overflow-hidden">
           {imageConfig.useNextImage ? (
+            // Use Next.js Image for optimization (non-Spoonacular images)
             <Image
               src={imageConfig.src}
               alt={recipe.title}
@@ -78,14 +88,25 @@ export function RecipeCard({
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={priority}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              onError={(e) => { e.currentTarget.src = '/placeholder-recipe.svg'; }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== '/placeholder-recipe.svg') {
+                  target.src = '/placeholder-recipe.svg';
+                }
+              }}
             />
           ) : (
+            // Use direct HTML img tag for Spoonacular images (no proxy)
             <img
               src={imageConfig.src}
               alt={recipe.title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              onError={(e) => { e.currentTarget.src = '/placeholder-recipe.svg'; }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== '/placeholder-recipe.svg') {
+                  target.src = '/placeholder-recipe.svg';
+                }
+              }}
               loading={priority ? "eager" : "lazy"}
             />
           )}
@@ -93,7 +114,10 @@ export function RecipeCard({
           {/* Difficulty Badge */}
           {('difficulty' in recipe) && recipe.difficulty && (
             <div className="absolute top-3 left-3">
-              <Badge variant="secondary" className="bg-white/90 text-gray-900 backdrop-blur-sm">
+              <Badge 
+                variant="secondary" 
+                className="bg-white/90 text-gray-900 backdrop-blur-sm"
+              >
                 {recipe.difficulty}
               </Badge>
             </div>
@@ -102,7 +126,10 @@ export function RecipeCard({
           {/* Rating Badge */}
           {recipe.rating && recipe.rating > 0 && (
             <div className="absolute top-3 right-3">
-              <Badge variant="secondary" className="bg-white/90 text-gray-900 backdrop-blur-sm flex items-center gap-1">
+              <Badge 
+                variant="secondary" 
+                className="bg-white/90 text-gray-900 backdrop-blur-sm flex items-center gap-1"
+              >
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                 {recipe.rating.toFixed(1)}
               </Badge>
@@ -112,14 +139,20 @@ export function RecipeCard({
 
         {/* Card Content */}
         <CardContent className="p-4">
+          {/* Recipe Title */}
           <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
             {recipe.title}
           </h3>
+
+          {/* Recipe Description */}
           <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
             {recipe.description || ('summary' in recipe ? recipe.summary?.replace(/<[^>]*>/g, '') : '') || 'No description available'}
           </p>
+
+          {/* Recipe Meta Information */}
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-4">
+              {/* Cooking Time */}
               {totalTime > 0 && (
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
@@ -127,6 +160,8 @@ export function RecipeCard({
                 </div>
               )}
             </div>
+
+            {/* Difficulty Icon */}
             {('difficulty' in recipe) && recipe.difficulty && (
               <div className="flex items-center gap-1">
                 <ChefHat className="w-4 h-4" />
@@ -138,16 +173,23 @@ export function RecipeCard({
         {/* Card Footer */}
         <CardFooter className="p-4 pt-0">
           <div className="flex items-center justify-between w-full">
+            {/* Author */}
             {showAuthor && 'authorName' in recipe && recipe.authorName && (
               <span className="text-sm text-muted-foreground">
                 by {recipe.authorName}
               </span>
             )}
+
+            {/* Tags */}
             <div className="flex gap-1 flex-wrap">
               {('tags' in recipe && recipe.tags) && (
                 <>
                   {recipe.tags.slice(0, 2).map((tag: string) => (
-                    <Badge key={tag} variant="outline" className="text-xs">
+                    <Badge 
+                      key={tag} 
+                      variant="outline" 
+                      className="text-xs"
+                    >
                       {tag}
                     </Badge>
                   ))}

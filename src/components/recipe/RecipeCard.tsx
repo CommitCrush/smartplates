@@ -44,11 +44,7 @@ export function RecipeCard({
       return { src: url, useNextImage: true }; // Use Next.js Image for Cloudinary
     }
     
-    // For Cloudinary URLs: use Next.js Image optimization
-    if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
-      return { src: url, useNextImage: true }; // Use Next.js Image for Cloudinary
-    }
-    
+    // For other URLs: use Next.js Image optimization
     if (!/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url)) {
       return { src: '/placeholder-recipe.svg', useNextImage: true };
     }

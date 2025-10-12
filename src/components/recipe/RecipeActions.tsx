@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { FaDownload, FaPrint, FaShoppingCart } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -15,6 +16,7 @@ interface RecipeActionsProps {
 
 export function RecipeActions({ recipe, contentRef }: RecipeActionsProps) {
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleDownloadPdf = () => {
     if (contentRef.current) {
@@ -51,6 +53,7 @@ export function RecipeActions({ recipe, contentRef }: RecipeActionsProps) {
 
       if (response.ok) {
         toast({ title: 'Success', description: 'Ingredients added to your shopping list.' });
+        router.push(`/user/shopping-list?recipeId=${recipe.id}`);
       } else {
         toast({ title: 'Error', description: 'Failed to add ingredients to shopping list.', variant: 'destructive' });
       }

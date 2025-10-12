@@ -8,7 +8,7 @@
 
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Recipe } from '@/types/recipe';
 import { RecipeHeader } from './RecipeHeader';
 import { RecipeIngredients } from './RecipeIngredients';
@@ -22,6 +22,7 @@ interface RecipeDetailProps {
 
 export function RecipeDetail({ recipe }: RecipeDetailProps) {
   const recipeContentRef = useRef<HTMLDivElement>(null);
+  const [currentServings, setCurrentServings] = useState(recipe.servings || 1);
 
   return (
     <div className="max-w-6xl mx-auto flex items-start space-x-4">
@@ -32,7 +33,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
             <div className="lg:col-span-1">
-              <RecipeIngredients recipe={recipe} />
+              <RecipeIngredients recipe={recipe} currentServings={currentServings} setCurrentServings={setCurrentServings} />
             </div>
             <div className="lg:col-span-2">
               <RecipeInstructions
@@ -51,7 +52,7 @@ export function RecipeDetail({ recipe }: RecipeDetailProps) {
 
       {/* Sticky Action Icons */}
       <div className="sticky top-28">
-        <RecipeActions recipe={recipe} contentRef={recipeContentRef} />
+        <RecipeActions recipe={recipe} contentRef={recipeContentRef} currentServings={currentServings} />
       </div>
     </div>
   );

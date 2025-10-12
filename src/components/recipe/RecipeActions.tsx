@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -12,9 +11,10 @@ import { useToast } from '@/components/ui/use-toast';
 interface RecipeActionsProps {
   recipe: Recipe;
   contentRef: React.RefObject<HTMLDivElement>;
+  currentServings: number;
 }
 
-export function RecipeActions({ recipe, contentRef }: RecipeActionsProps) {
+export function RecipeActions({ recipe, contentRef, currentServings }: RecipeActionsProps) {
   const { toast } = useToast();
   const router = useRouter();
 
@@ -37,11 +37,17 @@ export function RecipeActions({ recipe, contentRef }: RecipeActionsProps) {
 
   const handleAddToShoppingList = async () => {
     try {
-      const ingredients = recipe.extendedIngredients.map((ingredient) => ({
+      const ingredientSource = recipe.extendedIngredients || recipe.ingredients || [];
+      const ingredients = ingredientSource.map((ingredient: any) => ({
         name: ingredient.name,
-        quantity: ingredient.amount,
+        quantity: ingredient.amount || ingredient.quantity, 
         unit: ingredient.unit,
       }));
+
+      if (ingredients.length === 0) {
+        toast({ title: 'No Ingredients', description: 'This recipe has no ingredients to add.', variant: 'destructive' });
+        return;
+      }
 
       const response = await fetch('/api/grocery-list', {
         method: 'POST',
@@ -53,7 +59,8 @@ export function RecipeActions({ recipe, contentRef }: RecipeActionsProps) {
 
       if (response.ok) {
         toast({ title: 'Success', description: 'Ingredients added to your shopping list.' });
-        router.push(`/user/shopping-list?recipeId=${recipe._id}`);
+        const recipeId = recipe.id || recipe._id;
+        router.push(`/user/shopping-list?recipeId=${recipeId}&servings=${currentServings}`);
       } else {
         toast({ title: 'Error', description: 'Failed to add ingredients to shopping list.', variant: 'destructive' });
       }

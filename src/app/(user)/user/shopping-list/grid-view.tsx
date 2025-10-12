@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import jsPDF from 'jspdf';
@@ -13,6 +14,12 @@ interface Ingredient {
   checked: boolean;
 }
 
+interface OriginalIngredient {
+  name: string;
+  originalQuantity: number;
+  unit: string;
+}
+
 interface SavedList {
   _id: string;
   name: string;
@@ -23,42 +30,20 @@ interface SavedList {
 interface RecipeInfo {
   title: string;
   servings: number;
-  sourceUrl: string;
 }
 
 export default function ShoppingListGridView() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [originalIngredients, setOriginalIngredients] = useState<OriginalIngredient[]>([]);
   const [recipeInfo, setRecipeInfo] = useState<RecipeInfo | null>(null);
+  const [servings, setServings] = useState(1);
   const [savedLists, setSavedLists] = useState<SavedList[]>([]);
   const [listName, setListName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const recipeId = searchParams.get('recipeId');
-    if (recipeId) {
-      const fetchRecipeDetails = async () => {
-        try {
-          const response = await fetch(`/api/recipes/${recipeId}`);
-          if (response.ok) {
-            const data = await response.json();
-            setRecipeInfo({
-              title: data.title,
-              servings: data.servings,
-              sourceUrl: data.sourceUrl
-            });
-          } else {
-            console.error('Failed to fetch recipe details');
-          }
-        } catch (err) {
-          console.error('Error fetching recipe details:', err);
-        }
-      };
-      fetchRecipeDetails();
-    }
-  }, [searchParams]);
+  const [recipeId, setRecipeId] = useState<string | null>(null);
 
   const fetchShoppingList = useCallback(async () => {
     if (!session) return;
@@ -95,9 +80,51 @@ export default function ShoppingListGridView() {
   }, [session]);
 
   useEffect(() => {
-    fetchShoppingList();
+    const currentRecipeId = searchParams.get('recipeId');
+    const servingsParam = searchParams.get('servings');
+    setRecipeId(currentRecipeId);
+
+    if (currentRecipeId) {
+      setLoading(true);
+      const fetchRecipeDetails = async () => {
+        try {
+          const response = await fetch(`/api/recipes/${currentRecipeId}`);
+          if (response.ok) {
+            const data = await response.json();
+            const initialServings = servingsParam ? parseInt(servingsParam, 10) : data.servings || 1;
+            setRecipeInfo({ title: data.title, servings: data.servings });
+            setServings(initialServings);
+            setListName(data.title || '');
+            const baseIngredients = (data.extendedIngredients || []).map((ing: any) => ({ name: ing.name, originalQuantity: ing.amount, unit: ing.unit }));
+            setOriginalIngredients(baseIngredients);
+          } else {
+            setError('Failed to fetch recipe details');
+          }
+        } catch (err) {
+          setError('Error fetching recipe details.');
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchRecipeDetails();
+    } else {
+      fetchShoppingList();
+    }
     fetchSavedLists();
-  }, [fetchShoppingList, fetchSavedLists]);
+  }, [searchParams, session, fetchShoppingList, fetchSavedLists]);
+
+  useEffect(() => {
+    if (!recipeInfo || originalIngredients.length === 0) return;
+    const scaleFactor = recipeInfo.servings > 0 ? servings / recipeInfo.servings : 1;
+    const checkedMap = new Map(ingredients.map(ing => [ing.name, ing.checked]));
+    setIngredients(originalIngredients.map(origIng => ({
+      name: origIng.name,
+      quantity: parseFloat((origIng.originalQuantity * scaleFactor).toFixed(2)),
+      unit: origIng.unit,
+      checked: checkedMap.get(origIng.name) || false
+    })));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [servings, originalIngredients, recipeInfo]);
 
   const handleToggleIngredient = (index: number) => {
     const newIngredients = [...ingredients];
@@ -124,26 +151,21 @@ export default function ShoppingListGridView() {
         throw new Error(errorData.message || 'Failed to save list.');
       }
     });
-
-    toast.promise(promise, {
-      loading: 'Saving list...',
-      success: (message) => message,
-      error: (err) => err.message,
-    });
+    toast.promise(promise, { loading: 'Saving list...', success: (message) => message, error: (err) => err.message });
   };
 
   const handleLoadList = (listToLoad: SavedList) => {
-    if (window.confirm(`Are you sure you want to load "${listToLoad.name}"? This will replace your current list.`)) {
-      setIngredients(listToLoad.ingredients);
-      toast.success(`List "${listToLoad.name}" loaded!`);
+    if (window.confirm(`Are you sure you want to load \"${listToLoad.name}\"? This will replace your current list.`)) {
+      setRecipeInfo(null);
+      setOriginalIngredients([]);
+      setIngredients(listToLoad.ingredients.map(ing => ({ ...ing, checked: ing.checked || false })));
+      toast.success(`List \"${listToLoad.name}\" loaded!`);
     }
   };
 
   const handleDeleteList = async (listId: string) => {
     if (window.confirm('Are you sure you want to permanently delete this list?')) {
-      const promise = fetch(`/api/saved-grocery-lists/${listId}`, {
-        method: 'DELETE',
-      }).then(async (response) => {
+      const promise = fetch(`/api/saved-grocery-lists/${listId}`, { method: 'DELETE' }).then(async (response) => {
         if (response.ok) {
           fetchSavedLists();
           return 'List deleted successfully.';
@@ -152,15 +174,10 @@ export default function ShoppingListGridView() {
           throw new Error(errorData.message || 'Failed to delete list.');
         }
       });
-
-      toast.promise(promise, {
-        loading: 'Deleting list...',
-        success: (message) => message,
-        error: (err) => err.message,
-      });
+      toast.promise(promise, { loading: 'Deleting list...', success: (message) => message, error: (err) => err.message });
     }
   };
-  
+
   const handlePrint = () => window.print();
 
   const handleDownloadPdf = () => {
@@ -170,8 +187,7 @@ export default function ShoppingListGridView() {
     doc.setFontSize(12);
     let y = 30;
     if (recipeInfo) {
-      doc.text(`Serves: ${recipeInfo.servings}`, 20, y);
-      y += 10;
+      doc.text(`Serves: ${servings}`, 20, y); y += 10;
     }
     ingredients.forEach(ingredient => {
       const text = `${ingredient.checked ? '[X]' : '[ ]'} ${ingredient.name} - ${ingredient.quantity} ${ingredient.unit}`;
@@ -180,7 +196,7 @@ export default function ShoppingListGridView() {
       doc.text(splitText, 20, y);
       y += (splitText.length * 5) + 5;
     });
-    doc.save(`${recipeInfo?.title || 'shopping-list'}.pdf`);
+    doc.save(`${listName || 'shopping-list'}.pdf`);
   };
 
   if (loading) return <div className="text-center p-8">Loading your shopping list...</div>;
@@ -190,7 +206,6 @@ export default function ShoppingListGridView() {
     <div className="container mx-auto px-4 py-8">
       <Toaster position="top-center" reverseOrder={false} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
         <div>
           <div className="flex justify-between items-center mb-6 print:hidden">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Shopping List</h1>
@@ -199,29 +214,28 @@ export default function ShoppingListGridView() {
               <button onClick={handleDownloadPdf} className="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600" title="Download PDF">PDF</button>
             </div>
           </div>
-          
+
           {recipeInfo && (
             <div className="mb-6 p-4 bg-blue-50 dark:bg-gray-800/50 rounded-lg">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{recipeInfo.title}</h2>
-              <p className="text-md text-gray-700 dark:text-gray-300">Serves: {recipeInfo.servings}</p>
-              {recipeInfo.sourceUrl && (
-                <a href={recipeInfo.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
-                  View Full Recipe
-                </a>
-              )}
+              <div className="flex items-center space-x-2 mt-2 mb-2">
+                <label htmlFor="servings-input" className="text-md text-gray-700 dark:text-gray-300">Servings:</label>
+                <input id="servings-input" type="number" min="1" value={servings} onChange={(e) => setServings(Number(e.target.value) || 1)} className="w-20 p-1 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              </div>
+              {recipeId && <Link href={`/recipe/${recipeId}`} className="text-sm text-blue-600 hover:underline dark:text-blue-400">View Full Recipe</Link>}
             </div>
           )}
-          
+
           <div className="max-h-96 overflow-y-auto pr-2">
             {ingredients.length > 0 ? (
               <ul className="space-y-4 mb-8">
                 {ingredients.map((ing, i) => (
                   <li key={i} onClick={() => handleToggleIngredient(i)} className={`flex items-center p-4 rounded-lg shadow-md cursor-pointer transition-all ${ing.checked ? 'bg-green-50 dark:bg-gray-700 opacity-70' : 'bg-white dark:bg-gray-800'}`}>
-                      <input type="checkbox" checked={ing.checked} readOnly className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary mr-4 print:hidden" />
-                      <div className={ing.checked ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}>
-                        <span className="font-semibold">{ing.name}</span>
-                        <span className="text-sm"> - {ing.quantity} {ing.unit}</span>
-                      </div>
+                    <input type="checkbox" checked={ing.checked} readOnly className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary mr-4 print:hidden" />
+                    <div className={ing.checked ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}>
+                      <span className="font-semibold">{ing.name}</span>
+                      <span className="text-sm"> - {ing.quantity} {ing.unit}</span>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -231,17 +245,11 @@ export default function ShoppingListGridView() {
 
         <div>
           <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow-inner print:hidden mb-8">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Save Current List</h2>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                  <input 
-                      type="text"
-                      value={listName}
-                      onChange={(e) => setListName(e.target.value)}
-                      placeholder="Enter list name (e.g., Weekly Groceries)"
-                      className="flex-grow p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  />
-                  <button onClick={handleSaveList} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold">Save List</button>
-              </div>
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Save Current List</h2>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+              <input type="text" value={listName} onChange={(e) => setListName(e.target.value)} placeholder="Enter list name (e.g., Weekly Groceries)" className="flex-grow p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              <button onClick={handleSaveList} disabled={ingredients.length === 0} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed">Save List</button>
+            </div>
           </div>
 
           <div className="print:hidden">

@@ -22,7 +22,9 @@ import {
   ChevronDown,
   Star,
   Users,
-  Shield
+  Shield,
+  Upload,
+  ShoppingCart
 } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 
@@ -103,20 +105,20 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
   ] : [
     {
       icon: User,
-      label: 'Your Profile',
+      label: ' Profile',
       href: '/user/dashboard',
       description: 'Go to your dashboard'
     },
     {
-      icon: ChefHat,
-      label: 'Your Recipes',
-      href: '/user/my-recipe',
-      description: 'Manage your recipes'
+      icon: Upload,
+      label: 'Upload Recipe',
+      href: '/user/',
+      description: 'Upload your recipes'
     },
     {
-      icon: Calendar,
-      label: 'Meal Plans',
-      href: user?.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current',
+      icon: ShoppingCart,
+      label: 'Shopping List',
+      href: user?.name ? `/user/${encodeURIComponent(slugify(user.name))}/user/shopping_list` : '/user/shopping_list',
       description: 'Your meal planning'
     },
     {
@@ -124,12 +126,6 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
       label: 'Saved Plans',
       href: '/user/my_saved_meal_plan',
       description: 'Your saved meal plans'
-    },
-    {
-      icon: BookOpen,
-      label: 'Browse Recipes',
-      href: '/recipe',
-      description: 'Discover new recipes'
     }
   ];
 
@@ -152,7 +148,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
             alt={`${userName}'s avatar`}
             width={40}
             height={40}
-            className="rounded-full border border-gray-200 dark:border-gray-700"
+            className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
           />
           <div className="flex-1">
             <div className="font-semibold text-gray-900 dark:text-white">
@@ -236,7 +232,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
             alt={`${userName}'s avatar`}
             width={32}
             height={32}
-            className="rounded-full border border-gray-200 dark:border-gray-700"
+            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
           />
           {/* Status indicator */}
           <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full"></div>
@@ -255,7 +251,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
                 alt={`${userName}'s avatar`}
                 width={48}
                 height={48}
-                className="rounded-full border border-gray-200 dark:border-gray-700"
+                className="w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700 object-cover"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2">

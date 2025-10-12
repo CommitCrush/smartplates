@@ -246,7 +246,7 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="location">Standort</Label>
+                      <Label htmlFor="location">Location </Label>
                       <Input
                         id="location"
                         placeholder="Ihr Standort"
@@ -274,7 +274,7 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
                       )}
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        Mitglied seit {new Date(profile.createdAt).toLocaleDateString('de-DE')}
+                        <span>Joined on</span> {new Date(profile.createdAt).toLocaleDateString('de-DE')}
                       </div>
                     </div>
                   </div>
@@ -288,7 +288,7 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
                     <>
                       <Button onClick={handleSaveProfile} size="sm">
                         <Save className="h-4 w-4 mr-2" />
-                        Speichern
+                        Save
                       </Button>
                       <Button 
                         variant="outline" 
@@ -296,13 +296,13 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
                         size="sm"
                       >
                         <X className="h-4 w-4 mr-2" />
-                        Abbrechen
+                        Cancel
                       </Button>
                     </>
                   ) : (
                     <Button onClick={() => setIsEditing(true)} size="sm">
                       <Edit3 className="h-4 w-4 mr-2" />
-                      Bearbeiten
+                      Edit Profile
                     </Button>
                   )}
                 </div>
@@ -310,87 +310,6 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
             </div>
           </CardContent>
         </Card>
-
-        {/* Dietary Restrictions & Preferences */}
-        {(profile.dietaryRestrictions?.length || profile.favoriteCategories?.length) && (
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Dietary Restrictions */}
-            {profile.dietaryRestrictions?.length && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Ernährungseinschränkungen</CardTitle>
-                  <CardDescription>
-                    Besondere Ernährungsformen und Allergien
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.dietaryRestrictions.map((restriction, index) => (
-                      <Badge key={index} variant="secondary">
-                        {restriction}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Favorite Categories */}
-            {profile.favoriteCategories?.length && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Lieblings-Kategorien</CardTitle>
-                  <CardDescription>
-                    Bevorzugte Rezeptkategorien
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.favoriteCategories.map((category, index) => (
-                      <Badge key={index} variant="default">
-                        {category}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {/* Profile Actions for Non-Owner */}
-        {!profile.isOwner && isAuthenticated && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-muted-foreground mb-4">
-                  Möchten Sie mit {profile.name} in Kontakt treten?
-                </p>
-                <div className="flex justify-center gap-2">
-                  <Button variant="outline">
-                    Nachricht senden
-                  </Button>
-                  <Button variant="outline">
-                    Rezepte ansehen
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Public Profile Notice */}
-        {!isAuthenticated && (
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground">
-                <a href="/auth/signin" className="text-primary hover:underline">
-                  Melden Sie sich an
-                </a>, um mehr Profil-Features zu sehen.
-              </p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

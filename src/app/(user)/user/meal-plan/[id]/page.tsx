@@ -485,6 +485,54 @@ export default function MealPlanningPage() {
   // Force refresh key for weekly view persistence
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
 
+  // Load all existing meal plans on component mount
+  useEffect(() => {
+    const loadAllMealPlans = async () => {
+      if (!session?.user?.email) return;
+      
+      try {
+        console.log('🔄 Loading all user meal plans from database...');
+        const response = await fetch('/api/meal-plans');
+        
+        if (response.ok) {
+          const result = await response.json();
+          const allPlans = result.data || [];
+          
+          console.log(`📋 Loaded ${allPlans.length} meal plans from database`);
+          
+          // Create a new map with all plans
+          const newGlobalPlans = new Map<string, IMealPlan>();
+          
+          allPlans.forEach((plan: any) => {
+            // Convert date strings back to Date objects
+            const processedPlan: IMealPlan = {
+              ...plan,
+              weekStartDate: new Date(plan.weekStartDate),
+              days: plan.days.map((day: any) => ({
+                ...day,
+                date: new Date(day.date)
+              }))
+            };
+            
+            const weekKey = getWeekStartDate(processedPlan.weekStartDate).toISOString().split('T')[0];
+            newGlobalPlans.set(weekKey, processedPlan);
+            
+            console.log(`📅 Added meal plan for week ${weekKey} with ${processedPlan.days.reduce((total, day) => total + day.breakfast.length + day.lunch.length + day.dinner.length + day.snacks.length, 0)} meals`);
+          });
+          
+          setGlobalMealPlans(newGlobalPlans);
+          console.log(`✅ Successfully loaded ${newGlobalPlans.size} meal plans into global storage`);
+        } else {
+          console.warn('⚠️ Failed to load meal plans:', response.status, response.statusText);
+        }
+      } catch (error) {
+        console.error('❌ Error loading all meal plans:', error);
+      }
+    };
+    
+    loadAllMealPlans();
+  }, [session?.user?.email]);
+
   // Get or create meal plan for a specific week
   const getOrCreateMealPlan = (date: Date): IMealPlan => {
     const weekStart = getWeekStartDate(date);

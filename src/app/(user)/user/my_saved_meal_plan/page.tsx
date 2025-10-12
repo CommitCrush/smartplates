@@ -48,13 +48,15 @@ import type { IMealPlan } from '@/types/meal-planning';
 import { exportMealPlanToPDF } from '@/utils/mealPlanExport';
 import Link from 'next/link';
 import { slugify, cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'date' | 'name' | 'meals' | 'created';
 type FilterOption = 'all' | 'templates' | 'plans' | 'favorites';
 
-export default function SavedMealPlanPage() {
+export default function SavedMealPlansPage() {
   const { data: session } = useSession();
+  const { toast } = useToast();
   const [savedPlans, setSavedPlans] = useState<IMealPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -190,22 +192,212 @@ export default function SavedMealPlanPage() {
     }
   };
 
+  // Enhanced Batch Operations using optimized API
   const handleBulkDelete = async () => {
     if (selectedPlans.size === 0) return;
-    
-    if (!confirm(`Are you sure you want to delete ${selectedPlans.size} meal plan(s)?`)) {
+
+    const confirmed = confirm(
+      `Are you sure you want to delete ${selectedPlans.size} meal plan(s)? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/meal-plans/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'delete',
+          planIds: Array.from(selectedPlans)
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Remove deleted plans from state
+        setSavedPlans(prev => prev.filter(plan => !selectedPlans.has(plan._id || '')));
+        setSelectedPlans(new Set());
+        toast({
+          title: 'Success',
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.error || 'Failed to delete meal plans');
+      }
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete selected meal plans. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkCopy = async () => {
+    if (selectedPlans.size === 0) return;
+
+    const startDate = prompt(
+      `Enter the start date for copying ${selectedPlans.size} meal plan(s) (YYYY-MM-DD):`,
+      new Date().toISOString().split('T')[0]
+    );
+
+    if (!startDate) return;
+
+    const weeksToAdvance = selectedPlans.size > 1 ? 
+      parseInt(prompt('Weeks between each copied plan (default: 1):', '1') || '1', 10) : 1;
+
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/meal-plans/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'copy',
+          planIds: Array.from(selectedPlans),
+          data: { startDate, weeksToAdvance }
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Refresh the plans list
+        await loadSavedPlans();
+        setSelectedPlans(new Set());
+        toast({
+          title: 'Success',
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.error || 'Failed to copy meal plans');
+      }
+    } catch (error) {
+      console.error('Bulk copy error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to copy selected meal plans. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkExport = async () => {
+    if (selectedPlans.size === 0) return;
+
+    try {
+      setLoading(true);
+      
+      const response = await fetch('/api/meal-plans/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'export',
+          planIds: Array.from(selectedPlans)
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Create and download JSON file
+        const dataStr = JSON.stringify(result.plans, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `meal-plans-export-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        setSelectedPlans(new Set());
+        toast({
+          title: 'Success',
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.error || 'Failed to export meal plans');
+      }
+    } catch (error) {
+      console.error('Bulk export error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to export selected meal plans. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkCreateTemplates = async () => {
+    const nonTemplates = savedPlans.filter(plan => 
+      selectedPlans.has(plan._id || '') && !plan.isTemplate
+    );
+
+    if (nonTemplates.length === 0) {
+      toast({
+        title: 'No Action Needed',
+        description: 'All selected plans are already templates.',
+      });
       return;
     }
 
+    const confirmed = confirm(
+      `Convert ${nonTemplates.length} meal plan(s) to reusable template(s)?`
+    );
+
+    if (!confirmed) return;
+
     try {
-      await Promise.all(
-        Array.from(selectedPlans).map(planId => MealPlanService.deleteMealPlan(planId))
-      );
-      setSelectedPlans(new Set());
-      loadSavedPlans();
+      setLoading(true);
+      
+      const response = await fetch('/api/meal-plans/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'makeTemplates',
+          planIds: nonTemplates.map(plan => plan._id).filter(Boolean)
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update local state
+        setSavedPlans(prev => prev.map(plan => 
+          nonTemplates.some(nt => nt._id === plan._id) 
+            ? { ...plan, isTemplate: true }
+            : plan
+        ));
+        setSelectedPlans(new Set());
+        toast({
+          title: 'Success',
+          description: result.message,
+        });
+      } else {
+        throw new Error(result.error || 'Failed to create templates');
+      }
     } catch (error) {
-      console.error('Bulk delete failed:', error);
-      setError('Failed to delete meal plans. Please try again.');
+      console.error('Bulk template creation error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create templates. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -400,23 +592,86 @@ export default function SavedMealPlanPage() {
 
           {/* Bulk Actions */}
           {selectedPlans.size > 0 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">
-                  {selectedPlans.size} plan(s) selected
-                </span>
-                <Button variant="outline" size="sm" onClick={clearSelection}>
-                  Clear Selection
-                </Button>
+            <div className="mt-4 pt-4 border-t bg-gray-50 rounded-lg p-4">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-gray-700">
+                    {selectedPlans.size} plan(s) selected
+                  </span>
+                  <Button variant="outline" size="sm" onClick={clearSelection}>
+                    Clear Selection
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={selectAllPlans}>
+                    Select All ({filteredAndSortedPlans.length})
+                  </Button>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleBulkCopy}
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Selected
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleBulkExport}
+                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export All
+                  </Button>
+                  
+                  {savedPlans.some(plan => 
+                    selectedPlans.has(plan._id || '') && !plan.isTemplate
+                  ) && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleBulkCreateTemplates}
+                      className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                    >
+                      <Heart className="h-4 w-4 mr-2" />
+                      Make Templates
+                    </Button>
+                  )}
+                  
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={handleBulkDelete}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Selected
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={selectAllPlans}>
-                  Select All ({filteredAndSortedPlans.length})
-                </Button>
-                <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Selected
-                </Button>
+              
+              {/* Quick Info */}
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                  <span>
+                    Templates: {savedPlans.filter(plan => 
+                      selectedPlans.has(plan._id || '') && plan.isTemplate
+                    ).length}
+                  </span>
+                  <span>
+                    Plans: {savedPlans.filter(plan => 
+                      selectedPlans.has(plan._id || '') && !plan.isTemplate
+                    ).length}
+                  </span>
+                  <span>
+                    Total Meals: {savedPlans
+                      .filter(plan => selectedPlans.has(plan._id || ''))
+                      .reduce((total, plan) => total + getMealCount(plan), 0)
+                    }
+                  </span>
+                </div>
               </div>
             </div>
           )}

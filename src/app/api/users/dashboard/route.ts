@@ -32,8 +32,21 @@ export async function GET(request: NextRequest) {
       mealPlans.map(plan => MealPlanService.enrichMealPlanWithRecipes(plan))
     );
 
+    // Get all user recipes directly from database
+    const { getCollection } = await import('@/lib/db');
+    const recipesCollection = await getCollection('recipes');
+    const userRecipes = await recipesCollection.find({ 
+      $or: [
+        { userId: userId },
+        { 'uploadedBy.userId': userId },
+        { 'uploadedBy.email': userId }
+      ]
+    }).toArray();
+
+    console.log(`📊 Dashboard stats - User: ${userId}, Meal Plans: ${mealPlans.length}, Direct Recipes: ${userRecipes.length}`);
+
     // Calculate statistics
-    let totalRecipes = 0;
+    let totalMealPlanRecipes = 0;
     let totalMeals = 0;
     let recentActivity: Array<{
       id: string;
@@ -76,8 +89,13 @@ export async function GET(request: NextRequest) {
         });
       });
       
-      totalRecipes += recipeIds.size;
+      totalMealPlanRecipes += recipeIds.size;
     });
+
+    // Calculate total recipes (direct + from meal plans)
+    const totalRecipes = userRecipes.length + totalMealPlanRecipes;
+    
+    console.log(`📊 Final counts - Direct recipes: ${userRecipes.length}, Meal plan recipes: ${totalMealPlanRecipes}, Total: ${totalRecipes}`);
 
     // Sort activities by timestamp (most recent first) and limit to 10
     recentActivity.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
@@ -131,7 +149,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         stats: {
-          totalRecipes: Math.max(totalRecipes, 12), // Ensure minimum for demo
+          totalRecipes: totalRecipes, // Use actual count instead of hardcoded minimum
           savedMealPlans: mealPlans.length,
           totalMeals,
           totalLikes: 47 // Mock for now - would come from recipe likes

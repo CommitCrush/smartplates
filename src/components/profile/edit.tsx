@@ -4,92 +4,81 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/authContext';
 import { cn } from '@/lib/utils';
 import { User, UpdateUserInput } from '@/types/user';
+import CloudinaryWidgetUpload from '@/components/ui/CloudinaryWidgetUpload';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/components/ui/use-toast';
+import { Camera, User as UserIcon } from 'lucide-react';
 
 interface ProfileEditProps {
   className?: string;
   onSave?: (userData: UpdateUserInput) => void;
+  formData?: UpdateUserInput;
+  onFormDataChange?: (data: UpdateUserInput) => void;
 }
 
-export function ProfileEdit({ className, onSave }: ProfileEditProps) {
+export function ProfileEdit({ className, onSave, formData: externalFormData, onFormDataChange }: ProfileEditProps) {
   const { user } = useAuth();
-  const [formData, setFormData] = useState<UpdateUserInput>({
+  const { toast } = useToast();
+  const [internalFormData, setInternalFormData] = useState<UpdateUserInput>({
     name: '',
-    dietaryRestrictions: [],
-    favoriteCategories: [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
 
-  // Popular dietary restrictions and categories
-  const commonDietaryRestrictions = [
-    'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 'Nut-Free', 
-    'Keto', 'Paleo', 'Low-Carb', 'Halal', 'Kosher'
-  ];
-
-  const commonCategories = [
-    'Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snacks', 'Appetizers',
-    'Italian', 'Asian', 'Mexican', 'Mediterranean', 'Indian', 'Thai'
-  ];
+  // Use external form data if provided, otherwise use internal
+  const formData = externalFormData || internalFormData;
+  const setFormData = onFormDataChange || setInternalFormData;
 
   // Initialize form with user data
   useEffect(() => {
     if (user) {
-      setFormData({
+      const userData = {
         name: user.name || '',
-        dietaryRestrictions: (user as any).dietaryRestrictions || [],
-        favoriteCategories: (user as any).favoriteCategories || [],
-      });
+      };
+      setFormData(userData);
+      setAvatarUrl(user.image || '');
     }
-  }, [user]);
+  }, [user, setFormData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
+    const newData = {
+      ...formData,
       [e.target.name]: e.target.value
-    }));
+    };
+    setFormData(newData);
   };
 
-  const handleCheckboxChange = (field: 'dietaryRestrictions' | 'favoriteCategories', value: string) => {
-    setFormData(prev => {
-      const currentArray = prev[field] || [];
-      const isChecked = currentArray.includes(value);
-      
-      return {
-        ...prev,
-        [field]: isChecked 
-          ? currentArray.filter(item => item !== value)
-          : [...currentArray, value]
-      };
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setMessage('');
-
+  const handleAvatarUpload = async (uploadResult: { public_id: string; secure_url: string; url: string }) => {
     try {
-      const response = await fetch('/api/users/profile', {
+      // Save the uploaded image URL to the user profile in MongoDB
+      const response = await fetch('/api/users/profile/avatar', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: uploadResult.secure_url,
+          publicId: uploadResult.public_id
+        })
       });
 
       if (response.ok) {
-        setMessage('Profile updated successfully!');
-        onSave?.(formData);
+        setAvatarUrl(uploadResult.secure_url);
+        toast({
+          title: 'Success',
+          description: 'Profile picture updated successfully!',
+          variant: 'default'
+        });
       } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to update profile');
+        throw new Error('Failed to save profile picture');
       }
     } catch (error) {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setIsLoading(false);
+      console.error('Error saving avatar:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to save profile picture.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -102,115 +91,116 @@ export function ProfileEdit({ className, onSave }: ProfileEditProps) {
   }
 
   return (
-    <div className={cn('max-w-2xl mx-auto p-6', className)}>
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Profile</h2>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Info */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Full Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-800 dark:text-white"
-              placeholder="Enter your full name"
-            />
+    <div className={cn('w-full', className)}>
+      <div className="bg-card text-card-foreground rounded-lg shadow-sm border">
+        <div className="p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold">Profile Information</h3>
+            <p className="text-sm text-muted-foreground">
+              Update your basic profile information
+            </p>
           </div>
-
-          {/* Email (Read-only) */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={user.email || ''}
-              disabled
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-              placeholder="Email cannot be changed"
-            />
-          </div>
-
-          {/* Dietary Restrictions */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Dietary Restrictions
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {commonDietaryRestrictions.map((restriction) => (
-                <label key={restriction} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.dietaryRestrictions?.includes(restriction) || false}
-                    onChange={() => handleCheckboxChange('dietaryRestrictions', restriction)}
-                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+          
+          <div className="space-y-6">
+            {/* Profile Picture Section */}
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage 
+                    src={avatarUrl} 
+                    alt={formData.name || 'Profile'} 
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{restriction}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Favorite Categories */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Favorite Recipe Categories
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {commonCategories.map((category) => (
-                <label key={category} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.favoriteCategories?.includes(category) || false}
-                    onChange={() => handleCheckboxChange('favoriteCategories', category)}
-                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  <AvatarFallback className="text-lg bg-gradient-to-br from-primary/20 to-secondary/20">
+                    {formData.name ? (
+                      formData.name.charAt(0).toUpperCase()
+                    ) : (
+                      <UserIcon className="h-8 w-8" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="absolute -bottom-2 -right-2">
+                  <CloudinaryWidgetUpload
+                    onUpload={handleAvatarUpload}
+                    onError={(error) => {
+                      toast({
+                        title: 'Upload Error',
+                        description: error,
+                        variant: 'destructive'
+                      });
+                    }}
+                    buttonText=""
+                    buttonVariant="default"
+                    folder="smartplates/profiles"
+                    className="h-8 w-8 rounded-full p-0 bg-primary hover:bg-primary/90 flex items-center justify-center"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{category}</span>
-                </label>
-              ))}
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <p className="text-sm font-medium">Profile Picture</p>
+                <p className="text-xs text-muted-foreground">
+                  Click the camera icon to upload a new picture
+                </p>
+              </div>
             </div>
+
+            {/* Basic Info */}
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium mb-2">
+                Full Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            {/* Email (Read-only) */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={user.email || ''}
+                disabled
+                className="w-full px-3 py-2 border border-input rounded-md bg-muted text-muted-foreground cursor-not-allowed"
+                placeholder="Your current email address"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                To change your email address, go to{' '}
+                <a 
+                  href="/user/settings" 
+                  className="text-primary hover:text-primary/80 underline"
+                >
+                  Account Settings
+                </a>
+                {' '}→ Security Settings
+              </p>
+            </div>
+
+            {/* Display messages */}
+            {message && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 rounded-md text-sm">
+                {message}
+              </div>
+            )}
+
+            {error && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 rounded-md text-sm">
+                {error}
+              </div>
+            )}
           </div>
-
-          {/* Messages */}
-          {message && (
-            <div className="text-green-600 text-sm text-center bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-              {message}
-            </div>
-          )}
-
-          {error && (
-            <div className="text-red-600 text-sm text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <div className="flex space-x-4">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isLoading ? 'Saving...' : 'Save Changes'}
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => window.history.back()}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );

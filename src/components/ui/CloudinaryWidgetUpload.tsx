@@ -119,8 +119,14 @@ export default function CloudinaryWidgetUpload({
       className={className}
       type="button"
     >
-      <Camera className="h-4 w-4 mr-2" />
-      {buttonText}
+      {buttonText ? (
+        <>
+          <Camera className="h-4 w-4 mr-2" />
+          {buttonText}
+        </>
+      ) : (
+        <Camera className="h-4 w-4" />
+      )}
     </Button>
   );
 }

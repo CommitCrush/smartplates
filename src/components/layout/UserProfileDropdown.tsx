@@ -1,9 +1,3 @@
-/**
- * User Profile Dropdown Component
- * 
- * GitHub-style dropdown menu for user profile, navigation, and settings
- * Features user avatar, name, navigation links, and sign out
- */
 
 'use client';
 
@@ -22,7 +16,8 @@ import {
   ChevronDown,
   Star,
   Users,
-  Shield
+  Shield,
+  ShoppingCart
 } from 'lucide-react';
 import { slugify } from '@/lib/utils';
 
@@ -118,6 +113,12 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
       label: 'Meal Plans',
       href: user?.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current',
       description: 'Your meal planning'
+    },
+    {
+      icon: ShoppingCart,
+      label: 'Shopping List',
+      href: '/user/shopping-list',
+      description: 'View your shopping list'
     },
     {
       icon: Star,

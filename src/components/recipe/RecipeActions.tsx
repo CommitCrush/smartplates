@@ -1,25 +1,21 @@
 
-/**
- * Recipe Actions Component
- *
- * Displays action icons for a recipe, such as download, print, and shopping list.
- */
-
 'use client';
 
 import React from 'react';
 import { FaDownload, FaPrint, FaShoppingCart } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { Recipe } from '@/types/recipe';
+import { useToast } from '@/components/ui/use-toast';
 
 interface RecipeActionsProps {
-  recipe: {
-    title: string;
-  };
+  recipe: Recipe;
   contentRef: React.RefObject<HTMLDivElement>;
 }
 
 export function RecipeActions({ recipe, contentRef }: RecipeActionsProps) {
+  const { toast } = useToast();
+
   const handleDownloadPdf = () => {
     if (contentRef.current) {
       html2canvas(contentRef.current).then((canvas) => {
@@ -35,6 +31,33 @@ export function RecipeActions({ recipe, contentRef }: RecipeActionsProps) {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleAddToShoppingList = async () => {
+    try {
+      const ingredients = recipe.extendedIngredients.map((ingredient) => ({
+        name: ingredient.name,
+        quantity: ingredient.amount,
+        unit: ingredient.unit,
+      }));
+
+      const response = await fetch('/api/grocery-list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ingredients }),
+      });
+
+      if (response.ok) {
+        toast({ title: 'Success', description: 'Ingredients added to your shopping list.' });
+      } else {
+        toast({ title: 'Error', description: 'Failed to add ingredients to shopping list.', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Error adding to shopping list:', error);
+      toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
+    }
   };
 
   return (
@@ -56,10 +79,10 @@ export function RecipeActions({ recipe, contentRef }: RecipeActionsProps) {
         <FaPrint size={24} />
       </button>
       <button
+        onClick={handleAddToShoppingList}
         className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 p-3 rounded-full bg-white dark:bg-gray-800 shadow-md"
-        title="Shopping List (coming soon)"
-        aria-label="Shopping List"
-        disabled
+        title="Add to Shopping List"
+        aria-label="Add to Shopping List"
       >
         <FaShoppingCart size={24} />
       </button>

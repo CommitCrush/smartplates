@@ -16,23 +16,14 @@ interface RecipePageProps {
   };
 }
 
-// Fetch recipe data
+// Fetch recipe data - this would connect to your API
 async function getRecipe(id: string): Promise<Recipe | null> {
   try {
+    // Use proper base URL construction
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    let response;
-
-    if (id.startsWith('spoonacular-')) {
-      const spoonacularId = id.substring('spoonacular-'.length);
-      // Use the correct endpoint and pass the stripped ID
-      response = await fetch(`${baseUrl}/api/recipes/spoonacular-details?id=${spoonacularId}`, {
-        cache: 'no-store'
-      });
-    } else {
-      response = await fetch(`${baseUrl}/api/recipes/${id}`, {
-        cache: 'no-store'
-      });
-    }
+    const response = await fetch(`${baseUrl}/api/recipes/${id}`, {
+      cache: 'no-store' // For fresh data
+    });
     
     if (!response.ok) {
       console.error(`Failed to fetch recipe ${id}: ${response.status} ${response.statusText}`);

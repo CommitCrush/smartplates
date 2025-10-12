@@ -1,34 +1,23 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { findRecipeById, deleteRecipe, updateRecipe } from '@/services/recipeService';
-import { getSpoonacularRecipe } from '@/services/spoonacularService';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } } // Corrected parameter handling
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = context.params; // Corrected destructuring
-
+    const { id } = await params;
+    
     if (!id) {
       return NextResponse.json({ error: 'Recipe ID is required' }, { status: 400 });
     }
 
-    let recipe;
-    // Check if the ID is for Spoonacular or a local recipe
-    if (id.startsWith('spoonacular-')) {
-      recipe = await getSpoonacularRecipe(id);
-    } else {
-      recipe = await findRecipeById(id);
-    }
-
+    const recipe = await findRecipeById(id);
     if (!recipe) {
-      console.log(`Recipe with id ${id} not found in any collection.`);
       return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
-
     return NextResponse.json(recipe);
 
   } catch (error) {
@@ -42,7 +31,7 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } } // Corrected parameter handling
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -50,12 +39,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { id } = context.params; // Corrected destructuring
-
-    if (id.startsWith('spoonacular-')) {
-      return NextResponse.json({ error: 'Cannot delete external recipes' }, { status: 403 });
-    }
-
+    const { id } = await params;
     const recipe = await findRecipeById(id);
     if (!recipe) {
       return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
@@ -80,7 +64,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } } // Corrected parameter handling
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -88,15 +72,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { id } = context.params; // Corrected destructuring
-
-    if (id.startsWith('spoonacular-')) {
-      return NextResponse.json({ error: 'Cannot update external recipes' }, { status: 403 });
-    }
-
+    const { id } = await params;
     const current = await findRecipeById(id);
     if (!current) return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
-
     const isOwner = current.authorId && current.authorId === session.user.id;
     const isAdmin = session.user.role === 'admin';
     if (!isOwner && !isAdmin) {

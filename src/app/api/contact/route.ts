@@ -5,15 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase, getCollection } from '@/lib/db';
-
-interface ContactFormData {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  contactReason: 'support' | 'feedback' | 'partnership' | 'other';
-}
+import { connectToDatabase } from '@/lib/db';
+import { sendContactEmail, sendContactConfirmation, ContactFormData } from '@/services/emailService';
 
 // ========================================
 // POST /api/contact
@@ -47,62 +40,75 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Connect to database and save the contact form submission
-    await connectToDatabase();
-
-    // For now, we'll just log the contact form submission
-    // In a real application, you would:
-    // 1. Save to database
-    // 2. Send email notification to admin
-    // 3. Send confirmation email to user
-    
-    console.log('Contact form submission received:', {
-      name,
-      email,
-      subject,
-      contactReason,
-      submittedAt: new Date().toISOString(),
-      messageLength: message.length
-    });
-
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // In a real implementation, you might save to a contacts collection:
-    /*
-    const contactsCollection = db.collection('contacts');
-    const contactEntry = {
-      name,
-      email,
-      subject,
-      message,
-      contactReason,
-      status: 'new',
-      submittedAt: new Date(),
-      ipAddress: request.headers.get('x-forwarded-for') || 'unknown',
-      userAgent: request.headers.get('user-agent') || 'unknown'
+    // Sanitize inputs
+    const sanitizedData: ContactFormData = {
+      name: name.trim().substring(0, 100),
+      email: email.trim().toLowerCase().substring(0, 100),
+      subject: subject.trim().substring(0, 200),
+      message: message.trim().substring(0, 2000),
+      contactReason: contactReason || 'other'
     };
-    
-    await contactsCollection.insertOne(contactEntry);
-    */
 
-    return NextResponse.json({
-      success: true,
-      message: 'Thank you for your message! We\'ll get back to you within 24 hours.',
-      data: {
-        submittedAt: new Date().toISOString(),
-        contactReason,
-        reference: `SP-${Date.now()}` // Simple reference number
-      }
-    }, { status: 200 });
+    // Validate contact reason
+    const validReasons = ['support', 'feedback', 'partnership', 'other'];
+    if (!validReasons.includes(sanitizedData.contactReason)) {
+      sanitizedData.contactReason = 'other';
+    }
+
+    // Connect to database and save the contact form submission
+    try {
+      const db = await connectToDatabase();
+      const contactCollection = db.collection('contact_submissions');
+
+      const contactSubmission = {
+        ...sanitizedData,
+        submittedAt: new Date(),
+        userAgent: request.headers.get('user-agent') || 'unknown',
+        status: 'pending'
+      };
+
+      // Save to database
+      const result = await contactCollection.insertOne(contactSubmission);
+      console.log('Contact submission saved to database:', result.insertedId);
+    } catch (dbError) {
+      console.error('Failed to save to database:', dbError);
+      // Continue processing - don't fail if database is unavailable
+    }
+
+    // Send email to admin
+    try {
+      await sendContactEmail(sanitizedData);
+      console.log('Contact email sent successfully to admin');
+    } catch (emailError) {
+      console.error('Failed to send contact email:', emailError);
+      // Continue processing - don't fail the request if email fails
+    }
+
+    // Send confirmation email to user (optional)
+    try {
+      await sendContactConfirmation(sanitizedData.email, sanitizedData.name);
+      console.log('Confirmation email sent to user');
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+      // Continue processing - confirmation email is optional
+    }
+
+    return NextResponse.json(
+      { 
+        success: true,
+        message: 'Contact form submitted successfully. We will get back to you within 24 hours!',
+        reference: `SP-${Date.now()}`
+      },
+      { status: 200 }
+    );
 
   } catch (error) {
     console.error('Contact form submission error:', error);
     
     return NextResponse.json(
       { 
-        error: 'Failed to submit contact form',
-        details: 'Please try again later or contact us directly via email'
+        error: 'Internal server error',
+        details: 'Failed to process contact form submission. Please try again later.'
       },
       { status: 500 }
     );
@@ -110,26 +116,35 @@ export async function POST(request: NextRequest) {
 }
 
 // ========================================
-// GET /api/contact (for admin purposes)
+// GET /api/contact (for admin use - get all submissions)
 // ========================================
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // This could be used by admin to retrieve contact submissions
-    // For now, just return a simple status
+    const db = await connectToDatabase();
+    const contactCollection = db.collection('contact_submissions');
     
-    return NextResponse.json({
-      status: 'Contact API is working',
-      endpoints: {
-        POST: 'Submit contact form',
-        GET: 'Admin: Retrieve contact submissions (not implemented)'
-      }
-    });
+    const submissions = await contactCollection
+      .find({})
+      .sort({ submittedAt: -1 })
+      .limit(50)
+      .toArray();
+
+    return NextResponse.json(
+      { 
+        success: true,
+        submissions 
+      },
+      { status: 200 }
+    );
 
   } catch (error) {
-    console.error('Contact API GET error:', error);
+    console.error('Failed to fetch contact submissions:', error);
     
     return NextResponse.json(
-      { error: 'API error' },
+      { 
+        error: 'Internal server error',
+        details: 'Failed to fetch contact submissions'
+      },
       { status: 500 }
     );
   }

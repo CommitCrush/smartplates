@@ -62,36 +62,51 @@ export default function AdminProfilePage() {
   });
 
   useEffect(() => {
-    fetchProfileData();
-    fetchProfile();
+    if (user?.id) {
+      fetchProfileData();
+      fetchProfile();
+    }
     // Set loading to false after a timeout to prevent infinite loading
     const timer = setTimeout(() => setLoading(false), 10000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [user?.id]);
 
   const fetchProfileData = async () => {
     try {
       // Fetch real admin statistics with error handling
       let totalRecipes = 0;
+      let adminRecipes = 0;
+      let userRecipes = 0;
 
       try {
-        const recipesRes = await fetch('/api/admin/recipes');
+        // Debug: Check what's in the database
+        const debugRes = await fetch('/api/admin/debug/recipes');
+        if (debugRes.ok) {
+          const debugData = await debugRes.json();
+          console.log('DEBUG: Database content:', debugData);
+        }
+
+        // Fetch recipes created by this admin user specifically
+        const recipesRes = await fetch('/api/admin/recipes/created');
         if (recipesRes.ok) {
-          const recipes = await recipesRes.json();
-          totalRecipes = recipes.length || 0;
+          const recipesData = await recipesRes.json();
+          totalRecipes = recipesData.total || 0;
+          adminRecipes = recipesData.adminRecipes || 0;
+          userRecipes = recipesData.userRecipes || 0;
+          console.log('Admin recipe stats:', { totalRecipes, adminRecipes, userRecipes });
         }
       } catch (e) {
-        console.warn('Could not fetch recipes:', e);
+        console.warn('Could not fetch admin recipes:', e);
       }
 
       // Generate realistic statistics based on available data
-
       const adminData: AdminProfileData = {
-        totalRecipes: Math.max(totalRecipes, 15),
+        totalRecipes: totalRecipes,
         lastLogin: new Date().toISOString(),
         accountCreated: new Date().toISOString(),
         recentActivity: [
-          { action: 'Recipes moderated this week', count: Math.max(3, Math.floor(totalRecipes * 0.08)), period: 'week' },
+          { action: 'Admin recipes created', count: adminRecipes, period: 'total' },
+          { action: 'User recipes created', count: userRecipes, period: 'total' },
           { action: 'System health checks', count: 24, period: 'week' }
         ]
       };
@@ -438,7 +453,7 @@ export default function AdminProfilePage() {
                   <span className="text-sm text-muted-foreground">Last Login:</span>
                   <div className="font-medium">
                     {(profile?.lastLogin || profileData?.lastLogin) ? 
-                      new Date(profile?.lastLogin || profileData?.lastLogin).toLocaleDateString('de-DE', {
+                      new Date(profile?.lastLogin || profileData?.lastLogin || new Date()).toLocaleDateString('de-DE', {
                         day: '2-digit',
                         month: 'short',
                         year: 'numeric',

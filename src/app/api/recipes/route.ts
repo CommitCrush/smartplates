@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1', 10);
   const limit = parseInt(searchParams.get('limit') || searchParams.get('number') || '30', 10);
   const authorId = searchParams.get('authorId') || undefined;
+  const createdBy = searchParams.get('createdBy') || undefined;
   const randomize = searchParams.get('randomize') === 'true';
 
     console.log('Parsed Filters:', filters, 'page:', page, 'limit:', limit);
@@ -51,11 +52,11 @@ export async function GET(request: NextRequest) {
 
     // Primary: use central recipeService (Mongo-first)
     const { recipes: mongoRecipes, total: mongoTotal } = await searchRecipesMongo(
-      { query: filters.query, type: filters.type, diet: filters.diet, intolerances: filters.intolerances || undefined, maxReadyTime: filters.maxReadyTime, authorId },
+      { query: filters.query, type: filters.type, diet: filters.diet, intolerances: filters.intolerances || undefined, maxReadyTime: filters.maxReadyTime, authorId: authorId || createdBy },
       { page, limit },
       randomize
     );
-    recipes = mongoRecipes;
+    recipes = mongoRecipes as Recipe[];
     total = mongoTotal;
     source = 'mongodb';
 

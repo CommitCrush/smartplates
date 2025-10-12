@@ -8,6 +8,7 @@ import { Eye, Star, Trash2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/authContext';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Recipe {
   _id: string;
@@ -25,17 +26,96 @@ interface Recipe {
 export default function RecipeManagementPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSource, setFilterSource] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [recipesPerPage] = useState(20);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const handleViewRecipe = (recipe: Recipe) => {
     // Determine the correct recipe ID for the URL
     const recipeId = recipe.spoonacularId ? `spoonacular-${recipe.spoonacularId}` : recipe._id;
     router.push(`/recipe/${recipeId}`);
+  };
+
+  const handleDeleteRecipe = async (recipe: Recipe) => {
+    try {
+      // Determine the correct collection and ID based on recipe source
+      let apiUrl = '';
+      let recipeId = '';
+      
+      console.log('Deleting recipe:', { 
+        id: recipe._id, 
+        spoonacularId: recipe.spoonacularId, 
+        source: recipe.source,
+        authorType: recipe.authorType 
+      });
+
+      if (recipe.spoonacularId && recipe.source === 'spoonacular_api') {
+        // Spoonacular recipe - use MongoDB _id but indicate spoonacular source
+        recipeId = recipe._id;
+        apiUrl = `/api/admin/recipes/${recipeId}?source=spoonacular`;
+        console.log('Using spoonacular deletion with MongoDB ID:', recipeId);
+      } else if (recipe.source === 'user_upload' || recipe.authorType === 'user') {
+        // User recipe
+        recipeId = recipe._id;
+        apiUrl = `/api/admin/recipes/${recipeId}?source=user`;
+      } else {
+        // Admin recipe or other
+        recipeId = recipe._id;
+        apiUrl = `/api/admin/recipes/${recipeId}?source=admin`;
+      }
+
+      const response = await fetch(apiUrl, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Remove recipe from local state
+        setRecipes(prevRecipes => prevRecipes.filter(r => r._id !== recipe._id));
+        setDeleteConfirm(null);
+        
+        toast({
+          title: 'Recipe Deleted',
+          description: `"${recipe.title}" has been successfully deleted from ${result.deletedFrom || 'the database'}.`,
+          variant: 'default',
+        });
+        
+        console.log('Recipe deleted successfully:', result);
+      } else {
+        const error = await response.json();
+        console.error('Failed to delete recipe:', error);
+        
+        toast({
+          title: 'Delete Failed',
+          description: error.message || 'Failed to delete recipe. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      
+      toast({
+        title: 'Error',
+        description: 'An error occurred while deleting the recipe. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const confirmDeleteRecipe = (recipe: Recipe) => {
+    setDeleteConfirm(recipe._id);
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm(null);
   };
   
   // Reset to first page when search or filter changes
@@ -182,9 +262,14 @@ export default function RecipeManagementPage() {
                   <td className="p-2">{recipe.title}</td>
                   <td className="p-2">{recipe.author}</td>
                   <td className="p-2">
-                    <Badge variant={recipe.source === 'admin_upload' ? 'default' : 'secondary'}>
-                      {recipe.source === 'admin_upload' ? 'Admin' : 
-                       recipe.source === 'user_upload' ? 'User' : 'API'}
+                    <Badge variant={
+                      recipe.source === 'admin_upload' || recipe.authorType === 'admin' ? 'default' : 
+                      recipe.source === 'spoonacular_api' ? 'outline' :
+                      'secondary'
+                    }>
+                      {recipe.source === 'admin_upload' || recipe.authorType === 'admin' ? 'Admin' : 
+                       recipe.source === 'user_upload' || recipe.authorType === 'user' ? 'User' : 
+                       recipe.source === 'spoonacular_api' ? 'Spoonacular' : 'External'}
                     </Badge>
                   </td>
                   <td className="p-2">
@@ -201,8 +286,13 @@ export default function RecipeManagementPage() {
                       <Button variant="ghost" size="sm" onClick={() => handleViewRecipe(recipe)}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4 text-red-600" />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => confirmDeleteRecipe(recipe)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </td>
@@ -277,6 +367,51 @@ export default function RecipeManagementPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+            {(() => {
+              const recipe = recipes.find(r => r._id === deleteConfirm);
+              return (
+                <div className="mb-6">
+                  <p className="text-gray-600 mb-3">
+                    Are you sure you want to delete this recipe? This action cannot be undone.
+                  </p>
+                  {recipe && (
+                    <div className="bg-gray-50 p-3 rounded border">
+                      <p className="font-medium text-sm text-gray-900">"{recipe.title}"</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Source: {recipe.source === 'spoonacular_api' ? 'Spoonacular' : 
+                                recipe.source === 'user_upload' ? 'User Upload' : 
+                                'Admin Recipe'} • Author: {recipe.author}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={cancelDelete}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  const recipe = recipes.find(r => r._id === deleteConfirm);
+                  if (recipe) {
+                    handleDeleteRecipe(recipe);
+                  }
+                }}
+              >
+                Delete Recipe
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </Card>

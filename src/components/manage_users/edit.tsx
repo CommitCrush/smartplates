@@ -10,16 +10,12 @@ interface UserEditFormProps {
 	user: User;
 }
 
-const roleOptions: UserRole[] = ["user", "admin", "viewer"];
+// Entfernt: roleOptions
 
 export default function UserEditForm({ user }: UserEditFormProps) {
 	const [form, setForm] = useState({
 		name: user.name || "",
-		avatar: user.avatar || "",
-		role: user.role || "user",
-		isEmailVerified: user.isEmailVerified || false,
-		dietaryRestrictions: user.dietaryRestrictions?.join(", ") || "",
-		favoriteCategories: user.favoriteCategories?.join(", ") || "",
+		isEmailVerified: user.isEmailVerified || false
 	});
 		const [isActive, setIsActive] = useState((user as any).isActive !== false); // Default true, falls Feld fehlt
 	const [loading, setLoading] = useState(false);
@@ -49,16 +45,12 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					name: form.name,
-					avatar: form.avatar,
-					role: form.role,
-					isEmailVerified: form.isEmailVerified,
-					dietaryRestrictions: form.dietaryRestrictions.split(",").map((s) => s.trim()).filter(Boolean),
-					favoriteCategories: form.favoriteCategories.split(",").map((s) => s.trim()).filter(Boolean),
+					isEmailVerified: form.isEmailVerified
 				}),
 			});
 			if (!res.ok) throw new Error("Update failed");
 			setSuccess(true);
-		} catch (err) {
+		} catch {
 			setError("Fehler beim Speichern.");
 		} finally {
 			setLoading(false);
@@ -104,58 +96,29 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 
 		return (
 			<Card className="p-6 space-y-6">
-				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* ...bestehende Felder... */}
-					<div>
-						<label className="block font-medium mb-1">Name</label>
-						<Input name="name" value={form.name} onChange={handleChange} required />
-					</div>
-					<div>
-						<label className="block font-medium mb-1">Avatar URL</label>
-						<Input name="avatar" value={form.avatar} onChange={handleChange} />
-					</div>
-					<div>
-						<label className="block font-medium mb-1">Rolle</label>
-						<Select name="role" value={form.role} onChange={handleChange}>
-							{roleOptions.map((role) => (
-								<option key={role} value={role}>{role}</option>
-							))}
-						</Select>
-					</div>
-					<div className="flex items-center gap-2">
-						<input
-							type="checkbox"
-							name="isEmailVerified"
-							checked={form.isEmailVerified}
-							onChange={handleChange}
-							id="isEmailVerified"
-						/>
-						<label htmlFor="isEmailVerified">Email verifiziert</label>
-					</div>
-					<div>
-						<label className="block font-medium mb-1">Dietary Restrictions (Komma-getrennt)</label>
-						<Input name="dietaryRestrictions" value={form.dietaryRestrictions} onChange={handleChange} />
-					</div>
-					<div>
-						<label className="block font-medium mb-1">Favorite Categories (Komma-getrennt)</label>
-						<Input name="favoriteCategories" value={form.favoriteCategories} onChange={handleChange} />
-					</div>
-					<Button type="submit" disabled={loading}>
-						{loading ? "Speichern..." : "Speichern"}
-					</Button>
-					{success && <div className="text-green-600">Erfolgreich gespeichert!</div>}
-					{error && <div className="text-red-600">{error}</div>}
-				</form>
-				{/* Admin Actions */}
-				<div className="flex flex-col gap-2 pt-4 border-t mt-6">
+				<div>
+					<label className="block font-medium mb-1">Name</label>
+					<Input name="name" value={form.name} disabled />
+				</div>
+				<div className="flex items-center gap-2">
+					<input
+						type="checkbox"
+						name="isEmailVerified"
+						checked={form.isEmailVerified}
+						disabled
+						id="isEmailVerified"
+					/>
+					<label htmlFor="isEmailVerified">Email verifiziert</label>
+				</div>
+				<div className="flex flex-col gap-2 pt-4 mt-6">
 					<Button variant="destructive" onClick={handleDelete} disabled={actionLoading === "delete"}>
 						{actionLoading === "delete" ? "Lösche..." : "User löschen"}
 					</Button>
-							<Button variant="outline" onClick={handleToggleActive} disabled={actionLoading === "toggle"}>
-								{actionLoading === "toggle"
-									? (isActive ? "Deaktiviere..." : "Aktiviere...")
-									: (isActive ? "User deaktivieren" : "User reaktivieren")}
-							</Button>
+					<Button variant="outline" onClick={handleToggleActive} disabled={actionLoading === "toggle"}>
+						{actionLoading === "toggle"
+							? (isActive ? "Deaktiviere..." : "Aktiviere...")
+							: (isActive ? "User deaktivieren" : "User reaktivieren")}
+					</Button>
 					{actionSuccess && <div className="text-green-600">{actionSuccess}</div>}
 					{actionError && <div className="text-red-600">{actionError}</div>}
 				</div>

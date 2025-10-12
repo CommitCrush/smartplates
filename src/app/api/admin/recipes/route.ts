@@ -29,21 +29,50 @@ export async function GET(): Promise<NextResponse> {
       );
     }
 
+    console.log('[Admin API] Fetching recipes from MongoDB');
+    
     // Get recipes from all sources
+    const adminRecipesPromise = getCollection(COLLECTIONS.RECIPES)
+      .then(collection => {
+        console.log('[Admin API] Querying admin recipes collection');
+        return collection.find({}).sort({ createdAt: -1 }).limit(500).toArray();
+      })
+      .catch(err => {
+        console.error('[Admin API] Error fetching admin recipes:', err);
+        return [];
+      });
+      
+    const userRecipesPromise = getCollection(COLLECTIONS.USER_RECIPES)
+      .then(collection => {
+        console.log('[Admin API] Querying user recipes collection');
+        return collection.find({}).sort({ createdAt: -1 }).limit(500).toArray();
+      })
+      .catch(err => {
+        console.error('[Admin API] Error fetching user recipes:', err);
+        return [];
+      });
+      
+    const spoonacularRecipesPromise = getCollection('spoonacular_recipes')
+      .then(collection => {
+        console.log('[Admin API] Querying spoonacular recipes collection');
+        return collection.find({}).sort({ createdAt: -1 }).limit(500).toArray();
+      })
+      .catch(err => {
+        console.error('[Admin API] Error fetching spoonacular recipes:', err);
+        return [];
+      });
+    
     const [adminRecipes, userRecipes, spoonacularRecipes] = await Promise.all([
-      // Admin-uploaded recipes
-      getCollection(COLLECTIONS.RECIPES).then(collection => 
-        collection.find({}).sort({ createdAt: -1 }).limit(50).toArray()
-      ),
-      // User-uploaded recipes
-      getCollection(COLLECTIONS.USER_RECIPES).then(collection => 
-        collection.find({}).sort({ createdAt: -1 }).limit(50).toArray()
-      ),
-      // Spoonacular cached recipes
-      getCollection('spoonacular_recipes').then(collection => 
-        collection.find({}).sort({ createdAt: -1 }).limit(30).toArray()
-      ).catch(() => []) // In case collection doesn't exist
+      adminRecipesPromise,
+      userRecipesPromise,
+      spoonacularRecipesPromise
     ]);
+    
+    console.log('[Admin API] Recipe counts:', {
+      admin: adminRecipes.length,
+      user: userRecipes.length,
+      spoonacular: spoonacularRecipes.length
+    });
 
     const allRecipes: any[] = [];
 
@@ -91,6 +120,7 @@ export async function GET(): Promise<NextResponse> {
     spoonacularRecipes.forEach(recipe => {
       allRecipes.push({
         _id: recipe._id.toString(),
+        spoonacularId: recipe.id || recipe.spoonacularId,
         title: recipe.title || 'Untitled Recipe',
         author: 'Spoonacular',
         authorId: 'spoonacular',

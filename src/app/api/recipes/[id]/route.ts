@@ -5,10 +5,10 @@ import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     
     if (!id) {
       return NextResponse.json({ error: 'Recipe ID is required' }, { status: 400 });
@@ -31,7 +31,7 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -39,7 +39,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id } = params;
     const recipe = await findRecipeById(id);
     if (!recipe) {
       return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
@@ -64,7 +64,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -72,7 +72,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id } = params;
     const current = await findRecipeById(id);
     if (!current) return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     const isOwner = current.authorId && current.authorId === session.user.id;

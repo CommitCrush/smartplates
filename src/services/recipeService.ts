@@ -119,24 +119,50 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 }
 
 export async function findRecipeById(id: string) {
-	const col = await getCollection<Recipe>(COLLECTION_NAME);
-
-	// Try direct _id
+	// Search in community recipes first (admin and user recipes)
+	try {
+		const adminCol = await getCollection<Recipe>('recipes');
+		const userCol = await getCollection<Recipe>('userRecipes');
+		
+		// Try ObjectId for community recipes
 		try {
 			const asObjectId = new ObjectId(id);
-			const byObjectId = await col.findOne({ _id: asObjectId } as Filter<Recipe>);
-		if (byObjectId) return byObjectId;
+			
+			// Check admin recipes
+			const adminRecipe = await adminCol.findOne({ _id: asObjectId } as Filter<Recipe>);
+			if (adminRecipe) {
+				return { ...adminRecipe, source: 'admin_upload' };
+			}
+			
+			// Check user recipes
+			const userRecipe = await userCol.findOne({ _id: asObjectId } as Filter<Recipe>);
+			if (userRecipe) {
+				return { ...userRecipe, source: 'user_upload' };
+			}
+		} catch {}
+	} catch (error) {
+		console.error('Error searching community recipes:', error);
+	}
+	
+	// Search in Spoonacular recipes
+	const col = await getCollection<Recipe>(COLLECTION_NAME);
+
+	// Try direct _id for Spoonacular
+	try {
+		const asObjectId = new ObjectId(id);
+		const byObjectId = await col.findOne({ _id: asObjectId } as Filter<Recipe>);
+		if (byObjectId) return { ...byObjectId, source: 'spoonacular' };
 	} catch {}
 
 	// Try by stored string id
-		const byStringId = await col.findOne({ id } as Filter<Recipe>);
-	if (byStringId) return byStringId;
+	const byStringId = await col.findOne({ id } as Filter<Recipe>);
+	if (byStringId) return { ...byStringId, source: 'spoonacular' };
 
 	// Try by spoonacularId (supports both plain number or prefixed string)
 	const spoonId = id.startsWith('spoonacular-') ? parseInt(id.replace('spoonacular-', '')) : parseInt(id);
 	if (!Number.isNaN(spoonId)) {
-			const bySpoon = await col.findOne({ spoonacularId: spoonId } as Filter<Recipe>);
-		if (bySpoon) return bySpoon;
+		const bySpoon = await col.findOne({ spoonacularId: spoonId } as Filter<Recipe>);
+		if (bySpoon) return { ...bySpoon, source: 'spoonacular' };
 	}
 
 	return null;

@@ -160,6 +160,7 @@ export async function POST(request: NextRequest) {
         alt: `${recipeData.title} - Image ${index + 1}`,
         isPrimary: index === 0,
       })),
+      image: uploadedImages[0]?.url || '', // Single image field for compatibility
       primaryImageUrl: uploadedImages[0]?.url || '',
       source: recipeData.source || '',
       isOriginal: recipeData.isOriginal || true,

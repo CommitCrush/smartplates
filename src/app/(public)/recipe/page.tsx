@@ -282,7 +282,7 @@ export default function RecipePage() {
                 if (searchQuery.includes('community:')) {
                   setSearchQuery(searchQuery.replace('community:', '').trim());
                 } else {
-                  setSearchQuery(searchQuery + ' community:').trim();
+                  setSearchQuery((searchQuery + ' community:').trim());
                 }
                 setPage(1);
               }}

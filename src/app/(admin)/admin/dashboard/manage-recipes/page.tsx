@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Eye, Star, CheckCircle, XCircle, Trash2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/authContext';
+import { useRouter } from 'next/navigation';
 
 interface Recipe {
   _id: string;
+  spoonacularId?: number;
   title: string;
   author: string;
   authorType: string;
@@ -22,10 +24,17 @@ interface Recipe {
 
 export default function RecipeManagementPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSource, setFilterSource] = useState('all');
+
+  const handleViewRecipe = (recipe: Recipe) => {
+    // Determine the correct recipe ID for the URL
+    const recipeId = recipe.spoonacularId ? `spoonacular-${recipe.spoonacularId}` : recipe._id;
+    router.push(`/recipe/${recipeId}`);
+  };
 
   const loadRecipes = async () => {
     if (!user || user.role !== 'admin') return;
@@ -127,7 +136,7 @@ export default function RecipeManagementPage() {
                   </td>
                   <td className="p-2">
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleViewRecipe(recipe)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm">

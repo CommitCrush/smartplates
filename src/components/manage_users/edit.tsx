@@ -70,10 +70,10 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 
 
 		   return (
-			   <Card className="max-w-5xl mx-auto p-16 space-y-10">
+				<Card className="max-w-5xl mx-auto p-16 space-y-10 text-xl">
 				   <div>
-					   <div className="font-medium text-sm text-gray-500">User name</div>
-					   <div className="text-gray-800 dark:text-gray-200 mb-2">{user.name}</div>
+					<div className="font-medium text-lg text-gray-500 mb-1">User name</div>
+					<div className="font-semibold text-2xl text-gray-900 dark:text-gray-100 mb-2">{user.name}</div>
 				   </div>
 				<div className="flex items-center gap-2">
 					<input
@@ -83,18 +83,18 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 						disabled
 						id="isEmailVerified"
 					/>
-					<label htmlFor="isEmailVerified">Email verified</label>
+					<label htmlFor="isEmailVerified" className="text-lg">Email verified</label>
 				</div>
 				   <div className="flex flex-col gap-3 pt-4 mt-6">
 					   <Button
 						   variant="outline"
-						   className=" text-red-500"
+						   className="text-red-500 text-lg py-4"
 						   onClick={handleDelete}
 						   disabled={actionLoading === "delete"}
 					   >
 						   {actionLoading === "delete" ? "Deleting..." : "Delete user"}
 					   </Button>
-					   <Button variant="outline" onClick={handleToggleActive} disabled={actionLoading === "toggle"}>
+					   <Button variant="outline" className="text-lg py-4" onClick={handleToggleActive} disabled={actionLoading === "toggle"}>
 						   {actionLoading === "toggle"
 							   ? (isActive ? "Deactivating..." : "Activating...")
 							   : (isActive ? "Deactivate user" : "Reactivate user")}

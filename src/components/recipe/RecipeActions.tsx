@@ -53,7 +53,7 @@ export function RecipeActions({ recipe, contentRef }: RecipeActionsProps) {
 
       if (response.ok) {
         toast({ title: 'Success', description: 'Ingredients added to your shopping list.' });
-        router.push(`/user/shopping-list?recipeId=${recipe.id}`);
+        router.push(`/user/shopping-list?recipeId=${recipe._id}`);
       } else {
         toast({ title: 'Error', description: 'Failed to add ingredients to shopping list.', variant: 'destructive' });
       }

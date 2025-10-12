@@ -24,7 +24,7 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
   const plainUser = serializeUser(user);
   return (
     <div className="max-w-2xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Benutzer bearbeiten</h1>
+      <h1 className="text-2xl font-bold mb-6">Edit user</h1>
       <UserEditForm user={plainUser} />
     </div>
   );

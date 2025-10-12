@@ -138,19 +138,6 @@ export default function ManageUsersPage() {
                     <Mail className="w-4 h-4" />
                     <span className="text-sm">{user.email}</span>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Joined:</span>
-                      <span>{formatDate(user.createdAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Activity className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Last Login:</span>
-                      <span>{formatDate(user.lastLoginAt)}</span>
-                    </div>
-                  </div>
                 </div>
               </div>
 

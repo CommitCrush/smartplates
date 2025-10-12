@@ -8,6 +8,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { RecipeDetail } from '@/components/recipe/RecipeDetail';
+import { CommunityRecipeDetail } from '@/components/recipe/CommunityRecipeDetail';
 import { Recipe } from '@/types/recipe';
 
 interface RecipePageProps {
@@ -19,8 +20,8 @@ interface RecipePageProps {
 // Fetch recipe data - this would connect to your API
 async function getRecipe(id: string): Promise<Recipe | null> {
   try {
-    // Use proper base URL construction
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    // Use proper base URL construction with current port
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
     const response = await fetch(`${baseUrl}/api/recipes/${id}`, {
       cache: 'no-store' // For fresh data
     });
@@ -74,9 +75,21 @@ export default async function RecipePage({ params }: RecipePageProps) {
     notFound();
   }
 
+  // Check if this is a community recipe (admin/user created)
+  // Type-safe check for community recipe properties
+  const isCommunityRecipe = !!(recipe as any).source && 
+                           ((recipe as any).source === 'admin_upload' || 
+                            (recipe as any).source === 'user_upload') ||
+                           !recipe.spoonacularId ||
+                           !!(recipe as any).ingredients && Array.isArray((recipe as any).ingredients);
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <RecipeDetail recipe={recipe} />
+      {isCommunityRecipe ? (
+        <CommunityRecipeDetail recipe={recipe} />
+      ) : (
+        <RecipeDetail recipe={recipe} />
+      )}
     </div>
   );
 }

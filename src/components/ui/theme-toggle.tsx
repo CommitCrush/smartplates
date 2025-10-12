@@ -12,7 +12,7 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ className, showLabel = false, size = 'md' }: ThemeToggleProps) {
-  const { theme, resolvedTheme, toggleTheme } = useTheme();
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   const buttonSize = {
     sm: 'p-1.5 h-8 w-8',
@@ -33,20 +33,23 @@ export function ThemeToggle({ className, showLabel = false, size = 'md' }: Theme
       onClick={toggleTheme}
       className={cn(
         buttonSize[size],
-        "hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-lg shadow-sm",
-        "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
+        "border-2 border-primary-600/20 hover:border-primary-600 hover:bg-primary-50",
+        "dark:border-primary-400/20 dark:hover:border-primary-400 dark:hover:bg-primary-900/30",
+        "transition-all duration-200 rounded-lg shadow-sm hover:shadow-md",
+        "focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2",
+        "transform hover:scale-105",
         className
       )}
       aria-label={resolvedTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
       aria-pressed={resolvedTheme === 'dark'}
     >
       {resolvedTheme === 'light' ? (
-        <Moon className={cn(iconSize[size], "text-foreground")} />
+        <Moon className={cn(iconSize[size], "text-primary-600 dark:text-primary-400")} />
       ) : (
-        <Sun className={cn(iconSize[size], "text-foreground")} />
+        <Sun className={cn(iconSize[size], "text-primary-600 dark:text-primary-400")} />
       )}
       {showLabel && (
-        <span className="ml-2 text-sm font-medium">
+        <span className="ml-2 text-sm font-medium text-primary-600 dark:text-primary-400">
           {resolvedTheme === 'light' ? 'Dark' : 'Light'}
         </span>
       )}

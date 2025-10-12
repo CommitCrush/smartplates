@@ -59,22 +59,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
   }
 
   if (!isAuthenticated) {
-    return (
-      <div className={`flex items-center ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
-        <Link
-          href="/login"
-          className={`px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isMobile ? 'w-full text-center' : ''}`}
-        >
-          Sign In
-        </Link>
-        <Link
-          href="/register"
-          className={`px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 transition-colors ${isMobile ? 'w-full text-center' : ''}`}
-        >
-          Sign Up
-        </Link>
-      </div>
-    );
+    return null; // No longer handles authentication buttons
   }
 
   const userAvatar = user?.image || '/placeholder-avatar.svg';

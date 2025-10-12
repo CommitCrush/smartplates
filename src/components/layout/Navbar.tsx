@@ -174,8 +174,26 @@ export default function Navbar() {
               {/* Authentication & User Menu for Non-Admins */}
               <div className="hidden md:block">
                 <div className="ml-4 flex items-center md:ml-6 space-x-4">
-                  {/* User Profile Dropdown */}
-                  <UserProfileDropdown />
+                  {isAuthenticated ? (
+                    /* User Profile Dropdown for authenticated users */
+                    <UserProfileDropdown />
+                  ) : (
+                    /* Sign In/Sign Up Buttons for guests */
+                    <div className="flex items-center space-x-3">
+                      <Link
+                        href="/login"
+                        className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-primary-100 hover:text-primary-800 dark:border-primary-400 dark:text-primary-400 dark:hover:bg-primary-900 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm hover:shadow-md transform hover:scale-105"
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        href="/register"
+                        className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-coral-500 hover:border-coral-500 hover:text-white dark:border-primary-400 dark:text-primary-400 dark:hover:bg-coral-500 dark:hover:border-coral-500 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm hover:shadow-md transform hover:scale-105"
+                      >
+                        Sign Up
+                      </Link>
+                    </div>
+                  )}
 
                   {/* Theme Toggle */}
                   <ThemeToggle size="sm" />
@@ -324,7 +342,26 @@ export default function Navbar() {
             {/* Mobile Authentication */}
             <div className="pt-4 pb-3 border-t border-border">
               <div className="px-2">
-                <UserProfileDropdown isMobile={true} />
+                {isAuthenticated ? (
+                  <UserProfileDropdown isMobile={true} />
+                ) : (
+                  <div className="flex flex-col space-y-3">
+                    <Link
+                      href="/login"
+                      className="w-full text-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-primary-100 hover:text-primary-800 dark:border-primary-400 dark:text-primary-400 dark:hover:bg-primary-900 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm hover:shadow-md transform hover:scale-105"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="w-full text-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-coral-500 hover:border-coral-500 hover:text-white dark:border-primary-400 dark:text-primary-400 dark:hover:bg-coral-500 dark:hover:border-coral-500 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm hover:shadow-md transform hover:scale-105"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -224,8 +224,8 @@ export default function ContactPage() {
                 {submitStatus === 'success' && (
                   <div className="mb-6 p-4 bg-success-50 border border-success-200 rounded-lg">
                     <div className="flex items-center gap-2 text-success-800">
-                      <CheckCircle className="h-5 w-5" />
-                      <span className="font-semibold">Message Sent Successfully!</span>
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <span className="font-semibold text-green-600">Message Sent Successfully!</span>
                     </div>
                     <p className="text-success-700 mt-1">{submitMessage}</p>
                   </div>
@@ -234,8 +234,8 @@ export default function ContactPage() {
                 {submitStatus === 'error' && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <div className="flex items-center gap-2 text-red-800">
-                      <AlertCircle className="h-5 w-5" />
-                      <span className="font-semibold">Error Sending Message</span>
+                      <AlertCircle className="h-5 w-5 text-red-800" />
+                      <span className="font-semibold text-red-800">Error Sending Message</span>
                     </div>
                     <p className="text-red-700 mt-1">{submitMessage}</p>
                   </div>

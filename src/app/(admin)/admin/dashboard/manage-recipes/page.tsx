@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Star, CheckCircle, XCircle, Trash2, RefreshCw } from 'lucide-react';
+import { Eye, Star, Trash2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/authContext';
 import { useRouter } from 'next/navigation';
@@ -30,7 +30,7 @@ export default function RecipeManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSource, setFilterSource] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [recipesPerPage] = useState(10);
+  const [recipesPerPage] = useState(20);
 
   const handleViewRecipe = (recipe: Recipe) => {
     // Determine the correct recipe ID for the URL
@@ -48,11 +48,30 @@ export default function RecipeManagementPage() {
     
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/recipes');
+      
+      // Add cache-busting query parameter to prevent caching
+      const response = await fetch(`/api/admin/recipes?_t=${Date.now()}`);
       const data = await response.json();
       
+      console.log('API Response:', data);
+      
       if (response.ok) {
-        setRecipes(data.recipes || []);
+        // Sort by creation date to ensure consistent ordering
+        const sortedRecipes = [...(data.recipes || [])].sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        
+        setRecipes(sortedRecipes);
+        console.log('Loaded recipes:', sortedRecipes.length);
+        console.log('Recipe sources:', sortedRecipes.reduce((acc, recipe) => {
+          acc[recipe.source] = (acc[recipe.source] || 0) + 1;
+          return acc;
+        }, {}));
+        
+        // Reset to first page when new data is loaded
+        setCurrentPage(1);
+      } else {
+        console.error('API error:', data.error);
       }
     } catch (err) {
       console.error('Error loading recipes:', err);
@@ -62,7 +81,11 @@ export default function RecipeManagementPage() {
   };
 
   useEffect(() => {
-    loadRecipes();
+    console.log('User state changed:', user?.email, user?.role);
+    if (user?.role === 'admin') {
+      console.log('Loading recipes for admin...');
+      loadRecipes();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
@@ -77,7 +100,14 @@ export default function RecipeManagementPage() {
   const indexOfLastRecipe = currentPage * recipesPerPage;
   const indexOfFirstRecipe = indexOfLastRecipe - recipesPerPage;
   const currentRecipes = filteredRecipes.slice(indexOfFirstRecipe, indexOfLastRecipe);
-  const totalPages = Math.ceil(filteredRecipes.length / recipesPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredRecipes.length / recipesPerPage));
+  
+  console.log('Pagination:', { 
+    total: filteredRecipes.length,
+    currentPage, 
+    totalPages,
+    showing: `${indexOfFirstRecipe + 1}-${Math.min(indexOfLastRecipe, filteredRecipes.length)} of ${filteredRecipes.length}`
+  });
   
   // Change page
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
@@ -189,55 +219,62 @@ export default function RecipeManagementPage() {
           
           {/* Pagination */}
           {filteredRecipes.length > 0 && (
-            <div className="flex justify-center mt-6 gap-1">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={previousPage}
-                disabled={currentPage === 1}
-                className="px-2"
-              >
-                &lt; Previous
-              </Button>
+            <div className="mt-6">
+              <div className="text-sm text-muted-foreground text-center mb-2">
+                Showing {indexOfFirstRecipe + 1} to {Math.min(indexOfLastRecipe, filteredRecipes.length)} of {filteredRecipes.length} recipes
+              </div>
               
-              {[...Array(totalPages)].map((_, index) => {
-                // Display first page, last page, current page, and pages around current
-                const pageNumber = index + 1;
-                const shouldShow = 
-                  pageNumber === 1 || 
-                  pageNumber === totalPages ||
-                  (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1);
+              <div className="flex justify-center items-center gap-1">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={previousPage}
+                  disabled={currentPage === 1}
+                  className="px-2"
+                >
+                  &lt; Previous
+                </Button>
                 
-                if (!shouldShow) {
-                  // Show dots for skipped pages, but only once
-                  if (pageNumber === 2 || pageNumber === totalPages - 1) {
-                    return <span key={`dots-${pageNumber}`} className="px-3 py-1">...</span>;
+                {[...Array(totalPages)].map((_, index) => {
+                  const pageNumber = index + 1;
+                  
+                  // Show more pages for better navigation
+                  const shouldShow = 
+                    pageNumber === 1 || 
+                    pageNumber === totalPages ||
+                    (pageNumber >= currentPage - 2 && pageNumber <= currentPage + 2) ||
+                    (totalPages <= 10);
+                  
+                  if (!shouldShow) {
+                    if (pageNumber === 2 || pageNumber === totalPages - 1) {
+                      return <span key={`dots-${pageNumber}`} className="px-3 py-1">...</span>;
+                    }
+                    return null;
                   }
-                  return null;
-                }
+                  
+                  return (
+                    <Button
+                      key={pageNumber}
+                      variant={currentPage === pageNumber ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => paginate(pageNumber)}
+                      className="min-w-[36px]"
+                    >
+                      {pageNumber}
+                    </Button>
+                  );
+                })}
                 
-                return (
-                  <Button
-                    key={pageNumber}
-                    variant={currentPage === pageNumber ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => paginate(pageNumber)}
-                    className="min-w-[36px]"
-                  >
-                    {pageNumber}
-                  </Button>
-                );
-              })}
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={nextPage}
-                disabled={currentPage === totalPages}
-                className="px-2"
-              >
-                Next &gt;
-              </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={nextPage}
+                  disabled={currentPage === totalPages}
+                  className="px-2"
+                >
+                  Next &gt;
+                </Button>
+              </div>
             </div>
           )}
         </div>

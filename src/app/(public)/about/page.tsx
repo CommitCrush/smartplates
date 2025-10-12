@@ -67,28 +67,34 @@ export default function AboutPage() {
 
   const team = [
     {
-      name: 'Sarah Chen',
-      role: 'Founder & CEO',
-      background: 'Former Google product manager with 10+ years in food tech',
-      avatar: '👩‍💼'
-    },
-    {
-      name: 'Marcus Rodriguez',
-      role: 'Head of Engineering',
-      background: 'Ex-Uber senior engineer, AI and machine learning expert',
+      name: 'Ese Osagie',
+      role: 'Backend & Authentication Lead',
+      background: 'Built the project setup, authentication system, and meal planning core. Focused on backend logic, user management, and functionality testing.',
       avatar: '👨‍💻'
     },
     {
-      name: 'Dr. Emily Watson',
-      role: 'Chief Nutritionist',
-      background: 'Registered dietitian, PhD in Nutritional Sciences',
-      avatar: '👩‍⚕️'
+      name: 'Rozn Rasho',
+      role: 'Frontend & Integration Specialist',
+      background: 'Developed the UI foundation, integrated systems, and set up MongoDB to store Spoonacular recipes for faster data access. Focus on UI and frontend integration.',
+      avatar: '👩‍💻'
     },
     {
-      name: 'Alex Thompson',
-      role: 'Head of Design',
-      background: 'Former Airbnb designer, UX specialist for food apps',
-      avatar: '👨‍🎨'
+      name: 'Hana Abrham Tekle',
+      role: 'API & Data Integration Expert',
+      background: 'Implemented the admin dashboard, search & filter features, and Spoonacular API. Created the AI Fridge feature that suggests recipes based on fridge photos.',
+      avatar: '👩‍🔬'
+    },
+    {
+      name: 'Balta Garcia',
+      role: 'Recipe Management Developer',
+      background: 'Handled recipe management and implemented the grocery list integration for automatic shopping lists from saved recipes.',
+      avatar: '👨‍🔧'
+    },
+    {
+      name: 'Monika Kaur Choudhary',
+      role: 'Project Lead & Quality Assurance',
+      background: 'Led the team and managed UI updates, design system rollout, and quality assurance. Ensured consistency and a smooth user experience across the app.',
+      avatar: '👩‍💼'
     }
   ];
 
@@ -313,7 +319,7 @@ export default function AboutPage() {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 sm:gap-8">
               {team.map((member, index) => (
                 <Card key={index} className={cn(
                   "bg-card border border-border text-center hover:shadow-xl transition-all duration-300 group overflow-hidden",

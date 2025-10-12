@@ -86,18 +86,23 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 					/>
 					<label htmlFor="isEmailVerified">Email verifiziert</label>
 				</div>
-				<div className="flex flex-col gap-2 pt-4 mt-6">
-					<Button variant="destructive" onClick={handleDelete} disabled={actionLoading === "delete"}>
-						{actionLoading === "delete" ? "Lösche..." : "User löschen"}
-					</Button>
-					<Button variant="outline" onClick={handleToggleActive} disabled={actionLoading === "toggle"}>
-						{actionLoading === "toggle"
-							? (isActive ? "Deaktiviere..." : "Aktiviere...")
-							: (isActive ? "User deaktivieren" : "User reaktivieren")}
-					</Button>
-					{actionSuccess && <div className="text-green-600">{actionSuccess}</div>}
-					{actionError && <div className="text-red-600">{actionError}</div>}
-				</div>
+				   <div className="flex flex-col gap-3 pt-4 mt-6">
+					   <Button
+						   variant="outline"
+						   className=" text-red-500"
+						   onClick={handleDelete}
+						   disabled={actionLoading === "delete"}
+					   >
+						   {actionLoading === "delete" ? "Lösche..." : "User löschen"}
+					   </Button>
+					   <Button variant="outline" onClick={handleToggleActive} disabled={actionLoading === "toggle"}>
+						   {actionLoading === "toggle"
+							   ? (isActive ? "Deaktiviere..." : "Aktiviere...")
+							   : (isActive ? "User deaktivieren" : "User reaktivieren")}
+					   </Button>
+					   {actionSuccess && <div className="text-green-600">{actionSuccess}</div>}
+					   {actionError && <div className="text-red-600">{actionError}</div>}
+				   </div>
 			</Card>
 		);
 }

@@ -106,7 +106,7 @@ export default function Navbar() {
               {/* Desktop Navigation for Non-Admins */}
               <div className="hidden md:block">
                 <div className="ml-10 flex items-baseline space-x-4" role="menubar">
-                  {/* Public Navigation (Home removed) */}
+                  {/* Navigation in order: Recipes, Meal Plan, My Recipes, Smart Fridge AI, Cookware, About, Contact */}
                   <Link
                     href="/recipe"
                     className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
@@ -115,6 +115,39 @@ export default function Navbar() {
                   >
                     Recipes
                   </Link>
+                  {/* User Navigation - Meal Plan */}
+                  {isAuthenticated && (
+                    <Link
+                      href={user && user.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current'}
+                      className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                      role="menuitem"
+                      tabIndex={0}
+                    >
+                      Meal Plan
+                    </Link>
+                  )}
+                  {/* User Navigation - My Recipes */}
+                  {isAuthenticated && (
+                    <Link
+                      href="/user/my-recipe"
+                      className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                      role="menuitem"
+                      tabIndex={0}
+                    >
+                      My Recipes
+                    </Link>
+                  )}
+                  {/* User Navigation - Smart Fridge AI */}
+                  {isAuthenticated && (
+                    <Link
+                      href="/user/ai_feature"
+                      className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                      role="menuitem"
+                      tabIndex={0}
+                    >
+                      Smart Fridge AI
+                    </Link>
+                  )}
                   <Link
                     href="/cookware"
                     className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
@@ -139,35 +172,6 @@ export default function Navbar() {
                   >
                     Contact
                   </Link>
-                  {/* User Navigation */}
-                  {isAuthenticated && (
-                    <>
-                      <Link
-                        href={user && user.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current'}
-                        className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                        role="menuitem"
-                        tabIndex={0}
-                      >
-                        Meal Plans
-                      </Link>
-                      <Link
-                        href="/user/my-recipe"
-                        className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                        role="menuitem"
-                        tabIndex={0}
-                      >
-                        My Recipes
-                      </Link>
-                      <Link
-                        href="/user/ai_feature"
-                        className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                        role="menuitem"
-                        tabIndex={0}
-                      >
-                        Smart Fridge AI
-                      </Link>
-                    </>
-                  )}
                 </div>
               </div>
 
@@ -241,7 +245,7 @@ export default function Navbar() {
           aria-label="Mobile navigation menu"
         >
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-background-card border-t border-border">
-            {/* Public Mobile Navigation (Home removed) */}
+            {/* Mobile Navigation in order: Recipes, Meal Plan, My Recipes, Smart Fridge AI, Cookware, About, Contact */}
             <Link
               href="/recipe"
               className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
@@ -251,6 +255,46 @@ export default function Navbar() {
             >
               Recipes
             </Link>
+
+            {/* User Mobile Navigation - Meal Plan */}
+            {isAuthenticated && (
+              <Link
+                href={user && user.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current'}
+                className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                onClick={() => setIsMenuOpen(false)}
+                role="menuitem"
+                tabIndex={0}
+              >
+                Meal Plan
+              </Link>
+            )}
+
+            {/* User Mobile Navigation - My Recipes */}
+            {isAuthenticated && (
+              <Link
+                href="/user/my-recipe"
+                className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                onClick={() => setIsMenuOpen(false)}
+                role="menuitem"
+                tabIndex={0}
+              >
+                My Recipes
+              </Link>
+            )}
+
+            {/* User Mobile Navigation - Smart Fridge AI */}
+            {isAuthenticated && (
+              <Link
+                href="/user/ai_feature"
+                className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                onClick={() => setIsMenuOpen(false)}
+                role="menuitem"
+                tabIndex={0}
+              >
+                Smart Fridge AI
+              </Link>
+            )}
+
             <Link
               href="/cookware"
               className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
@@ -279,46 +323,17 @@ export default function Navbar() {
               Contact
             </Link>
 
-            {/* User Mobile Navigation */}
+            {/* User Mobile Navigation - Dashboard (legacy link if needed) */}
             {isAuthenticated && (
-              <>
-                <Link
-                  href="/user"
-                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                  onClick={() => setIsMenuOpen(false)}
-                  role="menuitem"
-                  tabIndex={0}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href={user && user.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current'}
-                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                  onClick={() => setIsMenuOpen(false)}
-                  role="menuitem"
-                  tabIndex={0}
-                >
-                  Meal Plans
-                </Link>
-                <Link
-                  href="/user/my-recipe"
-                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                  onClick={() => setIsMenuOpen(false)}
-                  role="menuitem"
-                  tabIndex={0}
-                >
-                  My Recipes
-                </Link>
-                <Link
-                  href="/user/profile/me"
-                  className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                  onClick={() => setIsMenuOpen(false)}
-                  role="menuitem"
-                  tabIndex={0}
-                >
-                  Profile
-                </Link>
-              </>
+              <Link
+                href="/user"
+                className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                onClick={() => setIsMenuOpen(false)}
+                role="menuitem"
+                tabIndex={0}
+              >
+                Dashboard
+              </Link>
             )}
 
             {/* Mobile Authentication */}

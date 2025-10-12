@@ -1,130 +1,185 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Search, ChefHat, ChevronDown } from 'lucide-react';
+import { ChefHat } from 'lucide-react';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
 import { Pagination } from '@/components/ui/pagination';
 import { useAllRecipes } from '@/hooks/useRecipes';
 import { useAuth } from '@/context/authContext';
 import { useRouter } from 'next/navigation';
+import { RecipeFilters } from '@/components/recipe/RecipeFilters';
+import { ActiveFilters } from '@/components/recipe/ActiveFilters';
+import { fuzzySearchRecipes, filterRecipesByDifficulty } from '@/utils/fuzzySearch';
+import type { Recipe } from '@/types/recipe';
 
 export default function RecipePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
-  const [showMore, setShowMore] = useState(false);
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
-  const [difficultyDropdownOpen, setDifficultyDropdownOpen] = useState(false);
   const [selectedDiet, setSelectedDiet] = useState('');
-  const [dietDropdownOpen, setDietDropdownOpen] = useState(false);
   const [selectedAllergy, setSelectedAllergy] = useState('');
-  const [allergyDropdownOpen, setAllergyDropdownOpen] = useState(false);
-  const [maxReadyTime, setMaxReadyTime] = useState<string | undefined>();
   const [page, setPage] = useState(1);
 
   // Auth and routing
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  // Refs for closing dropdowns on outside click
-  const categoryDropdownRef = useRef<HTMLDivElement>(null);
-  const difficultyDropdownRef = useRef<HTMLDivElement>(null);
-  const dietDropdownRef = useRef<HTMLDivElement>(null);
-  const allergyDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Filter option lists
-  const allergies = [
-    { value: '', label: 'Allergies (None)' },
-    { value: 'dairy', label: 'Dairy' },
-    { value: 'egg', label: 'Egg' },
-    { value: 'gluten', label: 'Gluten' },
-    { value: 'peanut', label: 'Peanut' },
-    { value: 'seafood', label: 'Seafood' },
-    { value: 'sesame', label: 'Sesame' },
-    { value: 'soy', label: 'Soy' },
-    { value: 'sulfite', label: 'Sulfite' },
-    { value: 'tree nut', label: 'Tree Nut' },
-    { value: 'wheat', label: 'Wheat' },
-  ];
-
-  const diets = [
-    { value: '', label: 'All Diets' },
-    { value: 'vegetarian', label: 'Vegetarian' },
-    { value: 'vegan', label: 'Vegan' },
-    { value: 'gluten free', label: 'Gluten-Free' },
-    { value: 'ketogenic', label: 'Ketogenic' },
-    { value: 'paleo', label: 'Paleo' },
-    { value: 'primal', label: 'Primal' },
-    { value: 'whole30', label: 'Whole30' },
-  ];
-
-  const categories = [
-    { value: '', label: 'All Categories' },
-    { value: 'breakfast', label: 'Breakfast' },
-    { value: 'main course', label: 'Lunch' },
-    { value: 'dinner', label: 'Dinner' },
-    { value: 'dessert', label: 'Dessert' },
-    { value: 'snack', label: 'Snack' },
-  ];
-
-  const difficulties = [
-    { value: '', label: 'All Difficulties' },
-    { value: 'easy', label: 'Easy' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'hard', label: 'Hard' },
-  ];
-
-  useEffect(() => {
-    if (selectedDifficulty === 'easy') {
-      setMaxReadyTime('15'); // Easy: bis 15 Minuten
-    } else if (selectedDifficulty === 'medium') {
-      setMaxReadyTime('30'); // Medium: bis 30 Minuten (wird client-seitig auf 15-30 gefiltert)
+  // Separate API-Aufruf für Dropdown-Filter vs. Search
+  const hasSearchQuery = searchQuery.trim().length > 0;
+  
+  // Intelligente API-Aufrufe basierend auf Modus
+  const apiOptions = useMemo(() => {
+    if (hasSearchQuery) {
+      // Search-Modus: alle Rezepte ungefiltert holen für präzise client-side Filterung
+      return {
+        number: '200', // Mehr Rezepte für bessere Search-Ergebnisse
+        randomize: 'false',
+        // KEINE API-Filter bei Search - nur client-side filtering
+      };
     } else {
-      setMaxReadyTime(undefined);
+      // Dropdown-Filter-Modus: normale API-basierte Paginierung
+      const options: Record<string, string> = {
+        type: selectedCategory,
+        diet: selectedDiet,
+        intolerances: selectedAllergy,
+        number: isAuthenticated ? '30' : '15',
+        page: String(page),
+      };
+
+      if (selectedDifficulty === 'easy') {
+        options.maxReadyTime = '15';
+      } else if (selectedDifficulty === 'medium') {
+        options.maxReadyTime = '34';  // Updated: Medium bis 34 Min
+      }
+
+      if (!isAuthenticated || page === 1) {
+        options.randomize = 'true';
+      }
+
+      return options;
     }
-    // Reset pagination when difficulty changes
-    setPage(1);
-  }, [selectedDifficulty]);
+  }, [selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, page, isAuthenticated, hasSearchQuery]);
 
-  const fetchOptions = useMemo(
-    () => ({
-      type: selectedCategory,
-      diet: selectedDiet,
-      intolerances: selectedAllergy,
-      ...(maxReadyTime && { maxReadyTime }),
-      number: isAuthenticated ? '30' : '15', // 30 for users, 15 for viewers
-      page: String(page),
-      // Remove randomize for consistent pagination
-    }),
-    [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, page, isAuthenticated]
-  );
+  const { recipes: rawRecipes, error, loading, hasMore, total } = useAllRecipes('', apiOptions);
 
-  const { recipes, error, loading, hasMore, total } = useAllRecipes(searchQuery, fetchOptions);
+  // Client-side filtering for all filter combinations
+  const allFilteredRecipes = useMemo(() => {
+    console.log('🔍 Client-side filtering started:', {
+      totalRecipes: rawRecipes.length,
+      hasSearchQuery,
+      searchQuery: `"${searchQuery}"`,
+      selectedCategory,
+      selectedDiet,
+      selectedAllergy,
+      selectedDifficulty
+    });
 
-  // Close dropdowns when clicking outside
+    let filtered = rawRecipes;
+
+    // 1. Search Filter (Title & Ingredients) - only when Search Query present
+    if (hasSearchQuery && searchQuery.trim()) {
+      filtered = fuzzySearchRecipes(filtered, searchQuery);
+      console.log(`After Search "${searchQuery}":`, filtered.length);
+    }
+
+    // 2. Category Filter (client-side when Search active)
+    if (hasSearchQuery && selectedCategory) {
+      filtered = filtered.filter(recipe => 
+        recipe.dishTypes?.some(type => 
+          type.toLowerCase() === selectedCategory.toLowerCase()
+        ) ||
+        recipe.cuisines?.some(cuisine => 
+          cuisine.toLowerCase() === selectedCategory.toLowerCase()
+        )
+      );
+      console.log(`After Category "${selectedCategory}":`, filtered.length);
+    }
+
+    // 3. Diet Filter (client-side when Search active)
+    if (hasSearchQuery && selectedDiet) {
+      filtered = filtered.filter(recipe => 
+        recipe.diets?.some(diet => 
+          diet.toLowerCase() === selectedDiet.toLowerCase()
+        )
+      );
+      console.log(`After Diet "${selectedDiet}":`, filtered.length);
+    }
+
+    // 4. Allergy/Intolerance Filter (client-side when Search active)
+    if (hasSearchQuery && selectedAllergy) {
+      filtered = filtered.filter(recipe => {
+        // Check if recipe does NOT contain the allergen
+        const ingredients = recipe.extendedIngredients || [];
+        return !ingredients.some(ingredient => {
+          const ingredientName = (ingredient.name || ingredient.originalName || '').toLowerCase();
+          return ingredientName.includes(selectedAllergy.toLowerCase());
+        });
+      });
+      console.log(`After Allergy filter "${selectedAllergy}":`, filtered.length);
+    }
+
+    // 5. Difficulty Filter (always client-side)
+    if (selectedDifficulty) {
+      filtered = filterRecipesByDifficulty(filtered, selectedDifficulty);
+      console.log(`After Difficulty "${selectedDifficulty}":`, filtered.length);
+    }
+
+    console.log('🎯 Final filtered results:', filtered.length);
+    return filtered;
+  }, [rawRecipes, hasSearchQuery, searchQuery, selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty]);
+
+  // Client-side Pagination (only for Search results)
+  const RECIPES_PER_PAGE = 30; // 3 columns × 10 rows
+  const totalFilteredPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
+  
+  const displayedRecipes = useMemo(() => {
+    if (!hasSearchQuery) {
+      // Dropdown-Filter: use API-paginated recipes
+      return allFilteredRecipes;
+    }
+
+    // Search-Mode: client-side Pagination
+    const startIndex = (page - 1) * RECIPES_PER_PAGE;
+    return allFilteredRecipes.slice(startIndex, startIndex + RECIPES_PER_PAGE);
+  }, [allFilteredRecipes, page, hasSearchQuery]);
+
+  // Reset page when any filter changes
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
-        setCategoryDropdownOpen(false);
-      }
-      if (difficultyDropdownRef.current && !difficultyDropdownRef.current.contains(event.target as Node)) {
-        setDifficultyDropdownOpen(false);
-      }
-      if (dietDropdownRef.current && !dietDropdownRef.current.contains(event.target as Node)) {
-        setDietDropdownOpen(false);
-      }
-      if (allergyDropdownRef.current && !allergyDropdownRef.current.contains(event.target as Node)) {
-        setAllergyDropdownOpen(false);
-      }
-    };
+    setPage(1);
+  }, [searchQuery, selectedCategory, selectedDifficulty, selectedDiet, selectedAllergy]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  // Auto-scroll to top when page changes OR when filters change
+  useEffect(() => {
+    if (page > 1) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [page]);
+
+  // Auto-scroll to top when any filter changes (including search input)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [searchQuery, selectedCategory, selectedDifficulty, selectedDiet, selectedAllergy]);
+
+  const handleFilterChange = () => {
+    setPage(1);
+  };
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('');
+    setSelectedDifficulty('');
+    setSelectedDiet('');
+    setSelectedAllergy('');
+    setPage(1);
+  };
+
+  const generateUniqueKey = (recipe: Recipe) => {
+    const objId = (recipe as unknown as { _id?: string | null })._id;
+    return (typeof objId === 'string' && objId) || 
+           (recipe.spoonacularId ? String(recipe.spoonacularId) : recipe.title);
+  };
 
   return (
     <div className="min-h-screen bg-background py-8">
@@ -138,182 +193,42 @@ export default function RecipePage() {
             Recipe Collection
           </h1>
           <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
-            Discover delicious recipes from our community of passionate cooks
+            {isAuthenticated 
+              ? 'Discover delicious recipes from our community - First page randomized, then paginated'
+              : 'Browse our collection of amazing recipes - Always randomly displayed'
+            }
           </p>
         </div>
 
+        {/* Search and Filters */}
+        <RecipeFilters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          selectedDifficulty={selectedDifficulty}
+          setSelectedDifficulty={setSelectedDifficulty}
+          selectedDiet={selectedDiet}
+          setSelectedDiet={setSelectedDiet}
+          selectedAllergy={selectedAllergy}
+          setSelectedAllergy={setSelectedAllergy}
+          onFilterChange={handleFilterChange}
+        />
 
-  {/* Search and Filters - sticky */}
-  <div className="bg-background-card border border-border rounded-lg p-6 mb-8 sticky top-16 z-30 shadow-lg">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="md:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search recipes..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-
-            {/* Category Filter */}
-            <div ref={categoryDropdownRef} className="relative">
-              <button
-                onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
-              >
-                <span>{categories.find(c => c.value === selectedCategory)?.label || 'All Categories'}</span>
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              {categoryDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10">
-                  {categories.map((category) => (
-                    <button
-                      key={category.value}
-                      onClick={() => {
-                        setSelectedCategory(category.value);
-                        setPage(1);
-                        setCategoryDropdownOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
-                    >
-                      {category.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Diet Filter */}
-            <div ref={dietDropdownRef} className="relative">
-              <button
-                onClick={() => setDietDropdownOpen(!dietDropdownOpen)}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
-              >
-                <span>{diets.find(d => d.value === selectedDiet)?.label || 'All Diets'}</span>
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              {dietDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10">
-                  {diets.map((diet) => (
-                    <button
-                      key={diet.value}
-                      onClick={() => {
-                        setSelectedDiet(diet.value);
-                        setPage(1);
-                        setDietDropdownOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
-                    >
-                      {diet.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Allergy Filter */}
-            <div ref={allergyDropdownRef} className="relative">
-              <button
-                onClick={() => setAllergyDropdownOpen(!allergyDropdownOpen)}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
-              >
-                <span>{allergies.find(a => a.value === selectedAllergy)?.label || 'Allergies (None)'}</span>
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              {allergyDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10">
-                  {allergies.map((allergy) => (
-                    <button
-                      key={allergy.value}
-                      onClick={() => {
-                        setSelectedAllergy(allergy.value);
-                        setPage(1);
-                        setAllergyDropdownOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
-                    >
-                      {allergy.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Difficulty Filter */}
-            <div ref={difficultyDropdownRef} className="relative">
-              <button
-                onClick={() => setDifficultyDropdownOpen(!difficultyDropdownOpen)}
-                className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
-              >
-                <span>{difficulties.find(d => d.value === selectedDifficulty)?.label || 'All Difficulties'}</span>
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              {difficultyDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-10">
-                  {difficulties.map((difficulty) => (
-                    <button
-                      key={difficulty.value}
-                      onClick={() => {
-                        setSelectedDifficulty(difficulty.value);
-                        setDifficultyDropdownOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"
-                    >
-                      {difficulty.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Community Recipes Toggle Button */}
-          <div className="mt-4 flex justify-center gap-3">
-            <Button
-              variant={searchQuery.includes('community:') ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => {
-                if (searchQuery.includes('community:')) {
-                  setSearchQuery(searchQuery.replace('community:', '').trim());
-                } else {
-                  setSearchQuery((searchQuery + ' community:').trim());
-                }
-                setPage(1);
-              }}
-              className="text-sm flex items-center gap-2"
-            >
-              <span>👥</span>
-              Community Recipes
-              {searchQuery.includes('community:') && <span className="text-xs">(Active)</span>}
-            </Button>
-            
-            {/* Show All Recipes Button */}
-            {(searchQuery || selectedCategory || selectedDiet || selectedAllergy || selectedDifficulty) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('');
-                  setSelectedDiet('');
-                  setSelectedAllergy('');
-                  setSelectedDifficulty('');
-                  setMaxReadyTime(undefined);
-                  setPage(1);
-                }}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                🏠 All Recipes
-              </Button>
-            )}
-          </div>
-        </div>
+        {/* Active Filters Display */}
+        <ActiveFilters
+          searchQuery={searchQuery}
+          selectedCategory={selectedCategory}
+          selectedDifficulty={selectedDifficulty}
+          selectedDiet={selectedDiet}
+          selectedAllergy={selectedAllergy}
+          onRemoveSearch={() => setSearchQuery('')}
+          onRemoveCategory={() => setSelectedCategory('')}
+          onRemoveDifficulty={() => setSelectedDifficulty('')}
+          onRemoveDiet={() => setSelectedDiet('')}
+          onRemoveAllergy={() => setSelectedAllergy('')}
+          onClearAll={clearAllFilters}
+        />
 
   {/* Loading State */}
   {loading && (
@@ -346,83 +261,67 @@ export default function RecipePage() {
         {!loading && !error && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recipes
-                .filter((recipe) => {
-                  if (!selectedDifficulty) return true;
-                  
-                  const cookTime = recipe.readyInMinutes || 0;
-                  
-                  // Easy: bis 15 Minuten (bereits durch API gefiltert)
-                  if (selectedDifficulty === 'easy') return true;
-                  
-                  // Medium: 15 bis 30 Minuten (client-seitig filtern)
-                  if (selectedDifficulty === 'medium') return cookTime >= 15 && cookTime <= 30;
-                  
-                  // Hard: ab 30 Minuten
-                  if (selectedDifficulty === 'hard') return cookTime > 30;
-                  
-                  return true;
-                })
-                .slice(0, 30) // Limit to 30 recipes (3 columns × 10 rows)
-                .map((recipe) => {
-                  const objId = (recipe as unknown as { _id?: string | null })._id;
-                  const safeKey = (typeof objId === 'string' && objId) || (recipe.spoonacularId ? String(recipe.spoonacularId) : recipe.title);
-                  return <RecipeCard key={safeKey} recipe={recipe} />;
-                })}
+              {displayedRecipes.map((recipe: Recipe) => (
+                <RecipeCard key={generateUniqueKey(recipe)} recipe={recipe} />
+              ))}
             </div>
             
-            {/* Pagination for authenticated users */}
-            {isAuthenticated && recipes.length > 0 && (
-              <div className="flex justify-center mt-8">
-                <Pagination
-                  currentPage={page}
-                  totalPages={Math.ceil((total || recipes.length) / 30)}
-                  onPageChange={setPage}
-                />
-              </div>
-            )}
-            
-            {/* Load More button for viewers */}
-            {!isAuthenticated && (hasMore ?? (!showMore && recipes.length >= 15)) && (
-              <div className="flex justify-center mt-8">
-                <Button
-                  onClick={() => {
-                    router.push('/register');
-                  }}
-                  variant="outline"
-                  size="lg"
-                >
-                  Registrieren für mehr Rezepte
-                </Button>
-              </div>
+            {/* Pagination Logic basierend auf Modus */}
+            {hasSearchQuery ? (
+              // Search-Modus: Client-side Pagination
+              allFilteredRecipes.length > RECIPES_PER_PAGE && (
+                <div className="flex justify-center mt-8">
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalFilteredPages}
+                    onPageChange={setPage}
+                  />
+                </div>
+              )
+            ) : (
+              // Dropdown-Filter-Modus: API-basierte Pagination
+              <>
+                {isAuthenticated && rawRecipes.length > 0 && (
+                  <div className="flex justify-center mt-8">
+                    <Pagination
+                      currentPage={page}
+                      totalPages={Math.ceil((total || rawRecipes.length) / 30)}
+                      onPageChange={setPage}
+                    />
+                  </div>
+                )}
+                
+                {!isAuthenticated && hasMore && rawRecipes.length >= 15 && (
+                  <div className="flex justify-center mt-8">
+                    <Button
+                      onClick={() => {
+                        router.push('/register');
+                      }}
+                      variant="outline"
+                      size="lg"
+                    >
+                      Register for More Recipes
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
 
-  {/* Empty State */}
-  {!loading && !error && recipes.length === 0 && (
+        {/* Empty State */}
+        {!loading && !error && displayedRecipes.length === 0 && (
           <Card className="p-12 text-center">
             <ChefHat className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Recipes Found</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery || selectedCategory || selectedDifficulty
+              {searchQuery || selectedCategory || selectedDifficulty || selectedDiet || selectedAllergy
                 ? 'Try adjusting your search filters'
                 : 'No recipes available at the moment'
               }
             </p>
-            {(searchQuery || selectedCategory || selectedDifficulty) && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('');
-                  setSelectedDifficulty('');
-                  setSelectedDiet('');
-                  setSelectedAllergy('');
-                  setPage(1);
-                  setShowMore(false);
-                }}
-              >
+            {(searchQuery || selectedCategory || selectedDifficulty || selectedDiet || selectedAllergy) && (
+              <Button variant="outline" onClick={clearAllFilters}>
                 Clear Filters
               </Button>
             )}

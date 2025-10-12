@@ -1,3 +1,4 @@
+
 /**
  * MongoDB Database Connection and Utilities
  * 
@@ -121,8 +122,9 @@ export const COLLECTIONS = {
   RECIPES: 'recipes',
   USER_RECIPES: 'userRecipes',
   CATEGORIES: 'categories',
-  MEAL_PLANS: 'mealPlans',
-  GROCERY_LISTS: 'groceryLists',
+  MEAL_PLANS: 'mealplans',
+  GROCERY_LISTS: 'grocerylists',
+  SAVED_GROCERY_LISTS: 'savedgrocerylists', // Added for saved lists
 } as const;
 
 /**

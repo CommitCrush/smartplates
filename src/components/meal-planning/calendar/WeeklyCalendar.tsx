@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { DayColumn } from './DayColumn';
 // MealPlanningToolbar removed - not used in this component
-import { RecipeDetailModal } from '../RecipeDetailModal';
+import { RecipeDetailModal } from '../modals/RecipeDetailModal';
 import { MealPlanService } from '@/services/mealPlanService';
 import { useAuth } from '@/context/authContext';
 import type { 
@@ -51,11 +51,13 @@ interface WeeklyCalendarProps {
   onMealPlanChange?: (mealPlan: IMealPlan) => void;
   onAddRecipe?: (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => void;
   onAddMeal?: (slot: any) => void;
+  onEditMeal?: (slot: any) => void; // Add edit meal handler
   onRemoveMeal?: (planId: string, day: number, mealType: string, index: number) => void;
   onShowRecipe?: (meal: MealSlot) => void;
   onCopyRecipe?: (meal: MealSlot) => void;
   copiedRecipe?: MealSlot | null;
   onClearCopiedRecipe?: () => void;
+  hideSearch?: boolean;
   className?: string;
 }
 
@@ -70,11 +72,13 @@ export function WeeklyCalendar({
   onMealPlanChange, 
   onAddRecipe,
   onAddMeal,
+  onEditMeal,
   onRemoveMeal,
   onShowRecipe,
   onCopyRecipe,
   copiedRecipe,
   onClearCopiedRecipe,
+  hideSearch = false,
   className 
 }: WeeklyCalendarProps) {
   // Get user context for MongoDB operations
@@ -87,6 +91,7 @@ export function WeeklyCalendar({
   const [, setIsLoading] = useState(false);
   const [dateSearchValue, setDateSearchValue] = useState<string>('');
   const [selectedMeal, setSelectedMeal] = useState<MealSlot | null>(null);
+  const [selectedMealContext, setSelectedMealContext] = useState<{dayName: string, mealType: string} | null>(null);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
   
   // MongoDB integration state
@@ -94,8 +99,12 @@ export function WeeklyCalendar({
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Handle showing recipe details
-  const handleShowRecipe = (meal: MealSlot) => {
+  const handleShowRecipe = (meal: MealSlot, dayIndex: number, mealType: string) => {
+    console.log('📅 WeeklyCalendar: handleShowRecipe called', { meal: meal.recipeName, dayIndex, mealType });
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = weekDates[dayIndex] ? dayNames[weekDates[dayIndex].getDay()] : 'Unknown';
     setSelectedMeal(meal);
+    setSelectedMealContext({ dayName, mealType });
     setShowRecipeModal(true);
   };
 
@@ -104,11 +113,6 @@ export function WeeklyCalendar({
     if (onCopyRecipe) {
       onCopyRecipe(meal);
     }
-  };
-
-  const handleCloseRecipeModal = () => {
-    setShowRecipeModal(false);
-    setSelectedMeal(null);
   };
 
   // MongoDB integration functions
@@ -127,13 +131,23 @@ export function WeeklyCalendar({
   }, [user]);
 
   const updateMealPlan = useCallback((updater: (plan: IMealPlan) => IMealPlan) => {
-    if (!currentMealPlan) return;
+    // Use the most current meal plan (prefer currentMealPlan, fallback to mealPlan prop)
+    const sourcePlan = currentMealPlan || mealPlan;
+    if (!sourcePlan) {
+      console.warn('📅 WeeklyCalendar: No meal plan available for update');
+      return;
+    }
     
-    const updatedPlan = updater(currentMealPlan);
+    const updatedPlan = updater(sourcePlan);
+    console.log('📅 WeeklyCalendar: Updating meal plan', {
+      source: sourcePlan === currentMealPlan ? 'currentMealPlan' : 'mealPlan prop',
+      updated: updatedPlan
+    });
+    
     setCurrentMealPlan(updatedPlan);
     onMealPlanChange?.(updatedPlan);
     saveMealPlan(updatedPlan);
-  }, [currentMealPlan, onMealPlanChange, saveMealPlan]);
+  }, [currentMealPlan, mealPlan, onMealPlanChange, saveMealPlan]);
 
   // Sync with parent currentDate prop
   useEffect(() => {
@@ -150,26 +164,63 @@ export function WeeklyCalendar({
 
   // Use meal plan from parent props instead of creating independently
   useEffect(() => {
-    if (mealPlan && mealPlan !== currentMealPlan) {
+    if (mealPlan) {
+      console.log('📅 WeeklyCalendar: Syncing meal plan from props', mealPlan);
       setCurrentMealPlan(mealPlan);
     }
-  }, [mealPlan, currentMealPlan]);
+  }, [mealPlan]);
 
-  // Navigation handlers
+  // Re-sync when week changes to ensure proper data loading
+  useEffect(() => {
+    if (mealPlan && weekDates.length > 0) {
+      console.log('📅 WeeklyCalendar: Week changed, re-syncing meal plan', {
+        weekStart: currentWeekStart.toDateString(),
+        mealPlanWeek: mealPlan.weekStartDate
+      });
+      setCurrentMealPlan(mealPlan);
+    }
+  }, [currentWeekStart, weekDates, mealPlan]);
+
+  // Navigation handlers - Enhanced to communicate with parent
   const goToPreviousWeek = () => {
     const newDate = new Date(currentWeekStart);
     newDate.setDate(newDate.getDate() - 7);
     setCurrentWeekStart(newDate);
+    
+    // Communicate navigation to parent if possible
+    if (onMealPlanChange && mealPlan) {
+      console.log('📅 WeeklyCalendar: Previous week navigation, triggering parent refresh');
+      // Just trigger a refresh by updating the meal plan's lastViewed date
+      const refreshedPlan = { ...mealPlan, lastViewed: new Date() };
+      onMealPlanChange(refreshedPlan);
+    }
   };
 
   const goToNextWeek = () => {
     const newDate = new Date(currentWeekStart);
     newDate.setDate(newDate.getDate() + 7);
     setCurrentWeekStart(newDate);
+    
+    // Communicate navigation to parent if possible
+    if (onMealPlanChange && mealPlan) {
+      console.log('📅 WeeklyCalendar: Next week navigation, triggering parent refresh');
+      // Just trigger a refresh by updating the meal plan's lastViewed date  
+      const refreshedPlan = { ...mealPlan, lastViewed: new Date() };
+      onMealPlanChange(refreshedPlan);
+    }
   };
 
   const goToCurrentWeek = () => {
-    setCurrentWeekStart(getWeekStartDate(new Date()));
+    const currentWeek = getWeekStartDate(new Date());
+    setCurrentWeekStart(currentWeek);
+    
+    // Communicate navigation to parent if possible
+    if (onMealPlanChange && mealPlan) {
+      console.log('📅 WeeklyCalendar: Current week navigation, triggering parent refresh');
+      // Just trigger a refresh by updating the meal plan's lastViewed date
+      const refreshedPlan = { ...mealPlan, lastViewed: new Date() };
+      onMealPlanChange(refreshedPlan);
+    }
   };
 
   // Date search functionality
@@ -222,20 +273,22 @@ export function WeeklyCalendar({
 
   // Get meals for a specific day - MongoDB integrated version
   const getMealsForDay = (dayIndex: number): DayMeals | undefined => {
-    // Priority 1: Current MongoDB meal plan
+    const targetDate = weekDates[dayIndex];
+    if (!targetDate) return undefined;
+
+    // Priority 1: Current MongoDB meal plan (most reliable)
     if (currentMealPlan && currentMealPlan.days && currentMealPlan.days[dayIndex]) {
+      console.log('📅 WeeklyCalendar: Using currentMealPlan for day', dayIndex, currentMealPlan.days[dayIndex]);
       return currentMealPlan.days[dayIndex];
     }
     
     // Priority 2: Props meal plan (for external control)
     if (mealPlan && mealPlan.days && mealPlan.days[dayIndex]) {
+      console.log('📅 WeeklyCalendar: Using props mealPlan for day', dayIndex, mealPlan.days[dayIndex]);
       return mealPlan.days[dayIndex];
     }
     
     // Priority 3: Cross-week synchronization from meal plans array
-    const targetDate = weekDates[dayIndex];
-    if (!targetDate) return undefined;
-    
     const targetWeekStart = getWeekStartDate(targetDate);
     const targetWeekKey = targetWeekStart.toISOString().split('T')[0];
     
@@ -255,18 +308,25 @@ export function WeeklyCalendar({
       });
       
       if (matchingDay) {
-        console.log('WeeklyCalendar: Cross-week meals found for', targetDate.toDateString());
+        console.log('📅 WeeklyCalendar: Cross-week meals found for', targetDate.toDateString(), matchingDay);
         return matchingDay;
       }
     }
     
+    console.log('📅 WeeklyCalendar: No meals found for day', dayIndex, targetDate.toDateString());
     return undefined;
   };
 
   // Handle meal changes - MongoDB integrated version
   const handleMealChange = (dayIndex: number, meals: DayMeals) => {
-    if (!currentMealPlan) return;
+    const sourcePlan = currentMealPlan || mealPlan;
+    if (!sourcePlan) {
+      console.warn('📅 WeeklyCalendar: No meal plan available for meal change');
+      return;
+    }
 
+    console.log('📅 WeeklyCalendar: Handling meal change for day', dayIndex, meals);
+    
     updateMealPlan(plan => ({
       ...plan,
       days: plan.days.map((day, index) => 
@@ -276,7 +336,7 @@ export function WeeklyCalendar({
     }));
   };
 
-  // Handle adding a new meal
+  // Handle adding a new meal - Enhanced with edit capability
   const handleAddRecipe = (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
     // If there's a copied recipe, paste it instead of opening add dialog
     if (copiedRecipe) {
@@ -299,38 +359,80 @@ export function WeeklyCalendar({
     }
   };
 
+  // Handle editing existing meal
+  const handleEditMeal = (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks', meal: MealSlot, mealIndex: number) => {
+    console.log('📝 WeeklyCalendar: Edit meal requested for:', meal.recipeName);
+    
+    if (onEditMeal) {
+      const editSlot = {
+        dayOfWeek: dayIndex,
+        mealType: mealType,
+        recipeId: meal.recipeId || '',
+        recipeName: meal.recipeName || '',
+        servings: meal.servings || 2,
+        prepTime: meal.prepTime || 30,
+        cookingTime: meal.cookingTime || 0,
+        notes: meal.notes || '',
+        ingredients: meal.ingredients || [],
+        tags: meal.tags || [],
+        image: meal.image || '',
+        existingMealIndex: mealIndex // Include index for updating existing meal
+      };
+      onEditMeal(editSlot);
+    } else if (onAddMeal) {
+      // Fallback to add meal with existing data
+      const editSlot = {
+        dayOfWeek: dayIndex,
+        mealType: mealType,
+        recipeId: meal.recipeId || '',
+        recipeName: meal.recipeName || '',
+        servings: meal.servings || 2,
+        prepTime: meal.prepTime || 30,
+        existingMealIndex: mealIndex
+      };
+      onAddMeal(editSlot);
+    }
+  };
+
   // Handle pasting copied recipe
   const handlePasteRecipe = (dayIndex: number, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks') => {
-    if (!copiedRecipe || !mealPlan) return;
+    const sourcePlan = currentMealPlan || mealPlan;
+    if (!copiedRecipe || !sourcePlan) {
+      console.warn('📅 WeeklyCalendar: Cannot paste recipe - missing copied recipe or meal plan');
+      return;
+    }
+
+    console.log('📅 WeeklyCalendar: Pasting recipe', copiedRecipe.recipeName, 'to day', dayIndex, mealType);
 
     // Create a new meal based on the copied recipe
     const newMeal: MealSlot = {
       ...copiedRecipe,
     };
 
-    // Update the meal plan
-    const updatedMealPlan = { ...mealPlan };
-    if (!updatedMealPlan.days[dayIndex]) {
-      updatedMealPlan.days[dayIndex] = {
-        date: weekDates[dayIndex],
-        breakfast: [],
-        lunch: [],
-        dinner: [],
-        snacks: []
-      };
-    }
+    // Update the meal plan using the updateMealPlan function
+    updateMealPlan(plan => {
+      const updatedPlan = { ...plan };
+      if (!updatedPlan.days[dayIndex]) {
+        updatedPlan.days[dayIndex] = {
+          date: weekDates[dayIndex],
+          breakfast: [],
+          lunch: [],
+          dinner: [],
+          snacks: []
+        };
+      }
 
-    updatedMealPlan.days[dayIndex][mealType].push(newMeal);
-
-    if (onMealPlanChange) {
-      onMealPlanChange(updatedMealPlan);
-    }
+      updatedPlan.days[dayIndex][mealType].push(newMeal);
+      updatedPlan.updatedAt = new Date();
+      
+      return updatedPlan;
+    });
 
     // Clear copied recipe after pasting
     if (onClearCopiedRecipe) {
       onClearCopiedRecipe();
     }
-    console.log('Recipe pasted:', newMeal.recipeName);
+    console.log('📅 WeeklyCalendar: Recipe pasted successfully:', newMeal.recipeName);
   };
 
   // Handle cross-day meal movement
@@ -342,34 +444,46 @@ export function WeeklyCalendar({
     targetDayIndex: number,
     targetMealType: string
   ) => {
-    if (!mealPlan || !onMealPlanChange) return;
-
-    const updatedMealPlan = { ...mealPlan };
-    
-    // Remove from source
-    const sourceMealTypeKey = sourceMealType as keyof DayMeals;
-    const targetMealTypeKey = targetMealType as keyof DayMeals;
-    
-    if (updatedMealPlan.days[sourceDayIndex] && updatedMealPlan.days[targetDayIndex]) {
-      // Remove from source day
-      const sourceDay = updatedMealPlan.days[sourceDayIndex];
-      const sourceMeals = sourceDay[sourceMealTypeKey] as any[];
-      updatedMealPlan.days[sourceDayIndex] = {
-        ...sourceDay,
-        [sourceMealTypeKey]: sourceMeals.filter((_, index) => index !== sourceMealIndex)
-      };
-      
-      // Add to target day
-      const targetDay = updatedMealPlan.days[targetDayIndex];
-      const targetMeals = targetDay[targetMealTypeKey] as any[];
-      updatedMealPlan.days[targetDayIndex] = {
-        ...targetDay,
-        [targetMealTypeKey]: [...targetMeals, draggedMeal.meal]
-      };
-
-      updatedMealPlan.updatedAt = new Date();
-      onMealPlanChange(updatedMealPlan);
+    const sourcePlan = currentMealPlan || mealPlan;
+    if (!sourcePlan || !onMealPlanChange) {
+      console.warn('📅 WeeklyCalendar: Cannot move meal - missing meal plan');
+      return;
     }
+
+    console.log('📅 WeeklyCalendar: Moving meal cross-day', {
+      meal: draggedMeal,
+      from: `day${sourceDayIndex}-${sourceMealType}`,
+      to: `day${targetDayIndex}-${targetMealType}`
+    });
+
+    updateMealPlan(plan => {
+      const updatedPlan = { ...plan };
+      
+      // Remove from source
+      const sourceMealTypeKey = sourceMealType as keyof DayMeals;
+      const targetMealTypeKey = targetMealType as keyof DayMeals;
+      
+      if (updatedPlan.days[sourceDayIndex] && updatedPlan.days[targetDayIndex]) {
+        // Remove from source day
+        const sourceDay = updatedPlan.days[sourceDayIndex];
+        const sourceMeals = sourceDay[sourceMealTypeKey] as any[];
+        updatedPlan.days[sourceDayIndex] = {
+          ...sourceDay,
+          [sourceMealTypeKey]: sourceMeals.filter((_, index) => index !== sourceMealIndex)
+        };
+        
+        // Add to target day
+        const targetDay = updatedPlan.days[targetDayIndex];
+        const targetMeals = targetDay[targetMealTypeKey] as any[];
+        updatedPlan.days[targetDayIndex] = {
+          ...targetDay,
+          [targetMealTypeKey]: [...targetMeals, draggedMeal.meal]
+        };
+      }
+
+      updatedPlan.updatedAt = new Date();
+      return updatedPlan;
+    });
   };
 
   // Week day names
@@ -378,67 +492,20 @@ export function WeeklyCalendar({
 
   return (
       <div id="weekly-calendar" className={cn('w-full space-y-4', className)}>
-        {/* Header with Date Search */}
+        {/* Header */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 justify-center flex-1">
                 <Calendar className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg sm:text-xl">
+                <CardTitle className="text-lg sm:text-xl text-center">
                   Weekly Meal Plan
                 </CardTitle>
-              </div>
-              
-              {/* Date Search and Navigation */}
-              <div className="flex items-center space-x-2 w-full sm:w-auto">
-                {/* Date Search Input */}
-                <div className="relative flex-1 sm:flex-initial">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search date (YYYY-MM-DD, DD/MM/YYYY...)"
-                    value={dateSearchValue}
-                    onChange={(e) => setDateSearchValue(e.target.value)}
-                    onKeyPress={handleDateSearchKeyPress}
-                    onBlur={() => handleDateSearch(dateSearchValue)}
-                    className="pl-10 w-full sm:w-64"
-                  />
-                </div>
-                
-                {/* Week Navigation */}
-                <div className="flex items-center space-x-1">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={goToPreviousWeek}
-                    className="h-9 px-2"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={goToCurrentWeek}
-                    className="h-9 px-3 hidden sm:inline-flex"
-                  >
-                    Today
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={goToNextWeek}
-                    className="h-9 px-2"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
             </div>
             
             {/* Week Range Display */}
-            <div className="text-sm text-muted-foreground mt-2 flex items-center">
+            <div className="text-sm text-muted-foreground mt-2 flex items-center justify-center">
               {formatWeekRange(currentWeekStart)}
               
               {/* Save status indicator */}
@@ -446,9 +513,9 @@ export function WeeklyCalendar({
                 <span className={cn(
                   'ml-2 px-2 py-1 text-xs rounded-full',
                   {
-                    'bg-yellow-100 text-yellow-800': saveStatus === 'saving',
-                    'bg-green-100 text-green-800': saveStatus === 'saved',
-                    'bg-red-100 text-red-800': saveStatus === 'error',
+                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': saveStatus === 'saving',
+                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': saveStatus === 'saved',
+                    'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': saveStatus === 'error',
                   }
                 )}>
                   {saveStatus === 'saving' && 'Saving...'}
@@ -461,7 +528,7 @@ export function WeeklyCalendar({
         </Card>
 
         {/* Calendar Grid */}
-        <div id="calendar-container" className="grid grid-cols-1 lg:grid-cols-7 gap-3 sm:gap-4">
+        <div id="calendar-container" className="grid grid-cols-1 lg:grid-cols-7 gap-2 sm:gap-3 lg:gap-4">
           {weekDates.map((date, dayIndex) => {
             const dayMeals = getMealsForDay(dayIndex);
             const isToday = date.toDateString() === new Date().toDateString();
@@ -470,7 +537,7 @@ export function WeeklyCalendar({
               <Card 
                 key={dayIndex}
                 className={cn(
-                  'min-h-[400px] sm:min-h-[500px]',
+                  'min-h-[400px] sm:min-h-[500px] lg:min-h-[600px]',
                   isToday && 'ring-2 ring-primary ring-opacity-50'
                 )}
               >
@@ -506,6 +573,9 @@ export function WeeklyCalendar({
                     meals={dayMeals}
                     onMealsChange={(meals: DayMeals) => handleMealChange(dayIndex, meals)}
                     onAddRecipe={handleAddRecipe}
+                    onEditMeal={(meal: MealSlot, mealIndex: number, mealType: string) => 
+                      handleEditMeal(dayIndex, mealType as 'breakfast' | 'lunch' | 'dinner' | 'snacks', meal, mealIndex)
+                    }
                     onCrossDayMealMove={handleCrossDayMealMove}
                     onShowRecipe={handleShowRecipe}
                     onCopyRecipe={handleCopyRecipe}
@@ -520,14 +590,14 @@ export function WeeklyCalendar({
 
         {/* Empty State */}
         {!mealPlan && (
-          <Card className="py-12">
+          <Card className="py-12 bg-[#EFF4E6] dark:bg-[#74765D] border-[#AAC91] dark:border-[#C1D3AF]">
             <CardContent className="text-center">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Meal Plan Yet</h3>
-              <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+              <Calendar className="h-12 w-12 text-[#7D966D] dark:text-[#C1D3AF] mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2 text-[#7D966D] dark:text-[#C1D3AF]">No Meal Plan Yet</h3>
+              <p className="text-[#7D966D] dark:text-[#C1D3AF] mb-4 max-w-md mx-auto">
                 Start planning your meals by creating a new meal plan for this week.
               </p>
-              <Button>
+              <Button className="bg-[#F96850] hover:bg-[#F96850]/90 dark:bg-[#F16B59] dark:hover:bg-[#F16B59]/90 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Meal Plan
               </Button>
@@ -538,12 +608,12 @@ export function WeeklyCalendar({
         {/* Mobile Week Summary */}
         <div className="lg:hidden">
           {mealPlan && (
-            <Card>
+            <Card className="bg-[#EFF4E6] dark:bg-[#74765D] border-[#AAC91] dark:border-[#C1D3AF]">
               <CardHeader>
-                <CardTitle className="text-base">Week Summary</CardTitle>
+                <CardTitle className="text-base text-[#7D966D] dark:text-[#C1D3AF]">Week Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-sm text-[#7D966D] dark:text-[#C1D3AF]">
                   <div>
                     <span className="font-medium">Total Meals:</span>
                     <span className="ml-2">
@@ -575,8 +645,10 @@ export function WeeklyCalendar({
         {/* Recipe Detail Modal */}
         <RecipeDetailModal
           meal={selectedMeal}
-          isOpen={showRecipeModal}
-          onClose={handleCloseRecipeModal}
+          open={showRecipeModal}
+          onOpenChange={setShowRecipeModal}
+          dayName={selectedMealContext?.dayName}
+          mealType={selectedMealContext?.mealType}
         />
       </div>
   );

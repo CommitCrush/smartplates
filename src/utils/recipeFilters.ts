@@ -28,17 +28,17 @@ export function filterByAllergy(recipes: Recipe[], allergy: string): Recipe[] {
   );
 }
 
-// Difficulty: Easy (<=15min), Medium (<=30min), Hard (>30min)
+// Difficulty: Easy (<=15min), Medium (16-34min), Hard (35+min)
 export function filterByDifficulty(recipes: Recipe[], difficulty: string): Recipe[] {
   if (!difficulty) return recipes;
   if (difficulty === 'easy') {
     return recipes.filter(r => (r.readyInMinutes || 0) <= 15);
   }
   if (difficulty === 'medium') {
-    return recipes.filter(r => (r.readyInMinutes || 0) > 15 && (r.readyInMinutes || 0) <= 30);
+    return recipes.filter(r => (r.readyInMinutes || 0) > 15 && (r.readyInMinutes || 0) < 35);
   }
   if (difficulty === 'hard') {
-    return recipes.filter(r => (r.readyInMinutes || 0) > 30);
+    return recipes.filter(r => (r.readyInMinutes || 0) >= 35);
   }
   return recipes;
 }

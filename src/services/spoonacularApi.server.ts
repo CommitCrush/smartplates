@@ -1,3 +1,4 @@
+
 /**
  * Spoonacular Low-Level API Service (Server-Side)
  *
@@ -16,7 +17,7 @@ const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY || process.env.NEXT_
 const SPOONACULAR_API_URL = 'https://api.spoonacular.com';
 
 if (!SPOONACULAR_API_KEY) {
-  console.warn('SPOONACULAR_API_KEY not found in environment variables. Spoonacular API calls will fail.');
+  console.error('CRITICAL: SPOONACULAR_API_KEY not found in environment variables. Spoonacular API calls will fail.');
 }
 
 /**
@@ -78,7 +79,9 @@ export async function fetchComplexSearch(
   searchTerm: string,
   filters: RecipeFilters
 ): Promise<{ recipes: Recipe[]; totalResults: number }> {
-  if (!SPOONACULAR_API_KEY) return { recipes: [], totalResults: 0 };
+  if (!SPOONACULAR_API_KEY) {
+    throw new Error("Spoonacular API key is not configured.");
+  }
 
   const cleanedFilters: Record<string, string> = {};
   for (const key in filters) {
@@ -106,8 +109,6 @@ export async function fetchComplexSearch(
   }
   const data = await response.json();
   
-  // The 'results' from complexSearch may not have all details.
-  // We will fetch each recipe individually to ensure we get all data.
   const detailedRecipes = await Promise.all(
     data.results.map(async (recipe: { id: number }) => {
       const detailedRecipe = await fetchRecipeById(recipe.id.toString());
@@ -124,7 +125,9 @@ export async function fetchComplexSearch(
  * Fetches a single recipe's information by its ID.
  */
 export async function fetchRecipeById(id: string): Promise<SpoonacularApiRecipe | null> {
-  if (!SPOONACULAR_API_KEY) return null;
+  if (!SPOONACULAR_API_KEY) {
+    throw new Error("Spoonacular API key is not configured.");
+  }
   
   const numericId = id.replace('spoonacular-', '');
   const params = new URLSearchParams({
@@ -150,7 +153,9 @@ export async function fetchRecipeById(id: string): Promise<SpoonacularApiRecipe 
 export async function fetchRecipesByIngredients(
   ingredients: string[]
 ): Promise<SpoonacularFoundRecipe[]> {
-  if (!SPOONACULAR_API_KEY) return [];
+  if (!SPOONACULAR_API_KEY) {
+    throw new Error("Spoonacular API key is not configured.");
+  }
 
   const params = new URLSearchParams({
     apiKey: SPOONACULAR_API_KEY,
@@ -175,7 +180,9 @@ export async function fetchRecipesByIngredients(
  * Fetches random popular recipes.
  */
 export async function fetchPopularRecipes(): Promise<{ recipes: Recipe[]; totalResults: number }> {
-  if (!SPOONACULAR_API_KEY) return { recipes: [], totalResults: 0 };
+  if (!SPOONACULAR_API_KEY) {
+    throw new Error("Spoonacular API key is not configured.");
+  }
 
   const params = new URLSearchParams({
     apiKey: SPOONACULAR_API_KEY,

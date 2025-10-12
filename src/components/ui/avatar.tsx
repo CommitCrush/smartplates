@@ -18,29 +18,25 @@ const Avatar = React.forwardRef<
 Avatar.displayName = "Avatar"
 
 const AvatarImage = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & {
+  HTMLImageElement,
+  {
+    className?: string;
     src?: string;
     alt?: string;
   }
->(({ className, src, alt = "", ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("aspect-square h-full w-full overflow-hidden", className)}
-    {...props}
-  >
-    {src && (
-      <Image
-        src={src}
-        alt={alt}
-        width={40}
-        height={40}
-        className="h-full w-full object-cover"
-        sizes="40px"
-      />
-    )}
-  </div>
-))
+>(({ className, src, alt = "" }, ref) => {
+  if (!src) return null;
+  
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      className={cn("object-cover rounded-full", className)}
+      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+    />
+  );
+})
 AvatarImage.displayName = "AvatarImage"
 
 const AvatarFallback = React.forwardRef<

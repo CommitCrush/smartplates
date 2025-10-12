@@ -45,7 +45,7 @@ export default function ProductList() {
             <img
               src={product.image}
               alt={product.title}
-              className="w-full h-48 object-contain mb-3 "
+              className="w-full h-72 object-cover rounded-xl mb-3"
             />
             <h2 className="font-semibold text-lg mb-2">{product.title}</h2>
             <p className="text-sm text-gray-400 mb-3 flex-1">{product.description}</p>

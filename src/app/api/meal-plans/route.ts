@@ -9,9 +9,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import MealPlan from '@/models/MealPlan';
+import { MealPlanService } from '@/models/MealPlan';
 import { getWeekStartDate } from '@/types/meal-planning';
-import { connectToDatabase } from '@/lib/mongodb';
 
 // ========================================
 // GET /api/meal-plans
@@ -20,34 +19,49 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    if (!session?.user?.id && !session?.user?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    await connectToDatabase();
-
     const { searchParams } = new URL(request.url);
     const weekStart = searchParams.get('weekStart') || searchParams.get('weekStartDate');
     const isTemplate = searchParams.get('template') === 'true';
 
-    let query: any = { userId: session.user.id };
+    // Use email as fallback for userId if id is not available
+    const userId = session.user.id || session.user.email!;
+
+    let mealPlans;
 
     if (isTemplate) {
-      query = { ...query, isTemplate: true };
+      // Get user templates
+      mealPlans = await MealPlanService.findUserTemplates(userId);
     } else if (weekStart) {
+      // Get specific week
       const weekStartDate = getWeekStartDate(new Date(weekStart));
-      query = { ...query, weekStartDate: weekStartDate };
+      const mealPlan = await MealPlanService.findByUserAndWeek(userId, weekStartDate);
+      mealPlans = mealPlan ? [mealPlan] : [];
+    } else {
+      // Get all user meal plans
+      mealPlans = await MealPlanService.findByUserId(userId);
     }
 
-    const mealPlans = await MealPlan.find(query).sort({ weekStartDate: -1 }).exec();
+    // Enrich meal plans with recipe information
+    const enrichedMealPlans = await Promise.all(
+      mealPlans.map(plan => MealPlanService.enrichMealPlanWithRecipes(plan))
+    );
+
+    console.log(`📋 Found ${enrichedMealPlans.length} meal plans for user ${userId}`);
 
     return NextResponse.json({
       success: true,
-      data: mealPlans,
-      count: mealPlans.length
+      data: enrichedMealPlans.map(plan => ({
+        ...plan,
+        _id: plan._id?.toString()
+      })),
+      count: enrichedMealPlans.length
     });
 
   } catch (error) {
@@ -66,10 +80,19 @@ export async function GET(request: NextRequest) {
 // POST /api/meal-plans
 // ========================================
 export async function POST(request: NextRequest) {
+  let weekStartDate: string | undefined;
+  
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.id) {
+    console.log('🔍 POST /api/meal-plans - Session check:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email
+    });
+    
+    if (!session?.user?.id && !session?.user?.email) {
+      console.error('❌ Authentication failed - no valid session');
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -77,20 +100,34 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { weekStartDate, title, isTemplate, copyFromWeek } = body;
+    console.log('📝 Request body received:', {
+      hasWeekStartDate: !!body.weekStartDate,
+      hasTitle: !!body.title,
+      hasDays: !!body.days,
+      daysLength: body.days?.length
+    });
+    
+    const { title, isTemplate, copyFromWeek } = body;
+    weekStartDate = body.weekStartDate; // Store for error handling
 
-    await connectToDatabase();
+    if (!weekStartDate) {
+      return NextResponse.json(
+        { error: 'weekStartDate is required' },
+        { status: 400 }
+      );
+    }
 
-    // Check if meal plan already exists for this week using getWeekStartDate for consistency
+    // Use email as fallback for userId if id is not available
+    const userId = session.user.id || session.user.email!;
+    console.log('👤 Using userId:', userId);
+
+    // Check if meal plan already exists for this week
     const weekStart = getWeekStartDate(new Date(weekStartDate));
-    const existingPlan = await MealPlan.findOne({
-      userId: session.user.id,
-      weekStartDate: weekStart
-    }).exec();
+    const existingPlan = await MealPlanService.findByUserAndWeek(userId, weekStart);
 
     if (existingPlan) {
       // Return existing meal plan instead of creating a duplicate
-      console.log(`Returning existing meal plan for week ${weekStart.toISOString()}`);
+      console.log(`✅ Returning existing meal plan for week ${weekStart.toISOString()}`);
       return NextResponse.json({
         success: true,
         data: existingPlan,
@@ -99,7 +136,7 @@ export async function POST(request: NextRequest) {
     }
 
     const mealPlanData: any = {
-      userId: session.user.id,
+      userId: userId,
       weekStartDate: weekStart,
       title: title || `Week of ${weekStart.toLocaleDateString()}`,
       isTemplate: isTemplate || false
@@ -107,10 +144,7 @@ export async function POST(request: NextRequest) {
 
     // If copying from another week
     if (copyFromWeek) {
-      const sourceMealPlan = await MealPlan.findOne({
-        userId: session.user.id,
-        weekStartDate: new Date(copyFromWeek)
-      }).exec();
+      const sourceMealPlan = await MealPlanService.findByUserAndWeek(userId, new Date(copyFromWeek));
 
       if (sourceMealPlan) {
         mealPlanData.days = sourceMealPlan.days.map((day: any) => ({
@@ -121,60 +155,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create the meal plan
-    const weekEndDate = new Date(mealPlanData.weekStartDate.getTime() + (6 * 24 * 60 * 60 * 1000));
-    const weekDates = Array.from({length: 7}, (_, i) => {
-      const date = new Date(mealPlanData.weekStartDate);
-      date.setDate(mealPlanData.weekStartDate.getDate() + i);
-      return date;
-    });
-    
-    const mealPlan = new MealPlan({
-      userId: session.user.id,
+    console.log('💾 Creating meal plan with data:', {
+      userId: userId,
       weekStartDate: mealPlanData.weekStartDate,
-      weekEndDate,
-      title: mealPlanData.title || `Week of ${mealPlanData.weekStartDate.toLocaleDateString()}`,
-      days: weekDates.map(date => ({
-        date,
-        breakfast: [],
-        lunch: [],
-        dinner: [],
-        snacks: []
-      })),
-      ...mealPlanData
+      title: mealPlanData.title
     });
 
-    const savedMealPlan = await mealPlan.save();
+    // Create meal plan using service
+    const savedMealPlan = await MealPlanService.create(mealPlanData);
+    console.log('✅ Meal plan saved successfully with ID:', savedMealPlan._id);
 
     return NextResponse.json({
       success: true,
-      data: savedMealPlan,
+      data: {
+        ...savedMealPlan,
+        _id: savedMealPlan._id?.toString()
+      },
       message: 'Meal plan created successfully'
     }, { status: 201 });
 
   } catch (error) {
-    console.error('POST /api/meal-plans error:', error);
+    console.error('❌ POST /api/meal-plans error:', {
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined,
+      weekStartDate
+    });
     
     // Handle duplicate key error (user already has meal plan for this week)
     if (error instanceof Error && (error.message.includes('duplicate key') || error.message.includes('E11000'))) {
-      // Try to find the existing meal plan and return it
-      try {
-        const existingPlan = await MealPlan.findOne({
-          userId: session.user.id,
-          weekStartDate: new Date(weekStartDate)
-        }).exec();
-        
-        if (existingPlan) {
-          return NextResponse.json({
-            success: true,
-            data: existingPlan,
-            message: 'Existing meal plan found'
-          }, { status: 200 });
-        }
-      } catch (findError) {
-        console.error('Error finding existing meal plan:', findError);
-      }
-      
       return NextResponse.json(
         { 
           error: 'Meal plan already exists for this week',

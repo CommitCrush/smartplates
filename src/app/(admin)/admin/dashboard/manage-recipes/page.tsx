@@ -29,12 +29,19 @@ export default function RecipeManagementPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSource, setFilterSource] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [recipesPerPage] = useState(10);
 
   const handleViewRecipe = (recipe: Recipe) => {
     // Determine the correct recipe ID for the URL
     const recipeId = recipe.spoonacularId ? `spoonacular-${recipe.spoonacularId}` : recipe._id;
     router.push(`/recipe/${recipeId}`);
   };
+  
+  // Reset to first page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterSource]);
 
   const loadRecipes = async () => {
     if (!user || user.role !== 'admin') return;
@@ -56,13 +63,38 @@ export default function RecipeManagementPage() {
 
   useEffect(() => {
     loadRecipes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // Filter recipes based on search and filter criteria
   const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSource = filterSource === 'all' || recipe.source === filterSource;
     return matchesSearch && matchesSource;
   });
+  
+  // Calculate pagination
+  const indexOfLastRecipe = currentPage * recipesPerPage;
+  const indexOfFirstRecipe = indexOfLastRecipe - recipesPerPage;
+  const currentRecipes = filteredRecipes.slice(indexOfFirstRecipe, indexOfLastRecipe);
+  const totalPages = Math.ceil(filteredRecipes.length / recipesPerPage);
+  
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  
+  // Go to next page
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
+  // Go to previous page
+  const previousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   if (!user || user.role !== 'admin') {
     return <div>Access denied. Admin privileges required.</div>;
@@ -115,7 +147,7 @@ export default function RecipeManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredRecipes.map((recipe) => (
+              {currentRecipes.map((recipe) => (
                 <tr key={recipe._id} className="border-b hover:bg-muted/50">
                   <td className="p-2">{recipe.title}</td>
                   <td className="p-2">{recipe.author}</td>
@@ -152,6 +184,60 @@ export default function RecipeManagementPage() {
           {filteredRecipes.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No recipes found.
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {filteredRecipes.length > 0 && (
+            <div className="flex justify-center mt-6 gap-1">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={previousPage}
+                disabled={currentPage === 1}
+                className="px-2"
+              >
+                &lt; Previous
+              </Button>
+              
+              {[...Array(totalPages)].map((_, index) => {
+                // Display first page, last page, current page, and pages around current
+                const pageNumber = index + 1;
+                const shouldShow = 
+                  pageNumber === 1 || 
+                  pageNumber === totalPages ||
+                  (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1);
+                
+                if (!shouldShow) {
+                  // Show dots for skipped pages, but only once
+                  if (pageNumber === 2 || pageNumber === totalPages - 1) {
+                    return <span key={`dots-${pageNumber}`} className="px-3 py-1">...</span>;
+                  }
+                  return null;
+                }
+                
+                return (
+                  <Button
+                    key={pageNumber}
+                    variant={currentPage === pageNumber ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => paginate(pageNumber)}
+                    className="min-w-[36px]"
+                  >
+                    {pageNumber}
+                  </Button>
+                );
+              })}
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={nextPage}
+                disabled={currentPage === totalPages}
+                className="px-2"
+              >
+                Next &gt;
+              </Button>
             </div>
           )}
         </div>

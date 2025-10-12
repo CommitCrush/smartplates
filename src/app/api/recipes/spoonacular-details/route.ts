@@ -9,11 +9,7 @@ export async function GET(req: NextRequest) {
   }
   try {
     const details = await getSpoonacularRecipe(`spoonacular-${id}`);
-    return NextResponse.json({
-      title: details?.title || '',
-      summary: details?.summary || details?.description || '',
-      image: details?.image || '',
-    });
+    return NextResponse.json(details);
   } catch (error: any) {
     return NextResponse.json({ error: 'Failed to fetch details', details: error?.message }, { status: 500 });
   }

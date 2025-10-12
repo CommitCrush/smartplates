@@ -29,9 +29,15 @@ export async function connectToDatabase(): Promise<Db> {
     // Return existing connection if available
     if (database && client) {
       console.log('[DB] Using existing MongoDB connection');
-      // Verify connection is still alive
-      await database.admin().ping();
-      return database;
+      try {
+        // Verify connection is still alive
+        await database.admin().ping();
+        console.log('[DB] Connection verified successfully');
+        return database;
+      } catch (error) {
+        console.error('[DB] Existing connection failed, reconnecting:', error);
+        // Continue to reconnect below
+      }
     }
 
     // Validate environment configuration

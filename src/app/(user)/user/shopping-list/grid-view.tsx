@@ -1,8 +1,8 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import jsPDF from 'jspdf';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -20,13 +20,45 @@ interface SavedList {
   ingredients: Ingredient[];
 }
 
+interface RecipeInfo {
+  title: string;
+  servings: number;
+  sourceUrl: string;
+}
+
 export default function ShoppingListGridView() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [recipeInfo, setRecipeInfo] = useState<RecipeInfo | null>(null);
   const [savedLists, setSavedLists] = useState<SavedList[]>([]);
   const [listName, setListName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const recipeId = searchParams.get('recipeId');
+    if (recipeId) {
+      const fetchRecipeDetails = async () => {
+        try {
+          const response = await fetch(`/api/recipes/${recipeId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setRecipeInfo({
+              title: data.title,
+              servings: data.servings,
+              sourceUrl: data.sourceUrl
+            });
+          } else {
+            console.error('Failed to fetch recipe details');
+          }
+        } catch (err) {
+          console.error('Error fetching recipe details:', err);
+        }
+      };
+      fetchRecipeDetails();
+    }
+  }, [searchParams]);
 
   const fetchShoppingList = useCallback(async () => {
     if (!session) return;
@@ -134,9 +166,13 @@ export default function ShoppingListGridView() {
   const handleDownloadPdf = () => {
     const doc = new jsPDF();
     doc.setFontSize(22);
-    doc.text('Shopping List', 20, 20);
+    doc.text(recipeInfo?.title || 'Shopping List', 20, 20);
     doc.setFontSize(12);
     let y = 30;
+    if (recipeInfo) {
+      doc.text(`Serves: ${recipeInfo.servings}`, 20, y);
+      y += 10;
+    }
     ingredients.forEach(ingredient => {
       const text = `${ingredient.checked ? '[X]' : '[ ]'} ${ingredient.name} - ${ingredient.quantity} ${ingredient.unit}`;
       const splitText = doc.splitTextToSize(text, 170);
@@ -144,7 +180,7 @@ export default function ShoppingListGridView() {
       doc.text(splitText, 20, y);
       y += (splitText.length * 5) + 5;
     });
-    doc.save('shopping-list.pdf');
+    doc.save(`${recipeInfo?.title || 'shopping-list'}.pdf`);
   };
 
   if (loading) return <div className="text-center p-8">Loading your shopping list...</div>;
@@ -155,32 +191,44 @@ export default function ShoppingListGridView() {
       <Toaster position="top-center" reverseOrder={false} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
-        {/* Left Column: Current List and Actions */}
         <div>
           <div className="flex justify-between items-center mb-6 print:hidden">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Shopping List</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Shopping List</h1>
             <div className="flex space-x-2">
               <button onClick={handlePrint} className="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600" title="Print">Print</button>
               <button onClick={handleDownloadPdf} className="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600" title="Download PDF">PDF</button>
             </div>
           </div>
           
-          {ingredients.length > 0 ? (
-            <ul className="space-y-4 mb-8">
-              {ingredients.map((ing, i) => (
-                <li key={i} onClick={() => handleToggleIngredient(i)} className={`flex items-center p-4 rounded-lg shadow-md cursor-pointer transition-all ${ing.checked ? 'bg-green-50 dark:bg-gray-700 opacity-70' : 'bg-white dark:bg-gray-800'}`}>
-                    <input type="checkbox" checked={ing.checked} readOnly className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary mr-4 print:hidden" />
-                    <div className={ing.checked ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}>
-                      <span className="font-semibold">{ing.name}</span>
-                      <span className="text-sm"> - {ing.quantity} {ing.unit}</span>
-                    </div>
-                </li>
-              ))}
-            </ul>
-          ) : <p className="text-gray-600 dark:text-gray-400">Your current shopping list is empty. Add items from a recipe!</p>}
+          {recipeInfo && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-gray-800/50 rounded-lg">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{recipeInfo.title}</h2>
+              <p className="text-md text-gray-700 dark:text-gray-300">Serves: {recipeInfo.servings}</p>
+              {recipeInfo.sourceUrl && (
+                <a href={recipeInfo.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline dark:text-blue-400">
+                  View Full Recipe
+                </a>
+              )}
+            </div>
+          )}
+          
+          <div className="max-h-96 overflow-y-auto pr-2">
+            {ingredients.length > 0 ? (
+              <ul className="space-y-4 mb-8">
+                {ingredients.map((ing, i) => (
+                  <li key={i} onClick={() => handleToggleIngredient(i)} className={`flex items-center p-4 rounded-lg shadow-md cursor-pointer transition-all ${ing.checked ? 'bg-green-50 dark:bg-gray-700 opacity-70' : 'bg-white dark:bg-gray-800'}`}>
+                      <input type="checkbox" checked={ing.checked} readOnly className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary mr-4 print:hidden" />
+                      <div className={ing.checked ? 'line-through text-gray-500' : 'text-gray-900 dark:text-gray-100'}>
+                        <span className="font-semibold">{ing.name}</span>
+                        <span className="text-sm"> - {ing.quantity} {ing.unit}</span>
+                      </div>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-gray-600 dark:text-gray-400">Your current shopping list is empty. Add items from a recipe!</p>}
+          </div>
         </div>
 
-        {/* Right Column: Saved Lists and Save Form */}
         <div>
           <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow-inner print:hidden mb-8">
               <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Save Current List</h2>

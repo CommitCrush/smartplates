@@ -41,6 +41,7 @@ export default function ShoppingListGridView() {
   const [servings, setServings] = useState(1);
   const [savedLists, setSavedLists] = useState<SavedList[]>([]);
   const [listName, setListName] = useState('');
+  const [activeListTitle, setActiveListTitle] = useState('My Shopping List');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recipeId, setRecipeId] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export default function ShoppingListGridView() {
         const data = await response.json();
         const initialIngredients = (data.ingredients || []).map((ing: Omit<Ingredient, 'checked'>) => ({ ...ing, checked: false }));
         setIngredients(initialIngredients);
+        setActiveListTitle('My Shopping List');
       } else {
         const errorData = await response.json();
         setError(`Failed to load shopping list: ${errorData.message}`);
@@ -95,6 +97,7 @@ export default function ShoppingListGridView() {
             setRecipeInfo({ title: data.title, servings: data.servings });
             setServings(initialServings);
             setListName(data.title || '');
+            setActiveListTitle(data.title || 'My Shopping List');
             const baseIngredients = (data.extendedIngredients || []).map((ing: any) => ({ name: ing.name, originalQuantity: ing.amount, unit: ing.unit }));
             setOriginalIngredients(baseIngredients);
           } else {
@@ -155,12 +158,12 @@ export default function ShoppingListGridView() {
   };
 
   const handleLoadList = (listToLoad: SavedList) => {
-    if (window.confirm(`Are you sure you want to load \"${listToLoad.name}\"? This will replace your current list.`)) {
-      setRecipeInfo(null);
-      setOriginalIngredients([]);
-      setIngredients(listToLoad.ingredients.map(ing => ({ ...ing, checked: ing.checked || false })));
-      toast.success(`List \"${listToLoad.name}\" loaded!`);
-    }
+    setRecipeInfo(null);
+    setOriginalIngredients([]);
+    setIngredients(listToLoad.ingredients.map(ing => ({ ...ing, checked: ing.checked || false })));
+    setListName(listToLoad.name);
+    setActiveListTitle(listToLoad.name);
+    toast.success(`List "${listToLoad.name}" loaded!`);
   };
 
   const handleDeleteList = async (listId: string) => {
@@ -177,13 +180,19 @@ export default function ShoppingListGridView() {
       toast.promise(promise, { loading: 'Deleting list...', success: (message) => message, error: (err) => err.message });
     }
   };
+  
+  const handleEditList = (e: React.MouseEvent, listId: string) => {
+    e.stopPropagation();
+    toast('Edit functionality will be implemented in the future.');
+  };
+
 
   const handlePrint = () => window.print();
 
   const handleDownloadPdf = () => {
     const doc = new jsPDF();
     doc.setFontSize(22);
-    doc.text(recipeInfo?.title || 'Shopping List', 20, 20);
+    doc.text(activeListTitle, 20, 20);
     doc.setFontSize(12);
     let y = 30;
     if (recipeInfo) {
@@ -208,7 +217,7 @@ export default function ShoppingListGridView() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <div className="flex justify-between items-center mb-6 print:hidden">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Shopping List</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{activeListTitle}</h1>
             <div className="flex space-x-2">
               <button onClick={handlePrint} className="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600" title="Print">Print</button>
               <button onClick={handleDownloadPdf} className="p-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600" title="Download PDF">PDF</button>
@@ -226,9 +235,9 @@ export default function ShoppingListGridView() {
             </div>
           )}
 
-          <div className="max-h-96 overflow-y-auto pr-2">
+          <div className="max-h-96 overflow-y-auto pr-2 mb-8">
             {ingredients.length > 0 ? (
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-4">
                 {ingredients.map((ing, i) => (
                   <li key={i} onClick={() => handleToggleIngredient(i)} className={`flex items-center p-4 rounded-lg shadow-md cursor-pointer transition-all ${ing.checked ? 'bg-green-50 dark:bg-gray-700 opacity-70' : 'bg-white dark:bg-gray-800'}`}>
                     <input type="checkbox" checked={ing.checked} readOnly className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary mr-4 print:hidden" />
@@ -241,36 +250,34 @@ export default function ShoppingListGridView() {
               </ul>
             ) : <p className="text-gray-600 dark:text-gray-400">Your current shopping list is empty. Add items from a recipe!</p>}
           </div>
-        </div>
 
-        <div>
-          <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow-inner print:hidden mb-8">
+          <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-lg shadow-inner print:hidden">
             <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Save Current List</h2>
             <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
               <input type="text" value={listName} onChange={(e) => setListName(e.target.value)} placeholder="Enter list name (e.g., Weekly Groceries)" className="flex-grow p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
               <button onClick={handleSaveList} disabled={ingredients.length === 0} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed">Save List</button>
             </div>
           </div>
+        </div>
 
-          <div className="print:hidden">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Your Saved Lists</h2>
-            {savedLists.length > 0 ? (
-              <div className="space-y-4">
-                {savedLists.map(list => (
-                  <div key={list._id} className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                    <div className="mb-2 sm:mb-0">
-                      <p className="font-bold text-gray-900 dark:text-white">{list.name}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Saved on: {new Date(list.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button onClick={() => handleLoadList(list)} className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 font-semibold">Load</button>
-                      <button onClick={() => handleDeleteList(list._id)} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold">Delete</button>
-                    </div>
+        <div className="print:hidden">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Your Saved Lists</h2>
+          {savedLists.length > 0 ? (
+            <div className="space-y-4">
+              {savedLists.map(list => (
+                <div key={list._id} onClick={() => handleLoadList(list)} className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div className="mb-2 sm:mb-0">
+                    <p className="font-bold text-gray-900 dark:text-white">{list.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Saved on: {new Date(list.createdAt).toLocaleDateString()}</p>
                   </div>
-                ))}
-              </div>
-            ) : <p className="text-gray-600 dark:text-gray-400">You haven't saved any lists yet.</p>}
-          </div>
+                  <div className="flex space-x-2">
+                    <button onClick={(e) => handleEditList(e, list._id)} className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 font-semibold">Edit</button>
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteList(list._id); }} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold">Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <p className="text-gray-600 dark:text-gray-400">You haven't saved any lists yet.</p>}
         </div>
       </div>
     </div>

@@ -194,7 +194,7 @@ export default function UserDashboardPage() {
       value: dashboardData?.stats.totalLikes || 0,
       icon: Star,
       color: 'text-yellow-600',
-      href: '/user/profile/me'
+      href: '/user/settings'
     }
   ];
 

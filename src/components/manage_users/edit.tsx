@@ -69,8 +69,8 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 			};
 
 
-		return (
-			<Card className="p-6 space-y-6">
+		   return (
+			   <Card className="max-w-5xl mx-auto p-16 space-y-10">
 				   <div>
 					   <div className="font-medium text-sm text-gray-500">User name</div>
 					   <div className="text-gray-800 dark:text-gray-200 mb-2">{user.name}</div>

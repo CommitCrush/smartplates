@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/authContext';
+import { UpdateUserInput } from '@/types/user';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +14,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { ProfileEdit } from '@/components/profile/edit';
 
 interface UserSettings {
-  dietaryRestrictions: string[];
-  allergies: string[];
-  cuisinePreferences: string[];
+ 
+  
   emailNotifications: {
     recipeRecommendations: boolean;
     mealPlanReminders: boolean;
@@ -34,28 +34,19 @@ interface UserSettings {
   };
 }
 
-const DIETARY_RESTRICTIONS = [
-  'Vegetarian', 'Vegan', 'Gluten-Free', 'Lactose-Free', 'Pescetarian',
-  'Paleo', 'Keto', 'Low-Carb', 'Halal', 'Kosher'
-];
 
-const COMMON_ALLERGIES = [
-  'Nuts', 'Peanuts', 'Dairy', 'Eggs', 'Fish', 'Shellfish',
-  'Soy', 'Wheat', 'Sesame', 'Sulfites'
-];
 
-const CUISINE_PREFERENCES = [
-  'Italian', 'Asian', 'Mediterranean', 'Mexican', 'Indian',
-  'French', 'German', 'American', 'Greek', 'Turkish'
-];
+
+
+
 
 export default function SettingsPage() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [profileData, setProfileData] = useState<UpdateUserInput>({
+    name: '',
+  });
   const [settings, setSettings] = useState<UserSettings>({
-    dietaryRestrictions: [],
-    allergies: [],
-    cuisinePreferences: [],
     emailNotifications: {
       recipeRecommendations: true,
       mealPlanReminders: true,
@@ -75,6 +66,21 @@ export default function SettingsPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
+
+  // Security form states
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [emailData, setEmailData] = useState({
+    newEmail: '',
+    verifyPassword: ''
+  });
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -107,7 +113,17 @@ export default function SettingsPage() {
     try {
       setIsSaving(true);
       
-      const response = await fetch('/api/users/settings', {
+      // Save profile data
+      const profileResponse = await fetch('/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(profileData)
+      });
+
+      // Save settings data
+      const settingsResponse = await fetch('/api/users/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -115,20 +131,20 @@ export default function SettingsPage() {
         body: JSON.stringify(settings)
       });
 
-      if (response.ok) {
+      if (profileResponse.ok && settingsResponse.ok) {
         toast({
           title: 'Success',
-          description: 'Settings saved successfully!',
+          description: 'Profile and settings saved successfully!',
           variant: 'default'
         });
       } else {
-        throw new Error('Settings update failed');
+        throw new Error('Update failed');
       }
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error('Error saving data:', error);
       toast({
         title: 'Error',
-        description: 'Settings could not be saved.',
+        description: 'Changes could not be saved.',
         variant: 'destructive'
       });
     } finally {
@@ -136,54 +152,270 @@ export default function SettingsPage() {
     }
   };
 
-  const addRestriction = (restriction: string) => {
-    if (!settings.dietaryRestrictions.includes(restriction)) {
-      setSettings(prev => ({
-        ...prev,
-        dietaryRestrictions: [...prev.dietaryRestrictions, restriction]
-      }));
+  const handleExportData = async () => {
+    try {
+      setIsExporting(true);
+      
+      const response = await fetch('/api/users/account-actions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'export' })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Create downloadable file
+        const blob = new Blob([JSON.stringify(data.data, null, 2)], {
+          type: 'application/json'
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `smartplates-data-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        toast({
+          title: 'Success',
+          description: 'Your data has been exported successfully!',
+          variant: 'default'
+        });
+      } else {
+        throw new Error('Export failed');
+      }
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to export data.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsExporting(false);
     }
   };
 
-  const removeRestriction = (restriction: string) => {
-    setSettings(prev => ({
-      ...prev,
-      dietaryRestrictions: prev.dietaryRestrictions.filter(r => r !== restriction)
-    }));
-  };
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data including recipes, meal plans, and personal information.'
+    );
 
-  const addAllergy = (allergy: string) => {
-    if (!settings.allergies.includes(allergy)) {
-      setSettings(prev => ({
-        ...prev,
-        allergies: [...prev.allergies, allergy]
-      }));
+    if (!confirmed) return;
+
+    const doubleConfirm = window.prompt(
+      'To confirm account deletion, please type "DELETE" in capital letters:'
+    );
+
+    if (doubleConfirm !== 'DELETE') {
+      toast({
+        title: 'Cancelled',
+        description: 'Account deletion cancelled.',
+        variant: 'default'
+      });
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      
+      const response = await fetch('/api/users/account-actions', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ confirmDelete: true })
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Account Deleted',
+          description: 'Your account has been successfully deleted.',
+          variant: 'default'
+        });
+        
+        // Redirect to home page after a short delay
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        throw new Error('Deletion failed');
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete account.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const removeAllergy = (allergy: string) => {
-    setSettings(prev => ({
-      ...prev,
-      allergies: prev.allergies.filter(a => a !== allergy)
-    }));
-  };
+  const handlePasswordReset = async () => {
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all password fields.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
-  const addCuisinePreference = (cuisine: string) => {
-    if (!settings.cuisinePreferences.includes(cuisine)) {
-      setSettings(prev => ({
-        ...prev,
-        cuisinePreferences: [...prev.cuisinePreferences, cuisine]
-      }));
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: 'Error',
+        description: 'New passwords do not match.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      toast({
+        title: 'Error',
+        description: 'New password must be at least 8 characters long.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+
+      const response = await fetch('/api/users/change-password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: 'Password updated successfully! Please sign in again.',
+          variant: 'default'
+        });
+        
+        // Clear form
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+
+        // Log out user after 2 seconds
+        setTimeout(() => {
+          window.location.href = '/api/auth/signout';
+        }, 2000);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Password change failed');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to change password.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
-  const removeCuisinePreference = (cuisine: string) => {
-    setSettings(prev => ({
-      ...prev,
-      cuisinePreferences: prev.cuisinePreferences.filter(c => c !== cuisine)
-    }));
+  const handleEmailChange = async () => {
+    // Validation
+    if (!emailData.newEmail || !emailData.verifyPassword) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all fields.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailData.newEmail)) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (emailData.newEmail === user?.email) {
+      toast({
+        title: 'Error',
+        description: 'New email must be different from current email.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setIsChangingEmail(true);
+
+      const response = await fetch('/api/users/change-email', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          newEmail: emailData.newEmail,
+          currentPassword: emailData.verifyPassword
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: 'Verification Email Sent',
+          description: `A verification email has been sent to ${emailData.newEmail}. Please check your inbox and click the verification link to complete the email change.`,
+          variant: 'default'
+        });
+        
+        // In development mode, show the verification URL
+        if (result.verificationUrl && process.env.NODE_ENV === 'development') {
+          console.log('🔗 Development verification URL:', result.verificationUrl);
+          alert(`Development Mode: Copy this URL to verify email change:\n\n${result.verificationUrl}`);
+        }
+        
+        // Clear form
+        setEmailData({
+          newEmail: '',
+          verifyPassword: ''
+        });
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Email change failed');
+      }
+    } catch (error) {
+      console.error('Error changing email:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to initiate email change.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsChangingEmail(false);
+    }
   };
 
+ 
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto py-8">
@@ -215,130 +447,16 @@ export default function SettingsPage() {
     <div className="container mx-auto py-8 max-w-4xl">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div>
           <h1 className="text-3xl font-bold">Settings</h1>
-          <Button 
-            onClick={handleSaveSettings}
-            disabled={isSaving}
-            className="flex items-center gap-2"
-          >
-            <Save className="h-4 w-4" />
-            {isSaving ? 'Saving...' : 'Save All Changes'}
-          </Button>
+          <p className="text-muted-foreground">Manage your account settings and preferences</p>
         </div>
 
         {/* User Profile Edit Section */}
-        <ProfileEdit />
-
-        {/* Dietary Preferences */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Dietary Settings</CardTitle>
-            <CardDescription>
-              Your dietary habits and restrictions for better recipe recommendations
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Dietary Restrictions */}
-            <div>
-              <Label className="text-base font-medium">Dietary Restrictions</Label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {settings.dietaryRestrictions.map(restriction => (
-                  <Badge key={restriction} variant="secondary" className="flex items-center gap-1">
-                    {restriction}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
-                      onClick={() => removeRestriction(restriction)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {DIETARY_RESTRICTIONS
-                  .filter(r => !settings.dietaryRestrictions.includes(r))
-                  .map(restriction => (
-                    <Button
-                      key={restriction}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addRestriction(restriction)}
-                      className="h-8"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      {restriction}
-                    </Button>
-                  ))
-                }
-              </div>
-            </div>
-
-            {/* Allergies */}
-            <div>
-              <Label className="text-base font-medium">Allergies & Intolerances</Label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {settings.allergies.map(allergy => (
-                  <Badge key={allergy} variant="destructive" className="flex items-center gap-1">
-                    {allergy}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
-                      onClick={() => removeAllergy(allergy)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {COMMON_ALLERGIES
-                  .filter(a => !settings.allergies.includes(a))
-                  .map(allergy => (
-                    <Button
-                      key={allergy}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addAllergy(allergy)}
-                      className="h-8"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      {allergy}
-                    </Button>
-                  ))
-                }
-              </div>
-            </div>
-
-            {/* Cuisine Preferences */}
-            <div>
-              <Label className="text-base font-medium">Cuisine Preferences</Label>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {settings.cuisinePreferences.map(cuisine => (
-                  <Badge key={cuisine} variant="default" className="flex items-center gap-1">
-                    {cuisine}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
-                      onClick={() => removeCuisinePreference(cuisine)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {CUISINE_PREFERENCES
-                  .filter(c => !settings.cuisinePreferences.includes(c))
-                  .map(cuisine => (
-                    <Button
-                      key={cuisine}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addCuisinePreference(cuisine)}
-                      className="h-8"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      {cuisine}
-                    </Button>
-                  ))
-                }
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <ProfileEdit 
+          formData={profileData}
+          onFormDataChange={setProfileData}
+        />
 
         {/* Email Notifications */}
         <Card>
@@ -373,9 +491,9 @@ export default function SettingsPage() {
             
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="meal-reminders">Essensplan-Erinnerungen</Label>
+                <Label htmlFor="meal-reminders">Meal Plan Reminders</Label>
                 <p className="text-sm text-muted-foreground">
-                  Erinnerungen für Ihre geplanten Mahlzeiten
+                  Reminders for your planned meals
                 </p>
               </div>
               <Switch
@@ -395,9 +513,9 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="new-features">Neue Features</Label>
+                <Label htmlFor="new-features">New Features</Label>
                 <p className="text-sm text-muted-foreground">
-                  Informationen über neue SmartPlates Features
+                  Information about new SmartPlates features
                 </p>
               </div>
               <Switch
@@ -419,7 +537,7 @@ export default function SettingsPage() {
               <div>
                 <Label htmlFor="newsletter">Newsletter</Label>
                 <p className="text-sm text-muted-foreground">
-                  Monatlicher Newsletter mit Tipps und Trends
+                  Monthly newsletter with tips and trends
                 </p>
               </div>
               <Switch
@@ -439,20 +557,153 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Security Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Security Settings</CardTitle>
+            <CardDescription>
+              Manage your account security and login information
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Password Reset Section */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <div>
+                <h4 className="font-medium">Change Password</h4>
+                <p className="text-sm text-muted-foreground">
+                  Update your account password for better security
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="current-password">Current Password</Label>
+                  <input
+                    id="current-password"
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    placeholder="Enter your current password"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="new-password">New Password</Label>
+                  <input
+                    id="new-password"
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    placeholder="Enter your new password (min. 8 characters)"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    placeholder="Confirm your new password"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                  />
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handlePasswordReset}
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword ? 'Updating Password...' : 'Update Password'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Email Change Section */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <div>
+                <h4 className="font-medium">Change Email Address</h4>
+                <p className="text-sm text-muted-foreground">
+                  Update your email address. You will need to verify the new email.
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="current-email">Current Email</Label>
+                  <input
+                    id="current-email"
+                    type="email"
+                    value={user?.email || ''}
+                    disabled
+                    className="w-full px-3 py-2 border border-input rounded-md bg-muted text-muted-foreground cursor-not-allowed"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="new-email">New Email Address</Label>
+                  <input
+                    id="new-email"
+                    type="email"
+                    value={emailData.newEmail}
+                    onChange={(e) => setEmailData(prev => ({ ...prev, newEmail: e.target.value }))}
+                    placeholder="Enter your new email address"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="verify-password">Current Password (for verification)</Label>
+                  <input
+                    id="verify-password"
+                    type="password"
+                    value={emailData.verifyPassword}
+                    onChange={(e) => setEmailData(prev => ({ ...prev, verifyPassword: e.target.value }))}
+                    placeholder="Enter your current password to verify"
+                    className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
+                  />
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleEmailChange}
+                  disabled={isChangingEmail}
+                >
+                  {isChangingEmail ? 'Sending Verification...' : 'Send Verification Email'}
+                </Button>
+              </div>
+              
+              <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
+                <p className="font-medium text-blue-800 dark:text-blue-200 mb-1">Important:</p>
+                <ul className="space-y-1 text-blue-700 dark:text-blue-300">
+                  <li>• A verification email will be sent to your new email address</li>
+                  <li>• You must click the verification link to complete the change</li>
+                  <li>• You will be logged out and need to sign in with your new email</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Privacy Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Datenschutz</CardTitle>
+            <CardTitle>Privacy Settings</CardTitle>
             <CardDescription>
-              Verwalten Sie Ihre Privatsphäre-Einstellungen
+              Manage your privacy preferences
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Profil-Sichtbarkeit</Label>
+                <Label>Profile Visibility</Label>
                 <p className="text-sm text-muted-foreground">
-                  Wer kann Ihr Profil sehen?
+                  Who can see your profile?
                 </p>
               </div>
               <select 
@@ -468,16 +719,16 @@ export default function SettingsPage() {
                 }
                 className="px-3 py-1 border rounded-md"
               >
-                <option value="public">Öffentlich</option>
-                <option value="private">Privat</option>
+                <option value="public">Public</option>
+                <option value="private">Private</option>
               </select>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="show-email">E-Mail anzeigen</Label>
+                <Label htmlFor="show-email">Show Email</Label>
                 <p className="text-sm text-muted-foreground">
-                  E-Mail-Adresse in Ihrem öffentlichen Profil anzeigen
+                  Display your email address in your public profile
                 </p>
               </div>
               <Switch
@@ -497,9 +748,9 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="show-location">Standort anzeigen</Label>
+                <Label htmlFor="show-location">Show Location</Label>
                 <p className="text-sm text-muted-foreground">
-                  Ihren Standort in Ihrem öffentlichen Profil anzeigen
+                  Display your location in your public profile
                 </p>
               </div>
               <Switch
@@ -522,37 +773,58 @@ export default function SettingsPage() {
         {/* Account Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Account-Aktionen</CardTitle>
+            <CardTitle>Account Actions</CardTitle>
             <CardDescription>
-              Verwalten Sie Ihren SmartPlates Account
+              Manage your SmartPlates account
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center">
               <div>
-                <h4 className="font-medium">Daten exportieren</h4>
+                <h4 className="font-medium">Export Data</h4>
                 <p className="text-sm text-muted-foreground">
-                  Laden Sie alle Ihre SmartPlates Daten herunter
+                  Download all your SmartPlates data
                 </p>
               </div>
-              <Button variant="outline">
-                Daten exportieren
+              <Button 
+                variant="outline"
+                onClick={handleExportData}
+                disabled={isExporting}
+              >
+                {isExporting ? 'Exporting...' : 'Export Data'}
               </Button>
             </div>
             
             <div className="flex justify-between items-center">
               <div>
-                <h4 className="font-medium text-red-600">Account löschen</h4>
+                <h4 className="font-medium text-red-600">Delete Account</h4>
                 <p className="text-sm text-muted-foreground">
-                  Permanente Löschung Ihres Accounts und aller Daten
+                  Permanently delete your account and all data
                 </p>
               </div>
-              <Button variant="destructive">
-                Account löschen
+              <Button 
+                variant="destructive"
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Account'}
               </Button>
             </div>
           </CardContent>
         </Card>
+
+        {/* Save All Changes Button */}
+        <div className="flex justify-center pt-6">
+          <Button 
+            onClick={handleSaveSettings}
+            disabled={isSaving}
+            size="lg"
+            className="flex items-center gap-2 px-8"
+          >
+            <Save className="h-5 w-5" />
+            {isSaving ? 'Saving All Changes...' : 'Save All Changes'}
+          </Button>
+        </div>
       </div>
     </div>
   );

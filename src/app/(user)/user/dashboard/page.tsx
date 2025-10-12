@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Calendar, 
   ChefHat, 
@@ -193,7 +194,7 @@ export default function UserDashboardPage() {
       value: dashboardData?.stats.totalLikes || 0,
       icon: Star,
       color: 'text-yellow-600',
-      href: '/user/profile/me'
+      href: '/user/settings'
     }
   ];
 
@@ -240,13 +241,15 @@ export default function UserDashboardPage() {
       <div className="mb-8">
         <div className="flex items-center space-x-4 mb-4">
           <div className="relative">
-            <Image
-              src={user?.image || '/placeholder-avatar.svg'}
-              alt={`${user?.name || 'User'}'s profile`}
-              width={80}
-              height={80}
-              className="rounded-full border-4 border-white shadow-lg"
-            />
+            <Avatar className="w-20 h-20 border-4 border-white shadow-lg">
+              <AvatarImage 
+                src={user?.image || '/placeholder-avatar.svg'} 
+                alt={`${user?.name || 'User'}'s profile`}
+              />
+              <AvatarFallback className="text-2xl bg-gradient-to-br from-primary/20 to-secondary/20">
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </AvatarFallback>
+            </Avatar>
             <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
           <div>

@@ -9,7 +9,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { BookOpen, Heart, Upload, Calendar, Plus, Search, Filter } from 'lucide-react';
+import { BookOpen, Heart, Upload, Calendar, Plus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -36,8 +36,6 @@ export default function MyRecipesPage() {
   const { data: _session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('uploaded');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
   const [recipes, setRecipes] = useState<{
     uploaded: Recipe[];
     saved: Recipe[];
@@ -150,14 +148,7 @@ export default function MyRecipesPage() {
     }
   };
 
-  const filteredRecipes = recipes[activeTab].filter(recipe => {
-    const matchesSearch = recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         recipe.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || recipe.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const categories = ['all', 'Italian', 'Indian', 'Mediterranean', 'Dessert'];
+  const filteredRecipes = recipes[activeTab];
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -231,34 +222,6 @@ export default function MyRecipesPage() {
           <Calendar className="h-4 w-4" />
           <span>Planned ({recipes.planned.length})</span>
         </button>
-      </div>
-
-      {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search recipes..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <Filter className="h-4 w-4 text-gray-400" />
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            {categories.map(category => (
-              <option key={category} value={category}>
-                {category === 'all' ? 'All Categories' : category}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
 
       {/* Recipes Grid */}
@@ -368,7 +331,7 @@ export default function MyRecipesPage() {
               href="/recipe"
               className="inline-flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
             >
-              <Search className="h-4 w-4" />
+              <BookOpen className="h-4 w-4" />
               <span>Explore Recipes</span>
             </Link>
           )}

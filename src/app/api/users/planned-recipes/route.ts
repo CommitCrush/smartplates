@@ -96,6 +96,8 @@ export async function GET(request: NextRequest) {
     // Sort by planned date (most recent first)
     plannedRecipes.sort((a, b) => new Date(b.plannedDate).getTime() - new Date(a.plannedDate).getTime());
 
+    console.log(`📅 Planned recipes count - User: ${userId}, Total planned recipes: ${plannedRecipes.length}`);
+
     return NextResponse.json({
       success: true,
       data: plannedRecipes,

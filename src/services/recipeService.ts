@@ -113,29 +113,47 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 	return { recipes: items, total };
 }
 
-export async function findRecipeById(id: string) {
-	const col = await getCollection<Recipe>(COLLECTION_NAME);
+export async function findRecipeById(id: string): Promise<Recipe | null> {
+    if (!id || typeof id !== 'string') {
+        console.error('Invalid id provided to findRecipeById', id);
+        return null;
+    }
 
-	// Try direct _id
-		try {
-			const asObjectId = new ObjectId(id);
-			const byObjectId = await col.findOne({ _id: asObjectId } as Filter<Recipe>);
-		if (byObjectId) return byObjectId;
-	} catch {}
+    // 1. Try finding by ObjectId in either collection
+    if (ObjectId.isValid(id)) {
+        const asObjectId = new ObjectId(id);
+        
+        // Prioritize user-created recipes
+        let recipe = await RecipeModel.findById(asObjectId).lean();
+        if (recipe) return recipe as Recipe;
 
-	// Try by stored string id
-		const byStringId = await col.findOne({ id } as Filter<Recipe>);
-	if (byStringId) return byStringId;
+        // Fallback to spoonacular recipes
+        const spoonCol = await getCollection<Recipe>(COLLECTION_NAME);
+        recipe = await spoonCol.findOne({ _id: asObjectId } as Filter<Recipe>);
+        if (recipe) return recipe;
+    }
 
-	// Try by spoonacularId (supports both plain number or prefixed string)
-	const spoonId = id.startsWith('spoonacular-') ? parseInt(id.replace('spoonacular-', '')) : parseInt(id);
-	if (!Number.isNaN(spoonId)) {
-			const bySpoon = await col.findOne({ spoonacularId: spoonId } as Filter<Recipe>);
-		if (bySpoon) return bySpoon;
-	}
+    // 2. Try finding by numeric Spoonacular ID
+    const spoonId = parseInt(id, 10);
+    if (!isNaN(spoonId)) {
+        const spoonCol = await getCollection<Recipe>(COLLECTION_NAME);
+        const recipe = await spoonCol.findOne({ id: spoonId } as Filter<Recipe>);
+        if (recipe) return recipe;
+        
+        // Also check spoonacularId field as a fallback
+        const recipeBySpoonId = await spoonCol.findOne({ spoonacularId: spoonId } as Filter<Recipe>);
+        if (recipeBySpoonId) return recipeBySpoonId;
+    }
 
-	return null;
+    // 3. Try finding by string `id` field (for legacy or custom string IDs)
+    const spoonCol = await getCollection<Recipe>(COLLECTION_NAME);
+    const byStringId = await spoonCol.findOne({ id: id } as Filter<Recipe>);
+    if (byStringId) return byStringId;
+
+    console.warn(`Recipe with id ${id} not found in any collection.`);
+    return null;
 }
+
 
 export type CreateUserRecipeInput = {
 	userId: string;

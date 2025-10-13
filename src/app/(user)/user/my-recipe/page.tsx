@@ -106,7 +106,7 @@ export default function MyRecipesPage() {
         const plannedResponse = await fetch('/api/users/planned-recipes');
         if (plannedResponse.ok) {
           const plannedData = await plannedResponse.json();
-          let rawPlannedRecipes = plannedData.data || [];
+          const rawPlannedRecipes = plannedData.data || [];
           
           const seenIds = new Set();
           plannedRecipes = rawPlannedRecipes.filter((recipe: Recipe) => {

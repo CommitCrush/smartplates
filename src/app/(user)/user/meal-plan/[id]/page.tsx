@@ -484,6 +484,71 @@ export default function MealPlanningPage() {
   
   // Force refresh key for weekly view persistence
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
+  
+  // Load specific meal plan based on ID from URL
+  useEffect(() => {
+    const loadSpecificMealPlan = async () => {
+      if (!session?.user?.email || !mealPlanId || mealPlanId === 'current') return;
+      
+      try {
+        console.log(`🔄 Loading specific meal plan with ID: ${mealPlanId}`);
+        const response = await fetch(`/api/meal-plans/${mealPlanId}`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          const specificPlan = result.data;
+
+          // Rigorous validation of the received data
+          if (!specificPlan || typeof specificPlan !== 'object') {
+            throw new Error('Invalid meal plan data received from server.');
+          }
+          if (!specificPlan.weekStartDate) {
+            throw new Error('Meal plan data is missing "weekStartDate".');
+          }
+          if (!Array.isArray(specificPlan.days)) {
+            throw new Error('Meal plan data is missing a valid "days" array.');
+          }
+
+          // Process the plan to ensure dates are Date objects
+          const processedPlan: IMealPlan = {
+            ...specificPlan,
+            weekStartDate: new Date(specificPlan.weekStartDate),
+            days: specificPlan.days.map((day: any) => ({
+              ...day,
+              date: new Date(day.date)
+            }))
+          };
+          
+          console.log(`📋 Loaded specific meal plan: ${processedPlan.title || 'Untitled Plan'}`);
+          
+          // Update meal plan state
+          setMealPlan(processedPlan);
+          setMealPlans([processedPlan]);
+          
+          // Also update current date to match meal plan's first day
+          setCurrentDate(new Date(processedPlan.weekStartDate));
+          
+          // Add to global plans
+          const weekKey = getWeekStartDate(processedPlan.weekStartDate).toISOString().split('T')[0];
+          const updatedGlobalPlans = new Map(globalMealPlans);
+          updatedGlobalPlans.set(weekKey, processedPlan);
+          setGlobalMealPlans(updatedGlobalPlans);
+          
+          setIsLoading(false);
+        } else {
+          console.error(`Failed to load meal plan with ID ${mealPlanId}:`, response.status, response.statusText);
+          setError(`Failed to load meal plan: ${response.statusText}`);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error(`Error loading meal plan with ID ${mealPlanId}:`, error);
+        setError('Failed to load meal plan due to an error');
+        setIsLoading(false);
+      }
+    };
+    
+    loadSpecificMealPlan();
+  }, [mealPlanId, session?.user?.email]);
 
   // Load all existing meal plans on component mount
   useEffect(() => {
@@ -832,7 +897,7 @@ export default function MealPlanningPage() {
     };
     
     loadMealPlan();
-  }, [mealPlanId, session?.user?.email]);
+  }, [session?.user?.email]);
 
   // Function to refresh meal plan data - Enhanced with Weekly View specific handling
   const refreshCurrentMealPlan = useCallback(() => {

@@ -389,7 +389,7 @@ export default function RecipeManagementPage() {
                   </p>
                   {recipe && (
                     <div className="bg-gray-50 p-3 rounded border">
-                      <p className="font-medium text-sm text-gray-900">"{recipe.title}"</p>
+                      <p className="font-medium text-sm text-gray-900">{recipe.title}</p>
                       <p className="text-xs text-gray-600 mt-1">
                         Source: {recipe.source === 'spoonacular_api' ? 'Spoonacular' : 
                                 recipe.source === 'user_upload' ? 'User Upload' : 

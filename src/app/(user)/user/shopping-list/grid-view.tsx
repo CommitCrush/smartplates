@@ -84,14 +84,18 @@ export default function ShoppingListGridView() {
       const response = await fetch('/api/grocery-list');
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched shopping list data:', data);
         const initialIngredients = (data.ingredients || []).map((ing: Omit<Ingredient, 'checked'>) => ({ ...ing, checked: false }));
+        console.log('Processed ingredients:', initialIngredients);
         setIngredients(initialIngredients);
         setActiveListTitle('My Shopping List');
       } else {
         const errorData = await response.json();
+        console.error('Error fetching shopping list:', errorData);
         setError(`Failed to load shopping list: ${errorData.message}`);
       }
     } catch (err) {
+      console.error('Fetch shopping list error:', err);
       setError('An unexpected error occurred while fetching the shopping list.');
     } finally {
       setLoading(false);
@@ -118,9 +122,27 @@ export default function ShoppingListGridView() {
     setRecipeId(currentRecipeId);
 
     if (currentRecipeId) {
+      // When coming from a recipe, first load the current shopping list to see if ingredients were already added
       setLoading(true);
-      const fetchRecipeDetails = async () => {
+      const loadDataForRecipe = async () => {
         try {
+          // First, check if there's already a shopping list
+          const listResponse = await fetch('/api/grocery-list');
+          if (listResponse.ok) {
+            const listData = await listResponse.json();
+            console.log('Loaded shopping list data:', listData);
+            if (listData.ingredients && listData.ingredients.length > 0) {
+              // If shopping list has ingredients, use them
+              const initialIngredients = listData.ingredients.map((ing: Omit<Ingredient, 'checked'>) => ({ ...ing, checked: false }));
+              console.log('Setting ingredients from shopping list:', initialIngredients);
+              setIngredients(initialIngredients);
+              setActiveListTitle('My Shopping List');
+              setLoading(false);
+              return;
+            }
+          }
+
+          // If no shopping list found, load recipe details to show recipe ingredients
           const response = await fetch(`/api/recipes/${currentRecipeId}`);
           if (response.ok) {
             const data = await response.json();
@@ -129,18 +151,46 @@ export default function ShoppingListGridView() {
             setServings(initialServings);
             setListName(data.title || '');
             setActiveListTitle(data.title || 'My Shopping List');
-            const baseIngredients = (data.extendedIngredients || []).map((ing: any) => ({ name: ing.name, originalQuantity: ing.amount, unit: ing.unit }));
+            
+            // Handle both Spoonacular (extendedIngredients) and Community (ingredients) recipes
+            const ingredientSource = data.extendedIngredients || data.ingredients || [];
+            console.log('Recipe ingredients for shopping list:', ingredientSource);
+            
+            const baseIngredients = ingredientSource.map((ing: any) => {
+              // Handle different ingredient formats
+              if (typeof ing === 'string') {
+                // Parse string ingredients like "1 cup flour"
+                const parts = ing.trim().split(' ');
+                const amount = parseFloat(parts[0]) || 1;
+                const unit = parts[1] || '';
+                const name = parts.slice(2).join(' ') || ing;
+                
+                return { 
+                  name: name, 
+                  originalQuantity: amount, 
+                  unit: unit 
+                };
+              }
+              
+              return { 
+                name: ing.name || ing.original || 'Unknown ingredient', 
+                originalQuantity: ing.amount || ing.quantity || 1, 
+                unit: ing.unit || '' 
+              };
+            });
+            
+            console.log('Processed base ingredients:', baseIngredients);
             setOriginalIngredients(baseIngredients);
           } else {
             setError('Failed to fetch recipe details');
           }
         } catch (err) {
-          setError('Error fetching recipe details.');
+          setError('Error loading shopping list data.');
         } finally {
           setLoading(false);
         }
       };
-      fetchRecipeDetails();
+      loadDataForRecipe();
     } else {
       fetchShoppingList();
     }

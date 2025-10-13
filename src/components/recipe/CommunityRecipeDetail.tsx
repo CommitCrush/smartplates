@@ -23,23 +23,32 @@ export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
   // Transform community recipe data to match Spoonacular format
   const normalizedRecipe: Recipe = {
     ...recipe,
+    // Keep original ingredients field for fallback
+    ingredients: recipe.ingredients,
+    
     // Ensure ingredients are in extendedIngredients format
     extendedIngredients: recipe.ingredients?.map((ingredient, index) => {
       if (typeof ingredient === 'string') {
+        // Try to parse string ingredients like "1 cup flour"
+        const parts = ingredient.split(' ');
+        const amount = parseFloat(parts[0]) || 1;
+        const unit = parts[1] || '';
+        const name = parts.slice(2).join(' ') || ingredient;
+        
         return {
           id: index,
-          name: ingredient,
-          amount: 1,
-          unit: '',
+          name: name,
+          amount: amount,
+          unit: unit,
           original: ingredient,
         };
       }
       return {
         id: ingredient.id || index,
         name: ingredient.name,
-        amount: typeof ingredient.amount === 'string' ? parseFloat(ingredient.amount) || 1 : ingredient.amount,
+        amount: typeof ingredient.amount === 'string' ? parseFloat(ingredient.amount) || 1 : (ingredient.amount || 1),
         unit: ingredient.unit || '',
-        original: `${ingredient.amount} ${ingredient.unit} ${ingredient.name}`.trim(),
+        original: `${ingredient.amount || 1} ${ingredient.unit || ''} ${ingredient.name}`.trim(),
       };
     }) || [],
     

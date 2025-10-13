@@ -35,15 +35,47 @@ export function RecipeActions({ recipe, contentRef, currentServings }: RecipeAct
 
   const handleAddToShoppingList = async (): Promise<void> => {
     try {
-      const ingredientSource = recipe.extendedIngredients || recipe.ingredients || [];
-      const ingredients: NormalizedIngredient[] = ingredientSource.map((ingredient: any) => ({
-        name: ingredient.name,
-        quantity: ingredient.amount || ingredient.quantity, 
-        unit: ingredient.unit,
-      }));
+      // Try extendedIngredients first (Spoonacular format), then ingredients (Community format)
+      let ingredientSource = recipe.extendedIngredients || recipe.ingredients || [];
+      
+      // If we still don't have ingredients, check if this is a community recipe with nested ingredients
+      if (!ingredientSource || ingredientSource.length === 0) {
+        // Sometimes community recipes might have nested structure
+        if ((recipe as any)?.recipe?.ingredients) {
+          ingredientSource = (recipe as any).recipe.ingredients;
+        }
+      }
+
+      const ingredients: NormalizedIngredient[] = ingredientSource.map((ingredient: any) => {
+        // Handle different ingredient formats
+        if (typeof ingredient === 'string') {
+          // Parse string ingredients like "1 cup flour"
+          const parts = ingredient.trim().split(' ');
+          const amount = parseFloat(parts[0]) || 1;
+          const unit = parts[1] || '';
+          const name = parts.slice(2).join(' ') || ingredient;
+          
+          return {
+            name: name,
+            quantity: amount,
+            unit: unit,
+          };
+        }
+        
+        // Handle object ingredients (both Spoonacular and Community formats)
+        return {
+          name: ingredient.name || ingredient.original || 'Unknown ingredient',
+          quantity: ingredient.amount || ingredient.quantity || 1, 
+          unit: ingredient.unit || '',
+        };
+      });
 
       if (ingredients.length === 0) {
-        toast({ title: 'No Ingredients', description: 'This recipe has no ingredients to add.', variant: 'destructive' });
+        toast({ 
+          title: 'No Ingredients', 
+          description: 'This recipe has no ingredients to add.', 
+          variant: 'destructive' 
+        });
         return;
       }
 
@@ -60,11 +92,21 @@ export function RecipeActions({ recipe, contentRef, currentServings }: RecipeAct
         const recipeId: string = (recipe.spoonacularId?.toString()) || recipe._id?.toString() || '';
         router.push(`/user/shopping-list?recipeId=${recipeId}&servings=${currentServings}`);
       } else {
-        toast({ title: 'Error', description: 'Failed to add ingredients to shopping list.', variant: 'destructive' });
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        toast({ 
+          title: 'Error', 
+          description: 'Failed to add ingredients to shopping list.', 
+          variant: 'destructive' 
+        });
       }
     } catch (error: unknown) {
       console.error('Error adding to shopping list:', error);
-      toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: 'An unexpected error occurred.', 
+        variant: 'destructive' 
+      });
     }
   };
 

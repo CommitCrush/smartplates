@@ -18,7 +18,8 @@ interface Recipe {
   id: string;
   title: string;
   description: string;
-  image: string;
+  primaryImageUrl?: string; // Use primaryImageUrl from the UserRecipe model
+  image?: string; // Keep for other recipe types if needed
   cookingTime: number;
   difficulty: 'easy' | 'medium' | 'hard';
   category: string;
@@ -74,7 +75,11 @@ export default function MyRecipesPage() {
       }
       const data = await response.json();
       // Map _id to id for consistency
-      return (data.recipes || []).map((recipe: any) => ({ ...recipe, id: recipe._id }));
+      return (data.recipes || []).map((recipe: any) => ({
+        ...recipe,
+        id: recipe._id,
+        image: recipe.primaryImageUrl || (recipe.images && recipe.images.length > 0 ? recipe.images[0].url : '/placeholder-recipe.svg')
+      }));
     } catch (error) {
       console.error('Error fetching user recipes:', error);
       return [];
@@ -313,7 +318,7 @@ export default function MyRecipesPage() {
               <div key={recipe.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
                 <div className="relative h-48">
                   <Image
-                    src={recipe.image}
+                    src={recipe.image || recipe.primaryImageUrl || '/placeholder-recipe.svg'}
                     alt={recipe.title}
                     fill
                     className="object-cover rounded-t-lg"

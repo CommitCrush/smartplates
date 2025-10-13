@@ -91,7 +91,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
     {
       icon: Upload,
       label: 'Upload Recipe',
-      href: '/user/',
+      href: '/user/my-recipe/new',
       description: 'Upload your recipes'
     },
    

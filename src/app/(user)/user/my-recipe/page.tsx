@@ -8,17 +8,19 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { BookOpen, Heart, Upload, Calendar, Plus, Search, Filter, ShoppingCart } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { BookOpen, Heart, Upload, Calendar, Plus, Search, Filter, ShoppingCart, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useFavorites } from '@/hooks/useFavorites';
+import { toast } from 'react-hot-toast';
 
 interface Recipe {
+  _id: string; // Use _id from MongoDB
   id: string;
   title: string;
   description: string;
-  image: string;
+  primaryImageUrl?: string; // Use primaryImageUrl from the UserRecipe model
+  image?: string; // Keep for other recipe types if needed
   cookingTime: number;
   difficulty: 'easy' | 'medium' | 'hard';
   category: string;
@@ -31,6 +33,13 @@ interface Recipe {
   notes?: string;
 }
 
+interface Favorite {
+  recipeId: string;
+  recipeTitle: string;
+  recipeImage: string;
+  createdAt: string;
+}
+
 interface ShoppingList {
   id: string;
   name: string;
@@ -41,12 +50,11 @@ interface ShoppingList {
 type TabType = 'uploaded' | 'saved' | 'planned' | 'shopping-list';
 
 export default function MyRecipesPage() {
-  const { data: _session, status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('uploaded');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
-  const { favorites, refetch: fetchFavorites } = useFavorites();
   const [data, setData] = useState<{
     uploaded: Recipe[];
     saved: Recipe[];
@@ -59,78 +67,126 @@ export default function MyRecipesPage() {
     'shopping-list': []
   });
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/');
+  const fetchUserRecipes = useCallback(async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/recipes?userId=${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch recipes');
+      }
+      const data = await response.json();
+      // Map _id to id for consistency
+      return (data.recipes || []).map((recipe: Recipe) => ({
+        ...recipe,
+        id: recipe._id,
+        image: recipe.primaryImageUrl || recipe.image || '/placeholder-recipe.svg'
+      }));
+    } catch (error) {
+      console.error('Error fetching user recipes:', error);
+      return [];
+    }
+  }, []);
+
+  const handleDeleteRecipe = async (recipeId: string) => {
+    setDeleting(recipeId);
+    try {
+      const response = await fetch('/api/users/recipes', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recipeId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete recipe');
+      }
+
+      toast.success('Recipe deleted successfully!');
+      // Refresh data after deletion
+      loadUserData();
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast.error(`Error: ${errorMessage}`);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const showDeleteConfirmation = (recipeId: string) => {
+    toast(
+      (t) => (
+        <div className="bg-white p-4 rounded-lg shadow-lg flex flex-col gap-4">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">Confirm Deletion</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Are you sure you want to delete this recipe? This action cannot be undone.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                handleDeleteRecipe(recipeId);
+              }}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 6000, // Persist until user action
+        position: 'top-center',
+      }
+    );
+  };
+
+  const loadUserData = useCallback(async () => {
+    if (status !== 'authenticated' || !session?.user?.id) {
+      setLoading(false);
       return;
     }
 
-    if (status === 'authenticated') {
-      loadUserData();
-    }
-  }, [status, router]);
-
-  // Update saved recipes when favorites change
-  useEffect(() => {
-    if (favorites.length > 0) {
-      setData(prevData => ({
-        ...prevData,
-        saved: favorites.map(fav => ({
-          id: fav.recipeId,
-          title: fav.recipeTitle || 'Recipe',
-          description: '',
-          image: fav.recipeImage || '/placeholder-recipe.svg',
-          cookingTime: 30,
-          difficulty: 'medium' as const,
-          category: 'Various',
-          isPublic: true,
-          createdAt: fav.createdAt
-        }))
-      }));
-    } else if (favorites.length === 0 && status === 'authenticated') {
-      // Clear saved recipes if no favorites
-      setData(prevData => ({
-        ...prevData,
-        saved: []
-      }));
-    }
-  }, [favorites, status]);
-
-  const loadUserData = async () => {
     setLoading(true);
     try {
+      // Parallel fetching for better performance
+      const [plannedResponse, userRecipes, favoritesResponse] = await Promise.all([
+        fetch('/api/users/planned-recipes').catch(e => { console.error('Error fetching planned recipes:', e); return null; }),
+        fetchUserRecipes(session.user.id),
+        fetch('/api/favorites').catch(e => { console.error('Error fetching favorites:', e); return null; })
+      ]);
+
       let plannedRecipes: Recipe[] = [];
-      
-      try {
-        const plannedResponse = await fetch('/api/users/planned-recipes');
-        if (plannedResponse.ok) {
-          const plannedData = await plannedResponse.json();
-          let rawPlannedRecipes = plannedData.data || [];
-          
-          const seenIds = new Set();
-          plannedRecipes = rawPlannedRecipes.filter((recipe: Recipe) => {
-            if (seenIds.has(recipe.id)) {
-              console.warn(`Duplicate recipe ID found: ${recipe.id}, skipping duplicate`);
-              return false;
-            }
-            seenIds.add(recipe.id);
-            return true;
-          });
-        }
-      } catch (error) {
-        console.error('Error loading planned recipes:', error);
+      if (plannedResponse && plannedResponse.ok) {
+        const plannedData = await plannedResponse.json();
+        const rawPlannedRecipes = plannedData.data || [];
+        
+        const seenIds = new Set();
+        plannedRecipes = rawPlannedRecipes.filter((recipe: Recipe) => {
+          if (seenIds.has(recipe.id)) {
+            console.warn(`Duplicate recipe ID found: ${recipe.id}, skipping duplicate`);
+            return false;
+          }
+          seenIds.add(recipe.id);
+          return true;
+        });
       }
 
-      // Load favorites
-      await fetchFavorites();
-
-      const mockData = {
-        uploaded: [
-          { id: '1', title: 'My Famous Pasta Carbonara', description: 'A family recipe passed down for generations', image: '/placeholder-recipe.svg', cookingTime: 25, difficulty: 'medium' as const, category: 'Italian', isPublic: true, createdAt: '2024-09-20' },
-          { id: '2', title: 'Homemade Pizza Margherita', description: 'Fresh mozzarella and basil on homemade dough', image: '/placeholder-recipe.svg', cookingTime: 45, difficulty: 'hard' as const, category: 'Italian', isPublic: false, createdAt: '2024-09-18' }
-        ],
-        saved: favorites.map(fav => ({
+      let savedRecipes: Recipe[] = [];
+      if (favoritesResponse && favoritesResponse.ok) {
+        const favoritesData = await favoritesResponse.json();
+        savedRecipes = (favoritesData.favorites || []).map((fav: Favorite) => ({
           id: fav.recipeId,
           title: fav.recipeTitle || 'Recipe',
           description: '',
@@ -140,21 +196,33 @@ export default function MyRecipesPage() {
           category: 'Various',
           isPublic: true,
           createdAt: fav.createdAt
-        })),
+        }));
+      }
+
+      setData({
+        uploaded: userRecipes,
+        saved: savedRecipes,
         planned: plannedRecipes,
         'shopping-list': [
           { id: 'sl1', name: 'Weekly Groceries', recipeCount: 5, createdAt: '2024-09-21' },
           { id: 'sl2', name: 'Dinner Party Prep', recipeCount: 3, createdAt: '2024-09-20' },
         ]
-      };
-      
-      setData(mockData);
+      });
+
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, session, fetchUserRecipes]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/');
+    } else if (status === 'authenticated') {
+      loadUserData();
+    }
+  }, [status, loadUserData, router]);
 
   const filteredItems = data[activeTab].filter(item => {
     if (activeTab === 'shopping-list') {
@@ -316,7 +384,7 @@ export default function MyRecipesPage() {
               <div key={recipe.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
                 <div className="relative h-48">
                   <Image
-                    src={recipe.image}
+                    src={recipe.image || recipe.primaryImageUrl || '/placeholder-recipe.svg'}
                     alt={recipe.title}
                     fill
                     className="object-cover rounded-t-lg"
@@ -379,12 +447,28 @@ export default function MyRecipesPage() {
                         <span>Added {new Date(recipe.createdAt).toLocaleDateString()}</span>
                       )}
                     </div>
-                    <Link
-                      href={`/recipe/${recipe.id}`}
-                      className="text-primary hover:text-primary/80 text-sm font-medium"
-                    >
-                      View Recipe
-                    </Link>
+                    <div className="flex items-center space-x-2">
+                      <Link
+                        href={`/recipe/${recipe._id}`}
+                        className="text-primary hover:text-primary/80 text-sm font-medium"
+                      >
+                        View Recipe
+                      </Link>
+                      {activeTab === 'uploaded' && (
+                        <button
+                          onClick={() => showDeleteConfirmation(recipe._id)}
+                          disabled={deleting === recipe._id}
+                          className="p-1 text-red-500 hover:text-red-700 disabled:text-gray-400"
+                          aria-label="Delete recipe"
+                        >
+                          {deleting === recipe._id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

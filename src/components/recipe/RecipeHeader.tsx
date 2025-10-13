@@ -1,7 +1,8 @@
+
 /**
  * Recipe Header Component
  * 
- * Displays recipe title, image, basic info, and action buttons.
+ * Displays recipe title, image, and basic info.
  */
 
 'use client';
@@ -23,7 +24,6 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
       return { src: '/placeholder-recipe.svg', useNextImage: true };
     }
     
-    // For Spoonacular URLs: use direct loading to avoid 429 errors
     if (url.includes('spoonacular.com') || url.includes('img.spoonacular.com')) {
       return { src: url, useNextImage: false };
     }
@@ -85,7 +85,7 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
             </div>
           </div>
 
-          {/* Prep and Cook Time Details - Only show if at least one time is available */}
+          {/* Prep and Cook Time Details */}
           {(recipe.preparationMinutes || recipe.cookingMinutes) && (
             <div className="grid grid-cols-2 gap-4 pt-4 border-t">
               {recipe.preparationMinutes && (

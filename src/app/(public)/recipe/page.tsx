@@ -20,6 +20,7 @@ export default function RecipePage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
   const [selectedDiet, setSelectedDiet] = useState('');
   const [selectedAllergy, setSelectedAllergy] = useState('');
+  const [communityOnly, setCommunityOnly] = useState(false);
   const [page, setPage] = useState(1);
 
   // Auth and routing
@@ -34,18 +35,18 @@ export default function RecipePage() {
     if (hasSearchQuery) {
       // Search-Modus: alle Rezepte ungefiltert holen für präzise client-side Filterung
       return {
-        number: '200', // Mehr Rezepte für bessere Search-Ergebnisse
+        number: '500', // Erhöht für alle Rezepte
         randomize: 'false',
         // KEINE API-Filter bei Search - nur client-side filtering
       };
     } else {
-      // Dropdown-Filter-Modus: normale API-basierte Paginierung
+      // Dropdown-Filter-Modus: alle Rezepte laden für client-side Pagination
       const options: Record<string, string> = {
         type: selectedCategory,
         diet: selectedDiet,
         intolerances: selectedAllergy,
-        number: isAuthenticated ? '30' : '15',
-        page: String(page),
+        number: '500', // Lade alle Rezepte für client-side Pagination
+        page: '1', // Immer erste Seite da wir client-side paginieren
       };
 
       if (selectedDifficulty === 'easy') {
@@ -54,34 +55,22 @@ export default function RecipePage() {
         options.maxReadyTime = '34';  // Updated: Medium bis 34 Min
       }
 
-      if (!isAuthenticated || page === 1) {
-        options.randomize = 'true';
-      }
+      // Randomize nur beim ersten Laden
+      options.randomize = 'true';
 
       return options;
     }
-  }, [selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, page, isAuthenticated, hasSearchQuery]);
+  }, [selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, isAuthenticated, hasSearchQuery]); // Entfernt page dependency
 
   const { recipes: rawRecipes, error, loading, hasMore, total } = useAllRecipes('', apiOptions);
 
   // Client-side filtering for all filter combinations
   const allFilteredRecipes = useMemo(() => {
-    console.log('🔍 Client-side filtering started:', {
-      totalRecipes: rawRecipes.length,
-      hasSearchQuery,
-      searchQuery: `"${searchQuery}"`,
-      selectedCategory,
-      selectedDiet,
-      selectedAllergy,
-      selectedDifficulty
-    });
-
     let filtered = rawRecipes;
 
     // 1. Search Filter (Title & Ingredients) - only when Search Query present
     if (hasSearchQuery && searchQuery.trim()) {
       filtered = fuzzySearchRecipes(filtered, searchQuery);
-      console.log(`After Search "${searchQuery}":`, filtered.length);
     }
 
     // 2. Category Filter (client-side when Search active)
@@ -94,7 +83,6 @@ export default function RecipePage() {
           cuisine.toLowerCase() === selectedCategory.toLowerCase()
         )
       );
-      console.log(`After Category "${selectedCategory}":`, filtered.length);
     }
 
     // 3. Diet Filter (client-side when Search active)
@@ -104,7 +92,6 @@ export default function RecipePage() {
           diet.toLowerCase() === selectedDiet.toLowerCase()
         )
       );
-      console.log(`After Diet "${selectedDiet}":`, filtered.length);
     }
 
     // 4. Allergy/Intolerance Filter (client-side when Search active)
@@ -117,38 +104,40 @@ export default function RecipePage() {
           return ingredientName.includes(selectedAllergy.toLowerCase());
         });
       });
-      console.log(`After Allergy filter "${selectedAllergy}":`, filtered.length);
     }
 
     // 5. Difficulty Filter (always client-side)
     if (selectedDifficulty) {
       filtered = filterRecipesByDifficulty(filtered, selectedDifficulty);
-      console.log(`After Difficulty "${selectedDifficulty}":`, filtered.length);
     }
 
-    console.log('🎯 Final filtered results:', filtered.length);
+    // 6. Community Filter (always client-side) - includes both admin (chef) and user-created recipes
+    if (communityOnly) {
+      filtered = filtered.filter(recipe => 
+        recipe.source === 'community' || recipe.source === 'chef'
+      );
+    }
+
     return filtered;
-  }, [rawRecipes, hasSearchQuery, searchQuery, selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty]);
+  }, [rawRecipes, hasSearchQuery, searchQuery, selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, communityOnly]);
 
   // Client-side Pagination (only for Search results)
-  const RECIPES_PER_PAGE = 30; // 3 columns × 10 rows
+  const RECIPES_PER_PAGE = isAuthenticated ? 30 : 15; // Authenticated: 3×10, Viewer: 3×5
   const totalFilteredPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
   
   const displayedRecipes = useMemo(() => {
-    if (!hasSearchQuery) {
-      // Dropdown-Filter: use API-paginated recipes
-      return allFilteredRecipes;
-    }
-
-    // Search-Mode: client-side Pagination
+    // Always apply client-side pagination
     const startIndex = (page - 1) * RECIPES_PER_PAGE;
-    return allFilteredRecipes.slice(startIndex, startIndex + RECIPES_PER_PAGE);
-  }, [allFilteredRecipes, page, hasSearchQuery]);
+    const endIndex = startIndex + RECIPES_PER_PAGE;
+    const sliced = allFilteredRecipes.slice(startIndex, endIndex);
+    
+    return sliced;
+  }, [allFilteredRecipes, page, RECIPES_PER_PAGE]); // Always paginate
 
   // Reset page when any filter changes
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, selectedCategory, selectedDifficulty, selectedDiet, selectedAllergy]);
+  }, [searchQuery, selectedCategory, selectedDifficulty, selectedDiet, selectedAllergy, isAuthenticated]); // Added isAuthenticated
 
   // Auto-scroll to top when page changes OR when filters change
   useEffect(() => {
@@ -172,6 +161,7 @@ export default function RecipePage() {
     setSelectedDifficulty('');
     setSelectedDiet('');
     setSelectedAllergy('');
+    setCommunityOnly(false);
     setPage(1);
   };
 
@@ -212,6 +202,8 @@ export default function RecipePage() {
           setSelectedDiet={setSelectedDiet}
           selectedAllergy={selectedAllergy}
           setSelectedAllergy={setSelectedAllergy}
+          communityOnly={communityOnly}
+          setCommunityOnly={setCommunityOnly}
           onFilterChange={handleFilterChange}
         />
 
@@ -222,11 +214,13 @@ export default function RecipePage() {
           selectedDifficulty={selectedDifficulty}
           selectedDiet={selectedDiet}
           selectedAllergy={selectedAllergy}
+          communityOnly={communityOnly}
           onRemoveSearch={() => setSearchQuery('')}
           onRemoveCategory={() => setSelectedCategory('')}
           onRemoveDifficulty={() => setSelectedDifficulty('')}
           onRemoveDiet={() => setSelectedDiet('')}
           onRemoveAllergy={() => setSelectedAllergy('')}
+          onRemoveCommunity={() => setCommunityOnly(false)}
           onClearAll={clearAllFilters}
         />
 
@@ -266,45 +260,15 @@ export default function RecipePage() {
               ))}
             </div>
             
-            {/* Pagination Logic basierend auf Modus */}
-            {hasSearchQuery ? (
-              // Search-Modus: Client-side Pagination
-              allFilteredRecipes.length > RECIPES_PER_PAGE && (
-                <div className="flex justify-center mt-8">
-                  <Pagination
-                    currentPage={page}
-                    totalPages={totalFilteredPages}
-                    onPageChange={setPage}
-                  />
-                </div>
-              )
-            ) : (
-              // Dropdown-Filter-Modus: API-basierte Pagination
-              <>
-                {isAuthenticated && rawRecipes.length > 0 && (
-                  <div className="flex justify-center mt-8">
-                    <Pagination
-                      currentPage={page}
-                      totalPages={Math.ceil((total || rawRecipes.length) / 30)}
-                      onPageChange={setPage}
-                    />
-                  </div>
-                )}
-                
-                {!isAuthenticated && hasMore && rawRecipes.length >= 15 && (
-                  <div className="flex justify-center mt-8">
-                    <Button
-                      onClick={() => {
-                        router.push('/register');
-                      }}
-                      variant="outline"
-                      size="lg"
-                    >
-                      Register for More Recipes
-                    </Button>
-                  </div>
-                )}
-              </>
+            {/* Unified Pagination - always client-side */}
+            {allFilteredRecipes.length > RECIPES_PER_PAGE && (
+              <div className="flex justify-center mt-8">
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalFilteredPages}
+                  onPageChange={setPage}
+                />
+              </div>
             )}
           </>
         )}

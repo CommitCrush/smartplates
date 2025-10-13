@@ -48,12 +48,12 @@ export async function GET(
     // Enrich meal plan with recipe information
     const enrichedMealPlan = await MealPlanService.enrichMealPlanWithRecipes(mealPlan);
 
+    // Convert to plain object to avoid Mongoose-specific properties and ensure _id is a string
+    const mealPlanObject = JSON.parse(JSON.stringify(enrichedMealPlan));
+
     return NextResponse.json({
       success: true,
-      data: {
-        ...enrichedMealPlan,
-        _id: enrichedMealPlan._id?.toString()
-      }
+      data: mealPlanObject
     });
 
   } catch (error) {

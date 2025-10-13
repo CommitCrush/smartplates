@@ -10,11 +10,14 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Clock, ChefHat, Star } from 'lucide-react';
+import { Clock, ChefHat, Star, Heart } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Recipe, RecipeCard as RecipeCardData } from '@/types/recipe';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/context/authContext';
 
 interface RecipeCardProps {
   recipe: RecipeCardData | Recipe;
@@ -29,15 +32,22 @@ export function RecipeCard({
   showAuthor = true,
   priority = false 
 }: RecipeCardProps) {
-  // Helper: Handle Spoonacular images with direct loading (bypassing Next.js Image proxy)
+  const { toggleFavorite, isFavorited } = useFavorites();
+  const { isAuthenticated } = useAuth();
+  
+  // Helper: Handle different image sources properly
   function getRecipeImage(url?: string) {
     if (!url || typeof url !== 'string') {
       return { src: '/placeholder-recipe.svg', useNextImage: true };
     }
     
-    // For Spoonacular URLs: use direct loading to avoid 429 errors
     if (url.includes('spoonacular.com') || url.includes('img.spoonacular.com')) {
       return { src: url, useNextImage: false }; // Direct HTML img tag
+    }
+    
+    // For Cloudinary URLs: use Next.js Image optimization
+    if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
+      return { src: url, useNextImage: true }; // Use Next.js Image for Cloudinary
     }
     
     // For other URLs: use Next.js Image optimization
@@ -48,39 +58,68 @@ export function RecipeCard({
     return { src: url, useNextImage: true };
   }
 
-  const imageConfig = getRecipeImage(recipe.image);
+  const imageConfig = getRecipeImage(
+    recipe.image || 
+    ('primaryImageUrl' in recipe ? recipe.primaryImageUrl : undefined) ||
+    ('images' in recipe && Array.isArray(recipe.images) && recipe.images.length > 0 ? recipe.images[0]?.url : undefined)
+  );
 
-  // Calculate total time - handle both RecipeCard and Recipe types
+  // Calculate total time
   const totalTime = (() => {
-    if ('totalTime' in recipe) {
-      return recipe.totalTime;
-    }
-    // For full Recipe objects
+    if ('totalTime' in recipe) return recipe.totalTime;
     const fullRecipe = recipe as Recipe;
-    if (fullRecipe.readyInMinutes) {
-      return fullRecipe.readyInMinutes;
-    }
+    if (fullRecipe.readyInMinutes) return fullRecipe.readyInMinutes;
     if (fullRecipe.preparationMinutes && fullRecipe.cookingMinutes) {
       return fullRecipe.preparationMinutes + fullRecipe.cookingMinutes;
     }
     return 0;
   })();
 
-  // Get recipe ID - handle both types with proper type guards
-  const recipeId = ('_id' in recipe ? recipe._id?.toString() : '') || 
-                   ('id' in recipe ? recipe.id?.toString() : '') || 
-                   ('spoonacularId' in recipe ? recipe.spoonacularId?.toString() : '');
+  const recipeId = (recipe as any)._id || (recipe as any).id;
+  const href = `/recipe/${recipeId}`;
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isAuthenticated) {
+      toggleFavorite(
+        recipeId, 
+        recipe.title, 
+        recipe.image || '/placeholder-recipe.svg'
+      );
+    }
+  };
 
   return (
     <Card className={cn(
-      "group cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
+      "group cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative",
       className
     )}>
-      <Link href={`/recipe/${recipeId}`}>
+      {/* Favorite Button - Top Right Corner */}
+      {isAuthenticated && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleFavoriteClick}
+          className={cn(
+            "absolute top-2 right-2 z-10 w-8 h-8 p-0 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all duration-200",
+            isFavorited(recipeId) && "text-red-500 hover:text-red-600"
+          )}
+        >
+          <Heart 
+            className={cn(
+              "w-4 h-4 transition-all duration-200",
+              isFavorited(recipeId) && "fill-current"
+            )} 
+          />
+        </Button>
+      )}
+
+      <Link href={href}>
         {/* Recipe Image */}
         <div className="relative aspect-[4/3] overflow-hidden">
           {imageConfig.useNextImage ? (
-            // Use Next.js Image for optimization (non-Spoonacular images)
             <Image
               src={imageConfig.src}
               alt={recipe.title}
@@ -88,25 +127,14 @@ export function RecipeCard({
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               priority={priority}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                if (target.src !== '/placeholder-recipe.svg') {
-                  target.src = '/placeholder-recipe.svg';
-                }
-              }}
+              onError={(e) => { e.currentTarget.src = '/placeholder-recipe.svg'; }}
             />
           ) : (
-            // Use direct HTML img tag for Spoonacular images (no proxy)
             <img
               src={imageConfig.src}
               alt={recipe.title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                if (target.src !== '/placeholder-recipe.svg') {
-                  target.src = '/placeholder-recipe.svg';
-                }
-              }}
+              onError={(e) => { e.currentTarget.src = '/placeholder-recipe.svg'; }}
               loading={priority ? "eager" : "lazy"}
             />
           )}
@@ -114,10 +142,7 @@ export function RecipeCard({
           {/* Difficulty Badge */}
           {('difficulty' in recipe) && recipe.difficulty && (
             <div className="absolute top-3 left-3">
-              <Badge 
-                variant="secondary" 
-                className="bg-white/90 text-gray-900 backdrop-blur-sm"
-              >
+              <Badge variant="secondary" className="bg-white/90 text-gray-900 backdrop-blur-sm">
                 {recipe.difficulty}
               </Badge>
             </div>
@@ -126,12 +151,26 @@ export function RecipeCard({
           {/* Rating Badge */}
           {recipe.rating && recipe.rating > 0 && (
             <div className="absolute top-3 right-3">
-              <Badge 
-                variant="secondary" 
-                className="bg-white/90 text-gray-900 backdrop-blur-sm flex items-center gap-1"
-              >
+              <Badge variant="secondary" className="bg-white/90 text-gray-900 backdrop-blur-sm flex items-center gap-1">
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                 {recipe.rating.toFixed(1)}
+              </Badge>
+            </div>
+          )}
+
+          {/* Community Source Badge */}
+          {('source' in recipe) && (recipe.source === 'chef' || recipe.source === 'community') && (
+            <div className="absolute bottom-3 right-3">
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "text-xs backdrop-blur-sm border-white/50",
+                  recipe.source === 'chef' && "bg-blue-500/90 text-white border-blue-500",
+                  recipe.source === 'community' && "bg-green-500/90 text-white border-green-500"
+                )}
+              >
+                {recipe.source === 'chef' && '👨‍🍳 Chef'}
+                {recipe.source === 'community' && '👥 Community'}
               </Badge>
             </div>
           )}
@@ -139,20 +178,14 @@ export function RecipeCard({
 
         {/* Card Content */}
         <CardContent className="p-4">
-          {/* Recipe Title */}
           <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
             {recipe.title}
           </h3>
-
-          {/* Recipe Description */}
           <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
             {recipe.description || ('summary' in recipe ? recipe.summary?.replace(/<[^>]*>/g, '') : '') || 'No description available'}
           </p>
-
-          {/* Recipe Meta Information */}
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-4">
-              {/* Cooking Time */}
               {totalTime > 0 && (
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
@@ -160,8 +193,6 @@ export function RecipeCard({
                 </div>
               )}
             </div>
-
-            {/* Difficulty Icon */}
             {('difficulty' in recipe) && recipe.difficulty && (
               <div className="flex items-center gap-1">
                 <ChefHat className="w-4 h-4" />
@@ -173,23 +204,16 @@ export function RecipeCard({
         {/* Card Footer */}
         <CardFooter className="p-4 pt-0">
           <div className="flex items-center justify-between w-full">
-            {/* Author */}
             {showAuthor && 'authorName' in recipe && recipe.authorName && (
               <span className="text-sm text-muted-foreground">
                 by {recipe.authorName}
               </span>
             )}
-
-            {/* Tags */}
             <div className="flex gap-1 flex-wrap">
               {('tags' in recipe && recipe.tags) && (
                 <>
                   {recipe.tags.slice(0, 2).map((tag: string) => (
-                    <Badge 
-                      key={tag} 
-                      variant="outline" 
-                      className="text-xs"
-                    >
+                    <Badge key={tag} variant="outline" className="text-xs">
                       {tag}
                     </Badge>
                   ))}

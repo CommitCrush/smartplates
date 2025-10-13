@@ -9,9 +9,10 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { BookOpen, Heart, Upload, Calendar, Plus } from 'lucide-react';
+import { BookOpen, Heart, Upload, Calendar, Plus, Search, Filter, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useFavorites } from '@/hooks/useFavorites';
 
 interface Recipe {
   id: string;
@@ -30,20 +31,32 @@ interface Recipe {
   notes?: string;
 }
 
-type TabType = 'uploaded' | 'saved' | 'planned';
+interface ShoppingList {
+  id: string;
+  name: string;
+  recipeCount: number;
+  createdAt: string;
+}
+
+type TabType = 'uploaded' | 'saved' | 'planned' | 'shopping-list';
 
 export default function MyRecipesPage() {
   const { data: _session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('uploaded');
-  const [recipes, setRecipes] = useState<{
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const { favorites, refetch: fetchFavorites } = useFavorites();
+  const [data, setData] = useState<{
     uploaded: Recipe[];
     saved: Recipe[];
     planned: Recipe[];
+    'shopping-list': ShoppingList[];
   }>({
     uploaded: [],
     saved: [],
-    planned: []
+    planned: [],
+    'shopping-list': []
   });
   const [loading, setLoading] = useState(true);
 
@@ -54,14 +67,39 @@ export default function MyRecipesPage() {
     }
 
     if (status === 'authenticated') {
-      loadUserRecipes();
+      loadUserData();
     }
   }, [status, router]);
 
-  const loadUserRecipes = async () => {
+  // Update saved recipes when favorites change
+  useEffect(() => {
+    if (favorites.length > 0) {
+      setData(prevData => ({
+        ...prevData,
+        saved: favorites.map(fav => ({
+          id: fav.recipeId,
+          title: fav.recipeTitle || 'Recipe',
+          description: '',
+          image: fav.recipeImage || '/placeholder-recipe.svg',
+          cookingTime: 30,
+          difficulty: 'medium' as const,
+          category: 'Various',
+          isPublic: true,
+          createdAt: fav.createdAt
+        }))
+      }));
+    } else if (favorites.length === 0 && status === 'authenticated') {
+      // Clear saved recipes if no favorites
+      setData(prevData => ({
+        ...prevData,
+        saved: []
+      }));
+    }
+  }, [favorites, status]);
+
+  const loadUserData = async () => {
     setLoading(true);
     try {
-      // Load planned recipes from API
       let plannedRecipes: Recipe[] = [];
       
       try {
@@ -70,7 +108,6 @@ export default function MyRecipesPage() {
           const plannedData = await plannedResponse.json();
           let rawPlannedRecipes = plannedData.data || [];
           
-          // Deduplicate recipes by ID to prevent duplicate key errors
           const seenIds = new Set();
           plannedRecipes = rawPlannedRecipes.filter((recipe: Recipe) => {
             if (seenIds.has(recipe.id)) {
@@ -80,75 +117,58 @@ export default function MyRecipesPage() {
             seenIds.add(recipe.id);
             return true;
           });
-          
-          console.log('Loaded planned recipes:', plannedRecipes.length);
         }
       } catch (error) {
         console.error('Error loading planned recipes:', error);
       }
 
-      // Mock data for uploaded and saved recipes - replace with actual API calls
-      const mockRecipes = {
+      // Load favorites
+      await fetchFavorites();
+
+      const mockData = {
         uploaded: [
-          {
-            id: '1',
-            title: 'My Famous Pasta Carbonara',
-            description: 'A family recipe passed down for generations',
-            image: '/placeholder-recipe.svg',
-            cookingTime: 25,
-            difficulty: 'medium' as const,
-            category: 'Italian',
-            isPublic: true,
-            createdAt: '2024-09-20'
-          },
-          {
-            id: '2',
-            title: 'Homemade Pizza Margherita',
-            description: 'Fresh mozzarella and basil on homemade dough',
-            image: '/placeholder-recipe.svg',
-            cookingTime: 45,
-            difficulty: 'hard' as const,
-            category: 'Italian',
-            isPublic: false,
-            createdAt: '2024-09-18'
-          }
+          { id: '1', title: 'My Famous Pasta Carbonara', description: 'A family recipe passed down for generations', image: '/placeholder-recipe.svg', cookingTime: 25, difficulty: 'medium' as const, category: 'Italian', isPublic: true, createdAt: '2024-09-20' },
+          { id: '2', title: 'Homemade Pizza Margherita', description: 'Fresh mozzarella and basil on homemade dough', image: '/placeholder-recipe.svg', cookingTime: 45, difficulty: 'hard' as const, category: 'Italian', isPublic: false, createdAt: '2024-09-18' }
         ],
-        saved: [
-          {
-            id: '3',
-            title: 'Chicken Tikka Masala',
-            description: 'Creamy and flavorful Indian curry',
-            image: '/placeholder-recipe.svg',
-            cookingTime: 40,
-            difficulty: 'medium' as const,
-            category: 'Indian',
-            isPublic: true,
-            createdAt: '2024-09-19'
-          },
-          {
-            id: '4',
-            title: 'Chocolate Chip Cookies',
-            description: 'Classic homemade cookies',
-            image: '/placeholder-recipe.svg',
-            cookingTime: 15,
-            difficulty: 'easy' as const,
-            category: 'Dessert',
-            isPublic: true,
-            createdAt: '2024-09-17'
-          }
-        ],
-        planned: plannedRecipes
+        saved: favorites.map(fav => ({
+          id: fav.recipeId,
+          title: fav.recipeTitle || 'Recipe',
+          description: '',
+          image: fav.recipeImage || '/placeholder-recipe.svg',
+          cookingTime: 30,
+          difficulty: 'medium' as const,
+          category: 'Various',
+          isPublic: true,
+          createdAt: fav.createdAt
+        })),
+        planned: plannedRecipes,
+        'shopping-list': [
+          { id: 'sl1', name: 'Weekly Groceries', recipeCount: 5, createdAt: '2024-09-21' },
+          { id: 'sl2', name: 'Dinner Party Prep', recipeCount: 3, createdAt: '2024-09-20' },
+        ]
       };
       
-      setRecipes(mockRecipes);
+      setData(mockData);
     } catch (error) {
-      console.error('Error loading recipes:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredRecipes = recipes[activeTab];
+  const filteredItems = data[activeTab].filter(item => {
+    if (activeTab === 'shopping-list') {
+      const shoppingList = item as ShoppingList;
+      return shoppingList.name.toLowerCase().includes(searchTerm.toLowerCase());
+    }
+    const recipe = item as Recipe;
+    const matchesSearch = recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (recipe.description && recipe.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = filterCategory === 'all' || recipe.category === filterCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const categories = ['all', 'Italian', 'Indian', 'Mediterranean', 'Dessert'];
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -198,7 +218,7 @@ export default function MyRecipesPage() {
           }`}
         >
           <Upload className="h-4 w-4" />
-          <span>Uploaded ({recipes.uploaded.length})</span>
+          <span>Uploaded ({data.uploaded.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('saved')}
@@ -209,7 +229,7 @@ export default function MyRecipesPage() {
           }`}
         >
           <Heart className="h-4 w-4" />
-          <span>Saved ({recipes.saved.length})</span>
+          <span>Saved ({data.saved.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('planned')}
@@ -220,102 +240,168 @@ export default function MyRecipesPage() {
           }`}
         >
           <Calendar className="h-4 w-4" />
-          <span>Planned ({recipes.planned.length})</span>
+          <span>Planned ({data.planned.length})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('shopping-list')}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+            activeTab === 'shopping-list' 
+              ? 'bg-white text-primary shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          <span>My Shopping List ({data['shopping-list'].length})</span>
         </button>
       </div>
 
-      {/* Recipes Grid */}
-      {filteredRecipes.length > 0 ? (
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder={activeTab === 'shopping-list' ? 'Search shopping lists...' : 'Search recipes...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+        </div>
+        {activeTab !== 'shopping-list' && (
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              {categories.map(category => (
+                <option key={category} value={category}>
+                  {category === 'all' ? 'All Categories' : category}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Content Grid */}
+      {filteredItems.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredRecipes.map((recipe) => (
-            <div key={recipe.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
-              <div className="relative h-48">
-                <Image
-                  src={recipe.image}
-                  alt={recipe.title}
-                  fill
-                  className="object-cover rounded-t-lg"
-                />
-                {activeTab === 'uploaded' && (
-                  <div className="absolute top-2 right-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      recipe.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {recipe.isPublic ? 'Public' : 'Private'}
-                    </span>
+          {activeTab === 'shopping-list' ? (
+            (filteredItems as ShoppingList[]).map((list) => (
+              <div key={list.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+                <div className="relative h-48 flex items-center justify-center bg-gray-100 rounded-t-lg">
+                  <ShoppingCart className="h-16 w-16 text-gray-300" />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2 line-clamp-1">{list.name}</h3>
+                  <p className="text-gray-600 text-sm mb-3">{list.recipeCount} recipes</p>
+                  <div className="mt-3 pt-3 border-t flex justify-between items-center">
+                    <div className="text-xs text-gray-500">
+                      <span>Created {new Date(list.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <Link
+                      href={`#`}
+                      className="text-primary hover:text-primary/80 text-sm font-medium"
+                    >
+                      View List
+                    </Link>
                   </div>
-                )}
-                {activeTab === 'planned' && recipe.plannedDate && (
-                  <div className="absolute top-2 right-2 space-y-1">
-                    <span className="block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                      {new Date(recipe.plannedDate).toLocaleDateString()}
-                    </span>
-                    {recipe.mealType && (
-                      <span className="block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                        {recipe.mealType}
+                </div>
+              </div>
+            ))
+          ) : (
+            (filteredItems as Recipe[]).map((recipe) => (
+              <div key={recipe.id} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow">
+                <div className="relative h-48">
+                  <Image
+                    src={recipe.image}
+                    alt={recipe.title}
+                    fill
+                    className="object-cover rounded-t-lg"
+                  />
+                  {activeTab === 'uploaded' && (
+                    <div className="absolute top-2 right-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        recipe.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {recipe.isPublic ? 'Public' : 'Private'}
                       </span>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-2 line-clamp-1">{recipe.title}</h3>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{recipe.description}</p>
-                
-                {/* Show notes for planned recipes */}
-                {activeTab === 'planned' && recipe.notes && (
-                  <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                    <span className="font-medium text-yellow-800">Note:</span>
-                    <span className="text-yellow-700 ml-1">{recipe.notes}</span>
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-gray-500">{recipe.cookingTime} min</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(recipe.difficulty)}`}>
-                      {recipe.difficulty}
-                    </span>
-                  </div>
-                  <span className="text-primary font-medium">{recipe.category}</span>
+                    </div>
+                  )}
+                  {activeTab === 'planned' && recipe.plannedDate && (
+                    <div className="absolute top-2 right-2 space-y-1">
+                      <span className="block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                        {new Date(recipe.plannedDate).toLocaleDateString()}
+                      </span>
+                      {recipe.mealType && (
+                        <span className="block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                          {recipe.mealType}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="mt-3 pt-3 border-t flex justify-between items-center">
-                  <div className="text-xs text-gray-500">
-                    {activeTab === 'planned' && recipe.weekRange ? (
-                      <div>
-                        <div>{recipe.weekRange}</div>
-                        <div>Added {new Date(recipe.createdAt).toLocaleDateString()}</div>
-                        {recipe.servings && (
-                          <div className="mt-1 text-blue-600">
-                            {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span>Added {new Date(recipe.createdAt).toLocaleDateString()}</span>
-                    )}
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2 line-clamp-1">{recipe.title}</h3>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{recipe.description}</p>
+                  
+                  {activeTab === 'planned' && recipe.notes && (
+                    <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                      <span className="font-medium text-yellow-800">Note:</span>
+                      <span className="text-yellow-700 ml-1">{recipe.notes}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-gray-500">{recipe.cookingTime} min</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(recipe.difficulty)}`}>
+                        {recipe.difficulty}
+                      </span>
+                    </div>
+                    <span className="text-primary font-medium">{recipe.category}</span>
                   </div>
-                  <Link
-                    href={`/recipe/${recipe.id}`}
-                    className="text-primary hover:text-primary/80 text-sm font-medium"
-                  >
-                    View Recipe
-                  </Link>
+                  <div className="mt-3 pt-3 border-t flex justify-between items-center">
+                    <div className="text-xs text-gray-500">
+                      {activeTab === 'planned' && recipe.weekRange ? (
+                        <div>
+                          <div>{recipe.weekRange}</div>
+                          <div>Added {new Date(recipe.createdAt).toLocaleDateString()}</div>
+                          {recipe.servings && (
+                            <div className="mt-1 text-blue-600">
+                              {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span>Added {new Date(recipe.createdAt).toLocaleDateString()}</span>
+                      )}
+                    </div>
+                    <Link
+                      href={`/recipe/${recipe.id}`}
+                      className="text-primary hover:text-primary/80 text-sm font-medium"
+                    >
+                      View Recipe
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       ) : (
         <div className="text-center py-12">
           <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
-            No recipes found
+            {activeTab === 'shopping-list' ? 'No shopping lists found' : 'No recipes found'}
           </h3>
           <p className="text-gray-500 mb-4">
             {activeTab === 'uploaded' && "You haven't uploaded any recipes yet."}
             {activeTab === 'saved' && "You haven't saved any recipes yet."}
             {activeTab === 'planned' && "You don't have any planned recipes."}
+            {activeTab === 'shopping-list' && "You don't have any shopping lists yet."}
           </p>
           {activeTab === 'uploaded' && (
             <Link
@@ -326,7 +412,7 @@ export default function MyRecipesPage() {
               <span>Upload Your First Recipe</span>
             </Link>
           )}
-          {activeTab === 'saved' && (
+           {activeTab === 'saved' && (
             <Link
               href="/recipe"
               className="inline-flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
@@ -342,6 +428,15 @@ export default function MyRecipesPage() {
             >
               <Calendar className="h-4 w-4" />
               <span>Start Meal Planning</span>
+            </Link>
+          )}
+          {activeTab === 'shopping-list' && (
+            <Link
+              href="#" // Link to a page to create a new shopping list
+              className="inline-flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Create Shopping List</span>
             </Link>
           )}
         </div>

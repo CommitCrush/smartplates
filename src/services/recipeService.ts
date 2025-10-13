@@ -32,8 +32,64 @@ export type SearchFilters = {
 };
 
 export async function searchRecipesMongo(filters: SearchFilters = {}, pagination: Pagination = {}, randomize: boolean = false) {
+	// Check if community filter is requested
+	if (filters.query && filters.query.includes('community:')) {
+		return await searchCommunityRecipes(filters, pagination, randomize);
+	}
+
 	const page = Math.max(1, pagination.page || 1);
-	const limit = Math.min(100, Math.max(1, pagination.limit || 30));
+	const limit = Math.min(500, Math.max(1, pagination.limit || 200)); // Erhöht für alle Spoonacular-Rezepte
+
+	// Search both Spoonacular and Community recipes in parallel
+	const [spoonacularResult, communityResult] = await Promise.all([
+		searchSpoonacularRecipesOnly(filters, pagination, randomize),
+		searchCommunityRecipes(filters, pagination, randomize)
+	]);
+
+	// Combine results
+	const combinedRecipes: (Recipe & { source: string })[] = [
+		...spoonacularResult.recipes.map((recipe: any) => ({ ...recipe, source: recipe.source || 'spoonacular' })),
+		...communityResult.recipes // Keep original source values ('chef' and 'community') from searchCommunityRecipes
+	];
+
+	// Remove duplicates by title
+	const seen = new Set();
+	const uniqueRecipes = combinedRecipes.filter((recipe: Recipe & { source: string }) => {
+		const key = recipe.title?.toLowerCase();
+		if (key && seen.has(key)) {
+			return false;
+		}
+		if (key) seen.add(key);
+		return true;
+	});
+
+	// Sort by creation date or randomize
+	let sortedRecipes = uniqueRecipes.sort((a: Recipe & { source: string }, b: Recipe & { source: string }) => {
+		const dateA = new Date(a.createdAt || 0).getTime();
+		const dateB = new Date(b.createdAt || 0).getTime();
+		return dateB - dateA;
+	});
+
+	if (randomize) {
+		sortedRecipes = sortedRecipes.sort(() => Math.random() - 0.5);
+	}
+
+	// Apply pagination
+	const startIndex = (page - 1) * limit;
+	const paginatedRecipes = sortedRecipes.slice(startIndex, startIndex + limit);
+
+	console.log(`🔍 Combined search: ${spoonacularResult.recipes.length} Spoonacular + ${communityResult.recipes.length} Community = ${paginatedRecipes.length} total recipes`);
+
+	return {
+		recipes: paginatedRecipes,
+		total: sortedRecipes.length
+	};
+}
+
+// Original spoonacular-only search function
+async function searchSpoonacularRecipesOnly(filters: SearchFilters = {}, pagination: Pagination = {}, randomize: boolean = false) {
+	const page = Math.max(1, pagination.page || 1);
+	const limit = Math.min(500, Math.max(1, pagination.limit || 200)); // Erhöht für alle Spoonacular-Rezepte
 	const col = await getCollection<Recipe>(COLLECTION_NAME);
 
 	const query: Filter<Recipe> = {
@@ -114,28 +170,55 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 }
 
 export async function findRecipeById(id: string) {
-	const col = await getCollection<Recipe>(COLLECTION_NAME);
-
-	// Try direct _id
+	// Search in community recipes first (admin and user recipes)
+	try {
+		const adminCol = await getCollection<Recipe>('recipes');
+		const userCol = await getCollection<Recipe>('userRecipes');
+		
+		// Try ObjectId for community recipes
 		try {
 			const asObjectId = new ObjectId(id);
-			const byObjectId = await col.findOne({ _id: asObjectId } as Filter<Recipe>);
-		if (byObjectId) return byObjectId;
+			
+			// Check admin recipes
+			const adminRecipe = await adminCol.findOne({ _id: asObjectId } as Filter<Recipe>);
+			if (adminRecipe) {
+				return { ...adminRecipe, source: 'admin_upload' };
+			}
+			
+			// Check user recipes
+			const userRecipe = await userCol.findOne({ _id: asObjectId } as Filter<Recipe>);
+			if (userRecipe) {
+				return { ...userRecipe, source: 'user_upload' };
+			}
+		} catch {}
+	} catch (error) {
+		console.error('Error searching community recipes:', error);
+	}
+	
+	// Search in Spoonacular recipes
+	const col = await getCollection<Recipe>(COLLECTION_NAME);
+
+	// Try direct _id for Spoonacular
+	try {
+		const asObjectId = new ObjectId(id);
+		const byObjectId = await col.findOne({ _id: asObjectId } as Filter<Recipe>);
+		if (byObjectId) return { ...byObjectId, source: 'spoonacular' };
 	} catch {}
 
 	// Try by stored string id
-		const byStringId = await col.findOne({ id } as Filter<Recipe>);
-	if (byStringId) return byStringId;
+	const byStringId = await col.findOne({ id } as Filter<Recipe>);
+	if (byStringId) return { ...byStringId, source: 'spoonacular' };
 
 	// Try by spoonacularId (supports both plain number or prefixed string)
 	const spoonId = id.startsWith('spoonacular-') ? parseInt(id.replace('spoonacular-', '')) : parseInt(id);
 	if (!Number.isNaN(spoonId)) {
-			const bySpoon = await col.findOne({ spoonacularId: spoonId } as Filter<Recipe>);
-		if (bySpoon) return bySpoon;
+		const bySpoon = await col.findOne({ spoonacularId: spoonId } as Filter<Recipe>);
+		if (bySpoon) return { ...bySpoon, source: 'spoonacular' };
 	}
 
 	return null;
 }
+
 
 export type CreateUserRecipeInput = {
 	userId: string;
@@ -312,4 +395,104 @@ export async function saveRecipeToDb(recipe: Recipe, userId: string) {
 	
 	const res = await col.insertOne(doc as unknown as Omit<Recipe, '_id'>);
 	return { ...doc, _id: res.insertedId } as Recipe;
+}
+
+/**
+ * Search Community Recipes (Admin + User recipes only)
+ */
+export async function searchCommunityRecipes(filters: SearchFilters = {}, pagination: Pagination = {}, randomize: boolean = false) {
+	const page = Math.max(1, pagination.page || 1);
+	const limit = Math.min(500, Math.max(1, pagination.limit || 200)); // Erhöht für alle Community-Rezepte
+	
+	try {
+		// Clean the query from community: prefix
+		const cleanQuery = filters.query?.replace('community:', '').trim() || '';
+		
+		// Build search query
+		const searchQuery = cleanQuery ? {
+			$or: [
+				{ title: { $regex: cleanQuery, $options: 'i' } },
+				{ description: { $regex: cleanQuery, $options: 'i' } }
+			]
+		} : {};
+		
+		const additionalFilters = {
+			...(filters.type && { dishTypes: { $in: [filters.type] } }),
+			...(filters.diet && { diets: { $in: [filters.diet] } }),
+			...(filters.maxReadyTime && { readyInMinutes: { $lte: filters.maxReadyTime } })
+		};
+
+		// Get recipes from Admin and User collections
+		const [adminRecipes, userRecipes] = await Promise.all([
+			// Admin recipes (from 'recipes' collection)
+			getCollection('recipes').then(collection => 
+				collection.find({ ...searchQuery, ...additionalFilters })
+					.sort({ createdAt: -1 }).toArray()
+			).catch(() => []),
+			
+			// User recipes (from 'userRecipes' collection)
+			getCollection('userRecipes').then(collection => 
+				collection.find({ ...searchQuery, ...additionalFilters })
+					.sort({ createdAt: -1 }).toArray()
+			).catch(() => [])
+		]);
+
+		// Combine recipes and mark their source
+		const allRecipes: (Recipe & { source?: string })[] = [
+			...adminRecipes.map((recipe: any) => ({ 
+				...recipe, 
+				source: 'chef',
+				id: recipe._id?.toString() || recipe.id,
+				// Ensure image field is properly set from different possible sources
+				image: recipe.image || recipe.primaryImageUrl || (recipe.images && recipe.images[0]?.url) || '/placeholder-recipe.svg'
+			})),
+			...userRecipes.map((recipe: any) => ({ 
+				...recipe, 
+				source: 'community',
+				id: recipe._id?.toString() || recipe.id,
+				// Ensure image field is properly set from different possible sources
+				image: recipe.image || recipe.primaryImageUrl || (recipe.images && recipe.images[0]?.url) || '/placeholder-recipe.svg'
+			}))
+		];
+
+		// Remove duplicates by title
+		const seen = new Set();
+		const uniqueRecipes = allRecipes.filter(recipe => {
+			const key = recipe.title?.toLowerCase();
+			if (key && seen.has(key)) {
+				return false;
+			}
+			if (key) seen.add(key);
+			return true;
+		});
+
+		// Sort by creation date or randomize
+		let sortedRecipes = uniqueRecipes.sort((a, b) => {
+			const dateA = new Date(a.createdAt || 0).getTime();
+			const dateB = new Date(b.createdAt || 0).getTime();
+			return dateB - dateA;
+		});
+
+		if (randomize) {
+			sortedRecipes = sortedRecipes.sort(() => Math.random() - 0.5);
+		}
+
+		// Apply pagination
+		const startIndex = (page - 1) * limit;
+		const paginatedRecipes = sortedRecipes.slice(startIndex, startIndex + limit);
+
+		console.log(`Found ${allRecipes.length} community recipes (${adminRecipes.length} chef, ${userRecipes.length} user)`);
+
+		return {
+			recipes: paginatedRecipes,
+			total: sortedRecipes.length
+		};
+
+	} catch (error) {
+		console.error('Error searching community recipes:', error);
+		return {
+			recipes: [],
+			total: 0
+		};
+	}
 }

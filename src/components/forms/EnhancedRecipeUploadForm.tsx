@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Plus, 
   X, 
@@ -68,6 +69,7 @@ export interface EnhancedRecipeFormData {
   category: string;
   cuisine?: string;
   dietaryTags: string[];
+  allergens: string[];
   customTags: string[];
   
   // Media (Cloudinary URLs)
@@ -92,6 +94,7 @@ interface ValidationRules {
 
 interface EnhancedRecipeUploadFormProps {
   onSubmit: (data: EnhancedRecipeFormData) => Promise<void>;
+  onSuccess?: () => void; // New callback for successful submission
   isLoading?: boolean;
   user: any;
   submitButtonText?: string;
@@ -119,6 +122,11 @@ const DIETARY_TAGS = [
   'Sojafrei', 'Zuckerfrei', 'Low-Carb', 'Keto', 'Paleo', 'Vollkorn'
 ];
 
+const ALLERGEN_OPTIONS = [
+  'Nüsse', 'Erdnüsse', 'Milchprodukte', 'Eier', 'Soja', 
+  'Weizen/Gluten', 'Fisch', 'Meeresfrüchte', 'Sesam', 'Sulfite'
+];
+
 const COMMON_UNITS = [
   'g', 'kg', 'ml', 'l', 'Stück', 'TL', 'EL', 'Tasse', 'Prise', 
   'Zehe', 'Bund', 'Dose', 'Packung', 'nach Geschmack'
@@ -126,13 +134,14 @@ const COMMON_UNITS = [
 
 export function EnhancedRecipeUploadForm({
   onSubmit,
+  onSuccess,
   isLoading = false,
   _user,
   submitButtonText = 'Rezept hochladen',
   validationRules = {}
 }: EnhancedRecipeUploadFormProps) {
-  // Form state
-  const [formData, setFormData] = useState<EnhancedRecipeFormData>({
+  // Initial form state (for reset functionality)
+  const initialFormData: EnhancedRecipeFormData = {
     title: '',
     description: '',
     ingredients: [],
@@ -144,13 +153,17 @@ export function EnhancedRecipeUploadForm({
     category: 'dinner',
     cuisine: '',
     dietaryTags: [],
+    allergens: [],
     customTags: [],
     images: [],
     primaryImageUrl: '',
     source: '',
     isOriginal: true,
     isPublic: false,
-  });
+  };
+
+  // Form state
+  const [formData, setFormData] = useState<EnhancedRecipeFormData>(initialFormData);
 
   // Component states
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
@@ -162,6 +175,16 @@ export function EnhancedRecipeUploadForm({
   });
   const [newTag, setNewTag] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Reset form to initial state
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setUploadedImages([]);
+    setNewIngredient({ name: '', amount: 0, unit: '', notes: '' });
+    setNewInstruction({ instruction: '', time: 0, temperature: 0 });
+    setNewTag('');
+    setErrors({});
+  };
 
   
 
@@ -348,13 +371,17 @@ export function EnhancedRecipeUploadForm({
   };
 
   // Tag management
-  const addTag = (tag: string, type: 'dietary' | 'custom') => {
+  const addTag = (tag: string, type: 'dietary' | 'allergen' | 'custom') => {
     const trimmedTag = tag.trim();
     if (!trimmedTag) return;
     
     if (type === 'dietary') {
       if (!formData.dietaryTags.includes(trimmedTag)) {
         handleFieldChange('dietaryTags', [...formData.dietaryTags, trimmedTag]);
+      }
+    } else if (type === 'allergen') {
+      if (!formData.allergens.includes(trimmedTag)) {
+        handleFieldChange('allergens', [...formData.allergens, trimmedTag]);
       }
     } else {
       if (!formData.customTags.includes(trimmedTag)) {
@@ -365,9 +392,11 @@ export function EnhancedRecipeUploadForm({
     setNewTag('');
   };
 
-  const removeTag = (tag: string, type: 'dietary' | 'custom') => {
+  const removeTag = (tag: string, type: 'dietary' | 'allergen' | 'custom') => {
     if (type === 'dietary') {
       handleFieldChange('dietaryTags', formData.dietaryTags.filter(t => t !== tag));
+    } else if (type === 'allergen') {
+      handleFieldChange('allergens', formData.allergens.filter(t => t !== tag));
     } else {
       handleFieldChange('customTags', formData.customTags.filter(t => t !== tag));
     }
@@ -386,6 +415,12 @@ export function EnhancedRecipeUploadForm({
         ...formData,
         images: uploadedImages
       });
+      
+      // Call onSuccess callback and reset form if provided
+      if (onSuccess) {
+        onSuccess();
+        resetForm();
+      }
     } catch (error) {
       console.error('Form submission error:', error);
     }
@@ -440,6 +475,7 @@ export function EnhancedRecipeUploadForm({
                 id="isOriginal"
                 checked={formData.isOriginal}
                 onCheckedChange={(checked) => handleFieldChange('isOriginal', checked)}
+                className="data-[state=checked]:bg-green-600"
               />
               <Label htmlFor="isOriginal">Das ist mein eigenes Originalrezept</Label>
             </div>
@@ -466,10 +502,11 @@ export function EnhancedRecipeUploadForm({
         
         <ImageUpload
           onUpload={handleImageUpload}
-          uploadType="recipe"
+          uploadType="general"
           maxSize={5}
           multiple={true}
           showPreview={true}
+          allowedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
         />
         
         {/* Image Gallery */}
@@ -630,30 +667,151 @@ export function EnhancedRecipeUploadForm({
 
           {/* Dietary Tags */}
           <div className="space-y-3">
-            <Label>Diätformen & Allergien</Label>
-            <div className="flex flex-wrap gap-2">
-              {DIETARY_TAGS.map(tag => (
-                <Badge
-                  key={tag}
-                  variant={formData.dietaryTags.includes(tag) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => {
-                    if (formData.dietaryTags.includes(tag)) {
-                      removeTag(tag, 'dietary');
-                    } else {
-                      addTag(tag, 'dietary');
-                    }
-                  }}
-                >
-                  {tag}
-                </Badge>
+            <Label>Diätformen</Label>
+            <p className="text-sm text-gray-600">Wählen Sie alle Diätformen aus, die auf dieses Rezept zutreffen:</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {DIETARY_TAGS.map((diet) => (
+                <div key={diet} className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    className={cn(
+                      "h-4 w-4 rounded border-2 flex items-center justify-center transition-colors",
+                      formData.dietaryTags.includes(diet)
+                        ? "bg-green-600 border-green-600 text-white"
+                        : "border-gray-300 bg-white"
+                    )}
+                    onClick={() => {
+                      if (formData.dietaryTags.includes(diet)) {
+                        removeTag(diet, 'dietary');
+                      } else {
+                        addTag(diet, 'dietary');
+                      }
+                    }}
+                  >
+                    {formData.dietaryTags.includes(diet) && (
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                  <Label 
+                    className="text-sm cursor-pointer"
+                    onClick={() => {
+                      if (formData.dietaryTags.includes(diet)) {
+                        removeTag(diet, 'dietary');
+                      } else {
+                        addTag(diet, 'dietary');
+                      }
+                    }}
+                  >
+                    {diet}
+                  </Label>
+                </div>
               ))}
             </div>
+            
+            {/* Selected Diets */}
+            {formData.dietaryTags.length > 0 && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <div className="h-5 w-5 bg-green-600 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm text-green-800 font-medium">Diätformen</p>
+                    <p className="text-sm text-green-700">Dieses Rezept ist geeignet für folgende Diätformen:</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.dietaryTags.map((diet) => (
+                        <Badge key={diet} variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800">
+                          {diet}
+                          <X 
+                            className="h-3 w-3 cursor-pointer" 
+                            onClick={() => removeTag(diet, 'dietary')}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Custom Tags */}
+          {/* Allergen Tags */}
           <div className="space-y-3">
-            <Label>Eigene Tags</Label>
+            <Label>Enthält Allergene</Label>
+            <p className="text-sm text-gray-600">Wählen Sie alle Allergene aus, die in diesem Rezept enthalten sind:</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {ALLERGEN_OPTIONS.map((allergen) => (
+                <div key={allergen} className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    className={cn(
+                      "h-4 w-4 rounded border-2 flex items-center justify-center transition-colors",
+                      formData.allergens.includes(allergen)
+                        ? "bg-red-600 border-red-600 text-white"
+                        : "border-gray-300 bg-white"
+                    )}
+                    onClick={() => {
+                      if (formData.allergens.includes(allergen)) {
+                        removeTag(allergen, 'allergen');
+                      } else {
+                        addTag(allergen, 'allergen');
+                      }
+                    }}
+                  >
+                    {formData.allergens.includes(allergen) && (
+                      <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                  <Label 
+                    className="text-sm cursor-pointer"
+                    onClick={() => {
+                      if (formData.allergens.includes(allergen)) {
+                        removeTag(allergen, 'allergen');
+                      } else {
+                        addTag(allergen, 'allergen');
+                      }
+                    }}
+                  >
+                    {allergen}
+                  </Label>
+                </div>
+              ))}
+            </div>
+
+            {/* Selected Allergens Warning */}
+            {formData.allergens.length > 0 && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm text-red-800 font-medium">Allergen-Warnung</p>
+                    <p className="text-sm text-red-700">Dieses Rezept enthält folgende Allergene:</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.allergens.map((allergen) => (
+                        <Badge key={allergen} variant="destructive" className="flex items-center gap-1">
+                          {allergen}
+                          <X 
+                            className="h-3 w-3 cursor-pointer" 
+                            onClick={() => removeTag(allergen, 'allergen')}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Custom Tags (Optional) */}
+          <div className="space-y-3">
+            <Label>Eigene Tags <span className="text-gray-500 text-sm">(optional)</span></Label>
             <div className="flex gap-2">
               <Input
                 placeholder="Tag hinzufügen (z.B. schnell, gesund)"
@@ -671,6 +829,7 @@ export function EnhancedRecipeUploadForm({
                 type="button" 
                 onClick={() => addTag(newTag, 'custom')}
                 disabled={!newTag.trim()}
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -798,44 +957,15 @@ export function EnhancedRecipeUploadForm({
               rows={3}
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder="Zeit (Min)"
-                  value={newInstruction.time || ''}
-                  onChange={(e) => setNewInstruction(prev => ({ 
-                    ...prev, 
-                    time: parseInt(e.target.value) || 0 
-                  }))}
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Thermometer className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder="Temperatur (°C)"
-                  value={newInstruction.temperature || ''}
-                  onChange={(e) => setNewInstruction(prev => ({ 
-                    ...prev, 
-                    temperature: parseInt(e.target.value) || 0 
-                  }))}
-                />
-              </div>
-              
-              <Button 
-                type="button" 
-                onClick={addInstruction}
-                disabled={!newInstruction.instruction.trim()}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Hinzufügen
-              </Button>
-            </div>
+            <Button 
+              type="button" 
+              onClick={addInstruction}
+              disabled={!newInstruction.instruction.trim()}
+              className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Hinzufügen
+            </Button>
           </div>
 
           {/* Instructions List */}
@@ -847,22 +977,6 @@ export function EnhancedRecipeUploadForm({
                 </span>
                 <div className="flex-1">
                   <p>{instruction.instruction}</p>
-                  {(instruction.time || instruction.temperature) && (
-                    <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                      {instruction.time && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {instruction.time} Min
-                        </span>
-                      )}
-                      {instruction.temperature && (
-                        <span className="flex items-center gap-1">
-                          <Thermometer className="h-3 w-3" />
-                          {instruction.temperature}°C
-                        </span>
-                      )}
-                    </div>
-                  )}
                 </div>
                 <Button 
                   type="button"
@@ -900,6 +1014,7 @@ export function EnhancedRecipeUploadForm({
               id="isPublic"
               checked={formData.isPublic}
               onCheckedChange={(checked) => handleFieldChange('isPublic', checked)}
+              className="data-[state=checked]:bg-green-600"
             />
             <div className="flex-1">
               <Label htmlFor="isPublic" className="text-base font-medium cursor-pointer">
@@ -933,7 +1048,7 @@ export function EnhancedRecipeUploadForm({
             type="submit"
             disabled={isLoading}
             size="lg"
-            className="w-full md:w-auto px-12"
+            className="w-full md:w-auto px-12 bg-green-600 hover:bg-green-700 text-white"
           >
             {isLoading ? (
               <>

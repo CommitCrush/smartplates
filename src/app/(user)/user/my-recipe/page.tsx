@@ -9,7 +9,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { BookOpen, Heart, Upload, Calendar, Plus, Search, Filter, ShoppingCart } from 'lucide-react';
+import { BookOpen, Heart, Upload, Calendar, Plus, Search, Filter, ShoppingCart, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -66,6 +66,7 @@ export default function MyRecipesPage() {
     'shopping-list': []
   });
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const fetchUserRecipes = useCallback(async (userId: string) => {
     try {
@@ -85,6 +86,36 @@ export default function MyRecipesPage() {
       return [];
     }
   }, []);
+
+  const handleDeleteRecipe = async (recipeId: string) => {
+    if (!confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleting(recipeId);
+    try {
+      const response = await fetch('/api/users/recipes', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recipeId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete recipe');
+      }
+
+      // Refresh data after deletion
+      loadUserData();
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const loadUserData = useCallback(async () => {
     if (status !== 'authenticated' || !session?.user?.id) {
@@ -381,12 +412,28 @@ export default function MyRecipesPage() {
                         <span>Added {new Date(recipe.createdAt).toLocaleDateString()}</span>
                       )}
                     </div>
-                    <Link
-                      href={`/recipe/${recipe._id}`}
-                      className="text-primary hover:text-primary/80 text-sm font-medium"
-                    >
-                      View Recipe
-                    </Link>
+                    <div className="flex items-center space-x-2">
+                      <Link
+                        href={`/recipe/${recipe._id}`}
+                        className="text-primary hover:text-primary/80 text-sm font-medium"
+                      >
+                        View Recipe
+                      </Link>
+                      {activeTab === 'uploaded' && (
+                        <button
+                          onClick={() => handleDeleteRecipe(recipe._id)}
+                          disabled={deleting === recipe._id}
+                          className="p-1 text-red-500 hover:text-red-700 disabled:text-gray-400"
+                          aria-label="Delete recipe"
+                        >
+                          {deleting === recipe._id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

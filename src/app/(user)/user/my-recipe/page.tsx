@@ -8,13 +8,13 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { BookOpen, Heart, Upload, Calendar, Plus, Search, Filter, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useFavorites } from '@/hooks/useFavorites';
 
 interface Recipe {
+  _id: string; // Use _id from MongoDB
   id: string;
   title: string;
   description: string;
@@ -31,6 +31,13 @@ interface Recipe {
   notes?: string;
 }
 
+interface Favorite {
+  recipeId: string;
+  recipeTitle: string;
+  recipeImage: string;
+  createdAt: string;
+}
+
 interface ShoppingList {
   id: string;
   name: string;
@@ -41,12 +48,11 @@ interface ShoppingList {
 type TabType = 'uploaded' | 'saved' | 'planned' | 'shopping-list';
 
 export default function MyRecipesPage() {
-  const { data: _session, status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('uploaded');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
-  const { favorites, refetch: fetchFavorites } = useFavorites();
   const [data, setData] = useState<{
     uploaded: Recipe[];
     saved: Recipe[];
@@ -60,77 +66,56 @@ export default function MyRecipesPage() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/');
+  const fetchUserRecipes = useCallback(async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/recipes?userId=${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch recipes');
+      }
+      const data = await response.json();
+      // Map _id to id for consistency
+      return (data.recipes || []).map((recipe: any) => ({ ...recipe, id: recipe._id }));
+    } catch (error) {
+      console.error('Error fetching user recipes:', error);
+      return [];
+    }
+  }, []);
+
+  const loadUserData = useCallback(async () => {
+    if (status !== 'authenticated' || !session?.user?.id) {
+      setLoading(false);
       return;
     }
 
-    if (status === 'authenticated') {
-      loadUserData();
-    }
-  }, [status, router]);
-
-  // Update saved recipes when favorites change
-  useEffect(() => {
-    if (favorites.length > 0) {
-      setData(prevData => ({
-        ...prevData,
-        saved: favorites.map(fav => ({
-          id: fav.recipeId,
-          title: fav.recipeTitle || 'Recipe',
-          description: '',
-          image: fav.recipeImage || '/placeholder-recipe.svg',
-          cookingTime: 30,
-          difficulty: 'medium' as const,
-          category: 'Various',
-          isPublic: true,
-          createdAt: fav.createdAt
-        }))
-      }));
-    } else if (favorites.length === 0 && status === 'authenticated') {
-      // Clear saved recipes if no favorites
-      setData(prevData => ({
-        ...prevData,
-        saved: []
-      }));
-    }
-  }, [favorites, status]);
-
-  const loadUserData = async () => {
     setLoading(true);
     try {
+      // Parallel fetching for better performance
+      const [plannedResponse, userRecipes, favoritesResponse] = await Promise.all([
+        fetch('/api/users/planned-recipes').catch(e => { console.error('Error fetching planned recipes:', e); return null; }),
+        fetchUserRecipes(session.user.id),
+        fetch('/api/favorites').catch(e => { console.error('Error fetching favorites:', e); return null; })
+      ]);
+
       let plannedRecipes: Recipe[] = [];
-      
-      try {
-        const plannedResponse = await fetch('/api/users/planned-recipes');
-        if (plannedResponse.ok) {
-          const plannedData = await plannedResponse.json();
-          const rawPlannedRecipes = plannedData.data || [];
-          
-          const seenIds = new Set();
-          plannedRecipes = rawPlannedRecipes.filter((recipe: Recipe) => {
-            if (seenIds.has(recipe.id)) {
-              console.warn(`Duplicate recipe ID found: ${recipe.id}, skipping duplicate`);
-              return false;
-            }
-            seenIds.add(recipe.id);
-            return true;
-          });
-        }
-      } catch (error) {
-        console.error('Error loading planned recipes:', error);
+      if (plannedResponse && plannedResponse.ok) {
+        const plannedData = await plannedResponse.json();
+        const rawPlannedRecipes = plannedData.data || [];
+        
+        const seenIds = new Set();
+        plannedRecipes = rawPlannedRecipes.filter((recipe: Recipe) => {
+          if (seenIds.has(recipe.id)) {
+            console.warn(`Duplicate recipe ID found: ${recipe.id}, skipping duplicate`);
+            return false;
+          }
+          seenIds.add(recipe.id);
+          return true;
+        });
       }
 
-      // Load favorites
-      await fetchFavorites();
-
-      const mockData = {
-        uploaded: [
-          { id: '1', title: 'My Famous Pasta Carbonara', description: 'A family recipe passed down for generations', image: '/placeholder-recipe.svg', cookingTime: 25, difficulty: 'medium' as const, category: 'Italian', isPublic: true, createdAt: '2024-09-20' },
-          { id: '2', title: 'Homemade Pizza Margherita', description: 'Fresh mozzarella and basil on homemade dough', image: '/placeholder-recipe.svg', cookingTime: 45, difficulty: 'hard' as const, category: 'Italian', isPublic: false, createdAt: '2024-09-18' }
-        ],
-        saved: favorites.map(fav => ({
+      let savedRecipes: Recipe[] = [];
+      if (favoritesResponse && favoritesResponse.ok) {
+        const favoritesData = await favoritesResponse.json();
+        savedRecipes = (favoritesData.favorites || []).map((fav: Favorite) => ({
           id: fav.recipeId,
           title: fav.recipeTitle || 'Recipe',
           description: '',
@@ -140,21 +125,33 @@ export default function MyRecipesPage() {
           category: 'Various',
           isPublic: true,
           createdAt: fav.createdAt
-        })),
+        }));
+      }
+
+      setData({
+        uploaded: userRecipes,
+        saved: savedRecipes,
         planned: plannedRecipes,
         'shopping-list': [
           { id: 'sl1', name: 'Weekly Groceries', recipeCount: 5, createdAt: '2024-09-21' },
           { id: 'sl2', name: 'Dinner Party Prep', recipeCount: 3, createdAt: '2024-09-20' },
         ]
-      };
-      
-      setData(mockData);
+      });
+
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, session, fetchUserRecipes]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/');
+    } else if (status === 'authenticated') {
+      loadUserData();
+    }
+  }, [status, loadUserData, router]);
 
   const filteredItems = data[activeTab].filter(item => {
     if (activeTab === 'shopping-list') {
@@ -380,7 +377,7 @@ export default function MyRecipesPage() {
                       )}
                     </div>
                     <Link
-                      href={`/recipe/${recipe.id}`}
+                      href={`/recipe/${recipe._id}`}
                       className="text-primary hover:text-primary/80 text-sm font-medium"
                     >
                       View Recipe

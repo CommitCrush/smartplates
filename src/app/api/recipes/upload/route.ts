@@ -193,12 +193,12 @@ export async function POST(request: NextRequest) {
 
     console.log('Saving recipe to database');
 
-    // Save to appropriate collection based on user role
-    const isAdmin = session.user.role === 'admin';
-    const targetCollection = isAdmin ? COLLECTIONS.RECIPES : COLLECTIONS.USER_RECIPES;
+    // Save to appropriate collection based on upload type
+    const isUserUpload = recipeData.isUserUpload || false;
+    const targetCollection = isUserUpload ? COLLECTIONS.USER_RECIPES : COLLECTIONS.RECIPES;
     const recipesCollection = await getCollection(targetCollection);
     
-    console.log(`Saving to collection: ${targetCollection} (Admin: ${isAdmin})`);
+    console.log(`Saving to collection: ${targetCollection} (User Upload: ${isUserUpload})`);
     console.log(`Recipe doc preview:`, {
       title: recipeDoc.title,
       authorType: recipeDoc.authorType,

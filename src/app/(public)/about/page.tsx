@@ -109,37 +109,32 @@ export default function AboutPage() {
   const team = [
     {
       name: "Ese Osagie",
-      role: "Backend & Authentication Lead",
       background:
-        "Driven by his family's meal planning challenges, Ese brings backend expertise to SmartPlates to combat food waste through technology. He loves the meal planning algorithm that echoes his grandmother's organized family meals - now enhanced with AI.",
+        "Driven by her family's meal planning challenges, Ese brings backend expertise to SmartPlates to combat food waste through technology. She loves the meal planning algorithm that echoes her grandmother's organized family meals now enhanced with AI.",
       avatar: `/images/about_profile_pics/ese.png`,
     },
     {
       name: "Rozn Rasho",
-      role: "Frontend & Integration Specialist",
       background:
-        "As a busy working mom, Rozn creates intuitive interfaces at SmartPlates to make healthy eating irresistible. Her design expertise shines in the AI fridge feature - like having a personal chef for chaotic weeknights. She hosts legendary dinner parties to test new features.",
-      avatar: "👩‍💻",
+        "As a busy working mom, Rozn creates intuitive interfaces at SmartPlates to make healthy eating irresistible. Her design expertise shines in the AI fridge feature like having a personal chef for chaotic weeknights. She hosts legendary dinner parties to test new features.",
+      avatar: `/images/about_profile_pics/rozn.png`,
     },
     {
       name: "Hana Abrham Tekle",
-      role: "API & Data Integration Expert",
       background:
         "Hana democratizes global cuisines through SmartPlates with her API expertise. She brought the revolutionary fridge photo feature to life and volunteers at community cooking classes, passionate about making world-class cooking accessible to everyone.",
       avatar: `/images/about_profile_pics/hana.png`,
     },
     {
       name: "Balta Garcia",
-      role: "Recipe Management Developer",
       background:
         "Balta struggled with healthy eating on a student budget, inspiring his work on SmartPlates' recipe management and grocery lists. He loves the grocery list feature that saves time and prevents forgetting crucial ingredients.",
-      avatar: "👨‍🔧",
+      avatar: `/images/about_profile_pics/balta.png`,
     },
     {
       name: "Monika Kaur Choudhary",
-      role: "Project Lead & Quality Assurance",
       background:
-        "Monika founded SmartPlates after her own journey from takeout meals to home cooking. As a busy professional and mother, she knew meal planning challenges firsthand. Her leadership ensures every feature serves real user needs. She believes technology should enhance experiences, not complicate them.",
+        "Monika's journey from takeout meals to home cooking inspired her work at SmartPlates. As a busy professional and mother, she understands meal planning challenges deeply. She focuses on creating features that truly serve user needs and believes technology should enhance life experiences.",
       avatar: `/images/about_profile_pics/monika.png`,
     },
   ];
@@ -161,7 +156,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section - SmartPlates Style with Better Contrast */}
-      <section className="pt-20 sm:pt-32 md:pt-40 lg:pt-52 pb-10 sm:pb-12 md:pb-16 lg:pb-20 min-h-[80vh] bg-background flex items-center">
+      <section className="pt-16 sm:pt-24 md:pt-32 lg:pt-40 pb-8 sm:pb-10 md:pb-12 lg:pb-16 min-h-[60vh] bg-background flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full">
           <div className="mb-6 sm:mb-8">
             <Badge
@@ -413,10 +408,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-3 sm:mb-4 leading-tight">
-              Meet Our{" "}
-              <span className="bg-gradient-to-r from-primary-600 to-coral-600 bg-clip-text text-transparent">
-                Team
-              </span>
+              Meet Our Team
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-foreground-muted max-w-3xl mx-auto leading-relaxed">
               We&apos;re a passionate team of food enthusiasts, technologists,
@@ -425,7 +417,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
             {team.map((member, index) => (
               <Card
                 key={index}
@@ -446,34 +438,27 @@ export default function AboutPage() {
                   {member.avatar.startsWith("/") ? (
                     <Image
                       src={member.avatar}
-                      alt={`${member.name} - ${member.role}`}
+                      alt={`${member.name}`}
                       width={80}
                       height={80}
-                      className="rounded-full object-cover mx-auto mb-4 group-hover:scale-110 transition-transform duration-300"
+                      className="rounded-full object-cover mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 w-20 h-20"
                       priority={false}
                     />
                   ) : (
-                    <div className="text-4xl sm:text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <div className="text-4xl sm:text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">
                       {member.avatar}
                     </div>
-                  )
-                  }
-                  {/* <div className="text-4xl sm:text-5xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                    {member.avatar}
-                  </div> */}
-                  <h3 className="font-semibold text-lg text-foreground mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300">
-                    {member.name}
-                  </h3>
-                  <p
+                  )}
+                  <h3
                     className={cn(
-                      "font-medium mb-3 transition-colors duration-300",
+                      "font-semibold text-lg sm:text-xl mb-4 transition-colors duration-300 text-center",
                       index % 2 === 0
                         ? "text-primary-600 dark:text-primary-400 group-hover:text-primary-700 dark:group-hover:text-primary-300"
                         : "text-coral-600 dark:text-coral-400 group-hover:text-coral-700 dark:group-hover:text-coral-300"
                     )}
                   >
-                    {member.role}
-                  </p>
+                    {member.name}
+                  </h3>
                   <p className="text-foreground-muted text-sm leading-relaxed">
                     {member.background}
                   </p>
@@ -520,10 +505,10 @@ export default function AboutPage() {
                   </div>
 
                   <div
-                    className={cn(
-                      "absolute left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full border-4 border-background transition-all duration-300 group-hover:scale-125 shadow-lg group-hover:shadow-xl",
-                      index % 2 === 0 ? "bg-primary-500" : "bg-coral-500"
-                    )}
+                    // className={cn(
+                    //   "absolute left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full border-4 border-background transition-all duration-300 group-hover:scale-125 shadow-lg group-hover:shadow-xl",
+                    //   index % 2 === 0 ? "bg-primary-500" : "bg-coral-500"
+                    // )}
                   ></div>
 
                   <div className="flex-1 ml-6 sm:ml-8">

@@ -52,9 +52,21 @@ export async function DELETE(request: NextRequest) {
 
     const userRecipesCollection = await getCollection(COLLECTIONS.USER_RECIPES);
 
+    // --- Start of Debugging ---
+    console.log('--- DELETE RECIPE DEBUG ---');
+    console.log('Session User ID:', session.user.id);
+    console.log('Recipe ID from request:', recipeId);
+
+    const recipeToDelete = await userRecipesCollection.findOne({ _id: toObjectId(recipeId) });
+    console.log('Recipe found in DB:', recipeToDelete);
+    // --- End of Debugging ---
+
     const result = await userRecipesCollection.deleteOne({
       _id: toObjectId(recipeId),
-      authorId: toObjectId(session.user.id), // Ensure user can only delete their own recipes
+      $or: [
+        { authorId: toObjectId(session.user.id) },
+        { authorId: session.user.id },
+      ],
     });
 
     if (result.deletedCount === 0) {

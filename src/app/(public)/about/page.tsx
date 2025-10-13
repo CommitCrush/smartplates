@@ -111,35 +111,35 @@ export default function AboutPage() {
       name: "Ese Osagie",
       role: "Backend & Authentication Lead",
       background:
-        "Built the project setup, authentication system, and meal planning core. Focused on backend logic, user management, and functionality testing.",
+        "Driven by his family's meal planning challenges, Ese brings backend expertise to SmartPlates to combat food waste through technology. He loves the meal planning algorithm that echoes his grandmother's organized family meals - now enhanced with AI.",
       avatar: `/images/about_profile_pics/ese.png`,
     },
     {
       name: "Rozn Rasho",
       role: "Frontend & Integration Specialist",
       background:
-        "Developed the UI foundation, integrated systems, and set up MongoDB to store Spoonacular recipes for faster data access. Focus on UI and frontend integration.",
+        "As a busy working mom, Rozn creates intuitive interfaces at SmartPlates to make healthy eating irresistible. Her design expertise shines in the AI fridge feature - like having a personal chef for chaotic weeknights. She hosts legendary dinner parties to test new features.",
       avatar: "👩‍💻",
     },
     {
       name: "Hana Abrham Tekle",
       role: "API & Data Integration Expert",
       background:
-        "Implemented the admin dashboard, search & filter features, and Spoonacular API. Created the AI Fridge feature that suggests recipes based on fridge photos.",
+        "Hana democratizes global cuisines through SmartPlates with her API expertise. She brought the revolutionary fridge photo feature to life and volunteers at community cooking classes, passionate about making world-class cooking accessible to everyone.",
       avatar: `/images/about_profile_pics/hana.png`,
     },
     {
       name: "Balta Garcia",
       role: "Recipe Management Developer",
       background:
-        "Handled recipe management and implemented the grocery list integration for automatic shopping lists from saved recipes.",
+        "Balta struggled with healthy eating on a student budget, inspiring his work on SmartPlates' recipe management and grocery lists. He loves the grocery list feature that saves time and prevents forgetting crucial ingredients.",
       avatar: "👨‍🔧",
     },
     {
       name: "Monika Kaur Choudhary",
       role: "Project Lead & Quality Assurance",
       background:
-        "Led the team and managed UI updates, design system rollout, and quality assurance. Ensured consistency and a smooth user experience across the app.",
+        "Monika founded SmartPlates after her own journey from takeout meals to home cooking. As a busy professional and mother, she knew meal planning challenges firsthand. Her leadership ensures every feature serves real user needs. She believes technology should enhance experiences, not complicate them.",
       avatar: `/images/about_profile_pics/monika.png`,
     },
   ];

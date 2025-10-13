@@ -20,6 +20,7 @@ interface RecipeDetailProps {
   recipe: Recipe;
 }
 
+
 export function RecipeDetail({ recipe }: RecipeDetailProps) {
   const recipeContentRef = useRef<HTMLDivElement>(null);
   const [currentServings, setCurrentServings] = useState(recipe.servings || 1);

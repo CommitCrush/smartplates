@@ -12,6 +12,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { BookOpen, Heart, Upload, Calendar, Plus, Search, Filter, ShoppingCart, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 
 interface Recipe {
   _id: string; // Use _id from MongoDB
@@ -76,10 +77,10 @@ export default function MyRecipesPage() {
       }
       const data = await response.json();
       // Map _id to id for consistency
-      return (data.recipes || []).map((recipe: any) => ({
+      return (data.recipes || []).map((recipe: Recipe) => ({
         ...recipe,
         id: recipe._id,
-        image: recipe.primaryImageUrl || (recipe.images && recipe.images.length > 0 ? recipe.images[0].url : '/placeholder-recipe.svg')
+        image: recipe.primaryImageUrl || recipe.image || '/placeholder-recipe.svg'
       }));
     } catch (error) {
       console.error('Error fetching user recipes:', error);
@@ -88,10 +89,6 @@ export default function MyRecipesPage() {
   }, []);
 
   const handleDeleteRecipe = async (recipeId: string) => {
-    if (!confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
-      return;
-    }
-
     setDeleting(recipeId);
     try {
       const response = await fetch('/api/users/recipes', {
@@ -107,14 +104,52 @@ export default function MyRecipesPage() {
         throw new Error(errorData.error || 'Failed to delete recipe');
       }
 
+      toast.success('Recipe deleted successfully!');
       // Refresh data after deletion
       loadUserData();
     } catch (error) {
       console.error('Error deleting recipe:', error);
-      alert(`Error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast.error(`Error: ${errorMessage}`);
     } finally {
       setDeleting(null);
     }
+  };
+
+  const showDeleteConfirmation = (recipeId: string) => {
+    toast(
+      (t) => (
+        <div className="bg-white p-4 rounded-lg shadow-lg flex flex-col gap-4">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">Confirm Deletion</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Are you sure you want to delete this recipe? This action cannot be undone.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                handleDeleteRecipe(recipeId);
+              }}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 6000, // Persist until user action
+        position: 'top-center',
+      }
+    );
   };
 
   const loadUserData = useCallback(async () => {
@@ -421,7 +456,7 @@ export default function MyRecipesPage() {
                       </Link>
                       {activeTab === 'uploaded' && (
                         <button
-                          onClick={() => handleDeleteRecipe(recipe._id)}
+                          onClick={() => showDeleteConfirmation(recipe._id)}
                           disabled={deleting === recipe._id}
                           className="p-1 text-red-500 hover:text-red-700 disabled:text-gray-400"
                           aria-label="Delete recipe"

@@ -158,7 +158,7 @@ export default function HomePage() {
       </section>
 
       {/* Recipe Showcase Section - Mobile-First Responsive */}
-      <section 
+      {/* <section 
         className="py-12 sm:py-16 md:py-20 lg:py-24 bg-background-secondary"
         aria-label="Featured recipes"
       >
@@ -170,12 +170,12 @@ export default function HomePage() {
             <p className="text-base sm:text-lg md:text-xl text-foreground-muted max-w-full sm:max-w-2xl mx-auto leading-relaxed px-4 sm:px-0">
               Discover delicious recipes that will transform your cooking experience.
             </p>
-          </div>
+          </div> */}
           
           {/* Mobile: 1 col, Tablet: 2 cols, Desktop: 3 cols */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12" role="list">
+          {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12" role="list"> */}
             {/* Recipe Card 1 */}
-            <div 
+            {/* <div 
               className="bg-card rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-border overflow-hidden"
               role="listitem"
             >
@@ -199,10 +199,10 @@ export default function HomePage() {
                   <span className="text-xs sm:text-sm font-medium text-primary-600">Healthy</span>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Recipe Card 2 */}
-            <div 
+            {/* <div 
               className="bg-card rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-border overflow-hidden"
               role="listitem"
             >
@@ -226,10 +226,10 @@ export default function HomePage() {
                   <span className="text-xs sm:text-sm font-medium text-coral-600">Comfort Food</span>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Recipe Card 3 */}
-            <div 
+            {/* <div 
               className="bg-card rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-border overflow-hidden"
               role="listitem"
             >
@@ -285,7 +285,7 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* CTA Section - Mobile-First Responsive */}
       <section className="py-12 sm:py-16 md:py-20 lg:py-24 ">

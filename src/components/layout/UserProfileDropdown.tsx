@@ -109,12 +109,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
       href: '/user/',
       description: 'Upload your recipes'
     },
-    {
-      icon: ShoppingCart,
-      label: 'Shopping List',
-      href: user?.name ? `/user/${encodeURIComponent(slugify(user.name))}/user/shopping_list` : '/user/shopping_list',
-      description: 'Your meal planning'
-    },
+   
     {
       icon: ShoppingCart,
       label: 'Shopping List',

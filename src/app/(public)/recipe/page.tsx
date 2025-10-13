@@ -35,18 +35,18 @@ export default function RecipePage() {
     if (hasSearchQuery) {
       // Search-Modus: alle Rezepte ungefiltert holen für präzise client-side Filterung
       return {
-        number: '200', // Mehr Rezepte für bessere Search-Ergebnisse
+        number: '500', // Erhöht für alle Rezepte
         randomize: 'false',
         // KEINE API-Filter bei Search - nur client-side filtering
       };
     } else {
-      // Dropdown-Filter-Modus: normale API-basierte Paginierung
+      // Dropdown-Filter-Modus: alle Rezepte laden für client-side Pagination
       const options: Record<string, string> = {
         type: selectedCategory,
         diet: selectedDiet,
         intolerances: selectedAllergy,
-        number: isAuthenticated ? '30' : '15',
-        page: String(page),
+        number: '500', // Lade alle Rezepte für client-side Pagination
+        page: '1', // Immer erste Seite da wir client-side paginieren
       };
 
       if (selectedDifficulty === 'easy') {
@@ -55,13 +55,12 @@ export default function RecipePage() {
         options.maxReadyTime = '34';  // Updated: Medium bis 34 Min
       }
 
-      if (!isAuthenticated || page === 1) {
-        options.randomize = 'true';
-      }
+      // Randomize nur beim ersten Laden
+      options.randomize = 'true';
 
       return options;
     }
-  }, [selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, page, isAuthenticated, hasSearchQuery]);
+  }, [selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, isAuthenticated, hasSearchQuery]); // Entfernt page dependency
 
   const { recipes: rawRecipes, error, loading, hasMore, total } = useAllRecipes('', apiOptions);
 
@@ -140,24 +139,39 @@ export default function RecipePage() {
   }, [rawRecipes, hasSearchQuery, searchQuery, selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, communityOnly]);
 
   // Client-side Pagination (only for Search results)
-  const RECIPES_PER_PAGE = 30; // 3 columns × 10 rows
+  const RECIPES_PER_PAGE = isAuthenticated ? 30 : 15; // Authenticated: 3×10, Viewer: 3×5
   const totalFilteredPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
   
+  // Debug pagination
+  console.log('Pagination Debug:', {
+    totalRecipes: allFilteredRecipes.length,
+    recipesPerPage: RECIPES_PER_PAGE,
+    currentPage: page,
+    totalPages: totalFilteredPages,
+    isAuthenticated
+  });
+  
   const displayedRecipes = useMemo(() => {
-    if (!hasSearchQuery) {
-      // Dropdown-Filter: use API-paginated recipes
-      return allFilteredRecipes;
-    }
-
-    // Search-Mode: client-side Pagination
+    // Always apply client-side pagination
     const startIndex = (page - 1) * RECIPES_PER_PAGE;
-    return allFilteredRecipes.slice(startIndex, startIndex + RECIPES_PER_PAGE);
-  }, [allFilteredRecipes, page, hasSearchQuery]);
+    const endIndex = startIndex + RECIPES_PER_PAGE;
+    const sliced = allFilteredRecipes.slice(startIndex, endIndex);
+    
+    console.log('Display Debug:', {
+      startIndex,
+      endIndex,
+      slicedLength: sliced.length,
+      page,
+      recipesPerPage: RECIPES_PER_PAGE
+    });
+    
+    return sliced;
+  }, [allFilteredRecipes, page, RECIPES_PER_PAGE]); // Always paginate
 
   // Reset page when any filter changes
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, selectedCategory, selectedDifficulty, selectedDiet, selectedAllergy]);
+  }, [searchQuery, selectedCategory, selectedDifficulty, selectedDiet, selectedAllergy, isAuthenticated]); // Added isAuthenticated
 
   // Auto-scroll to top when page changes OR when filters change
   useEffect(() => {
@@ -274,51 +288,28 @@ export default function RecipePage() {
         {/* Recipe Grid */}
         {!loading && !error && (
           <>
+            {/* Debug Info */}
+            <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-sm">
+              Debug: Seite {page} von {totalFilteredPages} | 
+              Zeige {displayedRecipes.length} von {allFilteredRecipes.length} Rezepten |
+              Pro Seite: {RECIPES_PER_PAGE}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedRecipes.map((recipe: Recipe) => (
                 <RecipeCard key={generateUniqueKey(recipe)} recipe={recipe} />
               ))}
             </div>
             
-            {/* Pagination Logic basierend auf Modus */}
-            {hasSearchQuery ? (
-              // Search-Modus: Client-side Pagination
-              allFilteredRecipes.length > RECIPES_PER_PAGE && (
-                <div className="flex justify-center mt-8">
-                  <Pagination
-                    currentPage={page}
-                    totalPages={totalFilteredPages}
-                    onPageChange={setPage}
-                  />
-                </div>
-              )
-            ) : (
-              // Dropdown-Filter-Modus: API-basierte Pagination
-              <>
-                {isAuthenticated && rawRecipes.length > 0 && (
-                  <div className="flex justify-center mt-8">
-                    <Pagination
-                      currentPage={page}
-                      totalPages={Math.ceil((total || rawRecipes.length) / 30)}
-                      onPageChange={setPage}
-                    />
-                  </div>
-                )}
-                
-                {!isAuthenticated && hasMore && rawRecipes.length >= 15 && (
-                  <div className="flex justify-center mt-8">
-                    <Button
-                      onClick={() => {
-                        router.push('/register');
-                      }}
-                      variant="outline"
-                      size="lg"
-                    >
-                      Register for More Recipes
-                    </Button>
-                  </div>
-                )}
-              </>
+            {/* Unified Pagination - always client-side */}
+            {allFilteredRecipes.length > RECIPES_PER_PAGE && (
+              <div className="flex justify-center mt-8">
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalFilteredPages}
+                  onPageChange={setPage}
+                />
+              </div>
             )}
           </>
         )}

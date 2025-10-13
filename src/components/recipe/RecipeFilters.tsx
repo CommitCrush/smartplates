@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, Users } from 'lucide-react';
 
 interface RecipeFiltersProps {
   searchQuery: string;
@@ -132,13 +132,17 @@ export function RecipeFilters({
             setCommunityOnly(!communityOnly);
             onFilterChange();
           }}
-          className={`px-6 py-2 rounded-md font-medium transition-colors whitespace-nowrap ${
-            communityOnly
-              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-          }`}
+          className="px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
-          {communityOnly ? '✓ Community (Chef + User)' : 'Community Recipes'}
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-green-600" />
+            <span className="text-sm">
+              {communityOnly ? 'Community (Chef + User)' : 'Community Recipes'}
+            </span>
+          </div>
+          {communityOnly && (
+            <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+          )}
         </button>
       </div>
 

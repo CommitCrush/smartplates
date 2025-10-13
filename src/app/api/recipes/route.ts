@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       maxReadyTime: searchParams.get('maxReadyTime') ? parseInt(searchParams.get('maxReadyTime') as string, 10) : undefined,
     } as const;
   const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = parseInt(searchParams.get('limit') || searchParams.get('number') || '30', 10);
+  const limit = parseInt(searchParams.get('limit') || searchParams.get('number') || '200', 10); // Erhöht auf 200 um alle Spoonacular-Rezepte zu zeigen
   const authorId = searchParams.get('authorId') || undefined;
   const createdBy = searchParams.get('createdBy') || undefined;
   const randomize = searchParams.get('randomize') === 'true';

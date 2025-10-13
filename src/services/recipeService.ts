@@ -38,7 +38,7 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 	}
 
 	const page = Math.max(1, pagination.page || 1);
-	const limit = Math.min(100, Math.max(1, pagination.limit || 30));
+	const limit = Math.min(500, Math.max(1, pagination.limit || 200)); // Erhöht für alle Spoonacular-Rezepte
 
 	// Search both Spoonacular and Community recipes in parallel
 	const [spoonacularResult, communityResult] = await Promise.all([
@@ -89,7 +89,7 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 // Original spoonacular-only search function
 async function searchSpoonacularRecipesOnly(filters: SearchFilters = {}, pagination: Pagination = {}, randomize: boolean = false) {
 	const page = Math.max(1, pagination.page || 1);
-	const limit = Math.min(100, Math.max(1, pagination.limit || 30));
+	const limit = Math.min(500, Math.max(1, pagination.limit || 200)); // Erhöht für alle Spoonacular-Rezepte
 	const col = await getCollection<Recipe>(COLLECTION_NAME);
 
 	const query: Filter<Recipe> = {
@@ -402,7 +402,7 @@ export async function saveRecipeToDb(recipe: Recipe, userId: string) {
  */
 export async function searchCommunityRecipes(filters: SearchFilters = {}, pagination: Pagination = {}, randomize: boolean = false) {
 	const page = Math.max(1, pagination.page || 1);
-	const limit = Math.min(100, Math.max(1, pagination.limit || 30));
+	const limit = Math.min(500, Math.max(1, pagination.limit || 200)); // Erhöht für alle Community-Rezepte
 	
 	try {
 		// Clean the query from community: prefix

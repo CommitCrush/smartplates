@@ -20,6 +20,7 @@ export default function RecipePage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
   const [selectedDiet, setSelectedDiet] = useState('');
   const [selectedAllergy, setSelectedAllergy] = useState('');
+  const [communityOnly, setCommunityOnly] = useState(false);
   const [page, setPage] = useState(1);
 
   // Auth and routing
@@ -126,9 +127,17 @@ export default function RecipePage() {
       console.log(`After Difficulty "${selectedDifficulty}":`, filtered.length);
     }
 
+    // 6. Community Filter (always client-side) - includes both admin (chef) and user-created recipes
+    if (communityOnly) {
+      filtered = filtered.filter(recipe => 
+        recipe.source === 'community' || recipe.source === 'chef'
+      );
+      console.log(`After Community filter (chef + user recipes):`, filtered.length);
+    }
+
     console.log('🎯 Final filtered results:', filtered.length);
     return filtered;
-  }, [rawRecipes, hasSearchQuery, searchQuery, selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty]);
+  }, [rawRecipes, hasSearchQuery, searchQuery, selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, communityOnly]);
 
   // Client-side Pagination (only for Search results)
   const RECIPES_PER_PAGE = 30; // 3 columns × 10 rows
@@ -172,6 +181,7 @@ export default function RecipePage() {
     setSelectedDifficulty('');
     setSelectedDiet('');
     setSelectedAllergy('');
+    setCommunityOnly(false);
     setPage(1);
   };
 
@@ -212,6 +222,8 @@ export default function RecipePage() {
           setSelectedDiet={setSelectedDiet}
           selectedAllergy={selectedAllergy}
           setSelectedAllergy={setSelectedAllergy}
+          communityOnly={communityOnly}
+          setCommunityOnly={setCommunityOnly}
           onFilterChange={handleFilterChange}
         />
 
@@ -222,11 +234,13 @@ export default function RecipePage() {
           selectedDifficulty={selectedDifficulty}
           selectedDiet={selectedDiet}
           selectedAllergy={selectedAllergy}
+          communityOnly={communityOnly}
           onRemoveSearch={() => setSearchQuery('')}
           onRemoveCategory={() => setSelectedCategory('')}
           onRemoveDifficulty={() => setSelectedDifficulty('')}
           onRemoveDiet={() => setSelectedDiet('')}
           onRemoveAllergy={() => setSelectedAllergy('')}
+          onRemoveCommunity={() => setCommunityOnly(false)}
           onClearAll={clearAllFilters}
         />
 

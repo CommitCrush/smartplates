@@ -39,6 +39,57 @@ export async function searchRecipesMongo(filters: SearchFilters = {}, pagination
 
 	const page = Math.max(1, pagination.page || 1);
 	const limit = Math.min(100, Math.max(1, pagination.limit || 30));
+
+	// Search both Spoonacular and Community recipes in parallel
+	const [spoonacularResult, communityResult] = await Promise.all([
+		searchSpoonacularRecipesOnly(filters, pagination, randomize),
+		searchCommunityRecipes(filters, pagination, randomize)
+	]);
+
+	// Combine results
+	const combinedRecipes: (Recipe & { source: string })[] = [
+		...spoonacularResult.recipes.map((recipe: any) => ({ ...recipe, source: recipe.source || 'spoonacular' })),
+		...communityResult.recipes // Keep original source values ('chef' and 'community') from searchCommunityRecipes
+	];
+
+	// Remove duplicates by title
+	const seen = new Set();
+	const uniqueRecipes = combinedRecipes.filter((recipe: Recipe & { source: string }) => {
+		const key = recipe.title?.toLowerCase();
+		if (key && seen.has(key)) {
+			return false;
+		}
+		if (key) seen.add(key);
+		return true;
+	});
+
+	// Sort by creation date or randomize
+	let sortedRecipes = uniqueRecipes.sort((a: Recipe & { source: string }, b: Recipe & { source: string }) => {
+		const dateA = new Date(a.createdAt || 0).getTime();
+		const dateB = new Date(b.createdAt || 0).getTime();
+		return dateB - dateA;
+	});
+
+	if (randomize) {
+		sortedRecipes = sortedRecipes.sort(() => Math.random() - 0.5);
+	}
+
+	// Apply pagination
+	const startIndex = (page - 1) * limit;
+	const paginatedRecipes = sortedRecipes.slice(startIndex, startIndex + limit);
+
+	console.log(`🔍 Combined search: ${spoonacularResult.recipes.length} Spoonacular + ${communityResult.recipes.length} Community = ${paginatedRecipes.length} total recipes`);
+
+	return {
+		recipes: paginatedRecipes,
+		total: sortedRecipes.length
+	};
+}
+
+// Original spoonacular-only search function
+async function searchSpoonacularRecipesOnly(filters: SearchFilters = {}, pagination: Pagination = {}, randomize: boolean = false) {
+	const page = Math.max(1, pagination.page || 1);
+	const limit = Math.min(100, Math.max(1, pagination.limit || 30));
 	const col = await getCollection<Recipe>(COLLECTION_NAME);
 
 	const query: Filter<Recipe> = {

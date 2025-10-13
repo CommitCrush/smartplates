@@ -25,6 +25,7 @@ export interface Recipe {
   spoonacularId?: number;            // Spoonacular's unique ID
   title: string;                     // Recipe name
   description: string;               // Short description of the recipe
+  source?: string;                   // Recipe source: 'spoonacular', 'community', 'chef', etc.
   
   // Recipe details
   summary: string;

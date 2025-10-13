@@ -14,6 +14,8 @@ interface RecipeFiltersProps {
   setSelectedDiet: (diet: string) => void;
   selectedAllergy: string;
   setSelectedAllergy: (allergy: string) => void;
+  communityOnly: boolean;
+  setCommunityOnly: (communityOnly: boolean) => void;
   onFilterChange: () => void;
 }
 
@@ -28,6 +30,8 @@ export function RecipeFilters({
   setSelectedDiet,
   selectedAllergy,
   setSelectedAllergy,
+  communityOnly,
+  setCommunityOnly,
   onFilterChange
 }: RecipeFiltersProps) {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
@@ -106,9 +110,10 @@ export function RecipeFilters({
 
   return (
     <div className="bg-background-card border border-border rounded-lg p-6 mb-8 sticky top-16 z-30 shadow-lg">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Search */}
-        <div className="md:col-span-2">
+      {/* Top Row: Search + Community Button */}
+      <div className="flex gap-4 mb-6">
+        {/* Search Bar */}
+        <div className="flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -121,6 +126,24 @@ export function RecipeFilters({
           </div>
         </div>
 
+        {/* Community Button */}
+        <button
+          onClick={() => {
+            setCommunityOnly(!communityOnly);
+            onFilterChange();
+          }}
+          className={`px-6 py-2 rounded-md font-medium transition-colors whitespace-nowrap ${
+            communityOnly
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+          }`}
+        >
+          {communityOnly ? '✓ Community (Chef + User)' : 'Community Recipes'}
+        </button>
+      </div>
+
+      {/* Bottom Row: All Filter Dropdowns in one row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Category Filter */}
         <div ref={categoryDropdownRef} className="relative">
           <button
@@ -221,6 +244,7 @@ export function RecipeFilters({
                   key={difficulty.value}
                   onClick={() => {
                     setSelectedDifficulty(difficulty.value);
+                    onFilterChange();
                     setDifficultyDropdownOpen(false);
                   }}
                   className="w-full px-3 py-2 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 first:rounded-t-md last:rounded-b-md"

@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCollection, toObjectId } from '@/lib/db';
 import { COLLECTIONS } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -31,5 +33,37 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Failed to fetch user recipes:', error);
     return NextResponse.json({ error: 'An error occurred while fetching recipes.' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
+  try {
+    const { recipeId } = await request.json();
+
+    if (!recipeId) {
+      return NextResponse.json({ error: 'Recipe ID is required' }, { status: 400 });
+    }
+
+    const userRecipesCollection = await getCollection(COLLECTIONS.USER_RECIPES);
+
+    const result = await userRecipesCollection.deleteOne({
+      _id: toObjectId(recipeId),
+      authorId: toObjectId(session.user.id), // Ensure user can only delete their own recipes
+    });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: 'Recipe not found or user not authorized to delete it.' }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: 'Recipe deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error('Failed to delete recipe:', error);
+    return NextResponse.json({ error: 'An error occurred while deleting the recipe.' }, { status: 500 });
   }
 }

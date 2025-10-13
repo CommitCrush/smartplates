@@ -23,28 +23,29 @@ import {
   User
 } from 'lucide-react';
 import { Recipe } from '@/types/recipe';
+import { 
+  CommunityRecipeDetailProps, 
+  CommunityRecipe 
+} from '@/types/components';
 import { cn } from '@/lib/utils';
-
-interface CommunityRecipeDetailProps {
-  recipe: Recipe;
-}
 
 export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
   const router = useRouter();
+  const communityRecipe = recipe as CommunityRecipe;
 
-  const handleShare = async () => {
+  const handleShare = async (): Promise<void> => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: recipe.title,
-          text: recipe.description,
+          title: communityRecipe.title,
+          text: communityRecipe.description,
           url: window.location.href,
         });
-      } catch (error) {
+      } catch (error: unknown) {
         console.log('Error sharing:', error);
       }
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(window.location.href);
     }
   };
 
@@ -84,14 +85,14 @@ export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recipe Image */}
             <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-              {recipe.image && recipe.image !== '/placeholder-recipe.svg' ? (
+              {communityRecipe.image && communityRecipe.image !== '/placeholder-recipe.svg' ? (
                 <Image
-                  src={recipe.image}
-                  alt={recipe.title}
+                  src={communityRecipe.image}
+                  alt={communityRecipe.title}
                   fill
                   className="object-cover"
                   priority
-                  onError={(e) => {
+                  onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                     const target = e.target as HTMLImageElement;
                     target.src = '/placeholder-recipe.svg';
                   }}
@@ -109,53 +110,53 @@ export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
             {/* Recipe Info */}
             <div className="space-y-4">
               <div>
-                <h1 className="text-3xl font-bold mb-2">{recipe.title}</h1>
-                {recipe.description && (
-                  <p className="text-muted-foreground text-lg">{recipe.description}</p>
+                <h1 className="text-3xl font-bold mb-2">{communityRecipe.title}</h1>
+                {communityRecipe.description && (
+                  <p className="text-muted-foreground text-lg">{communityRecipe.description}</p>
                 )}
               </div>
               
               {/* Recipe Meta */}
               <div className="grid grid-cols-2 gap-4">
-                {(recipe.prepTime || recipe.cookTime || recipe.readyInMinutes) && (
+                {(communityRecipe.preparationMinutes || communityRecipe.cookingMinutes || communityRecipe.readyInMinutes) && (
                   <div className="flex items-center gap-2">
                     <Clock className="h-5 w-5 text-primary" />
                     <div>
                       <p className="font-medium">Total Time</p>
                       <p className="text-sm text-muted-foreground">
-                        {recipe.readyInMinutes || (recipe.prepTime || 0) + (recipe.cookTime || 0)} minutes
+                        {communityRecipe.readyInMinutes || ((communityRecipe.preparationMinutes || 0) + (communityRecipe.cookingMinutes || 0))} minutes
                       </p>
                     </div>
                   </div>
                 )}
                 
-                {recipe.servings && (
+                {communityRecipe.servings && (
                   <div className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />
                     <div>
                       <p className="font-medium">Servings</p>
-                      <p className="text-sm text-muted-foreground">{recipe.servings}</p>
+                      <p className="text-sm text-muted-foreground">{communityRecipe.servings}</p>
                     </div>
                   </div>
                 )}
                 
-                {recipe.difficulty && (
+                {communityRecipe.difficulty && (
                   <div className="flex items-center gap-2">
                     <ChefHat className="h-5 w-5 text-primary" />
                     <div>
                       <p className="font-medium">Difficulty</p>
-                      <p className="text-sm text-muted-foreground capitalize">{recipe.difficulty}</p>
+                      <p className="text-sm text-muted-foreground capitalize">{communityRecipe.difficulty}</p>
                     </div>
                   </div>
                 )}
                 
-                {(recipe.authorName || recipe.author) && (
+                {(communityRecipe.authorName || communityRecipe.author) && (
                   <div className="flex items-center gap-2">
                     <User className="h-5 w-5 text-primary" />
                     <div>
                       <p className="font-medium">Created By</p>
                       <p className="text-sm text-muted-foreground">
-                        {recipe.authorName || recipe.author}
+                        {communityRecipe.authorName || communityRecipe.author}
                       </p>
                     </div>
                   </div>
@@ -165,31 +166,31 @@ export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
               {/* Categories and Tags */}
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
-                  {recipe.category && (
+                  {communityRecipe.category && (
                     <Badge variant="secondary" className="capitalize">
-                      {recipe.category}
+                      {communityRecipe.category}
                     </Badge>
                   )}
                   
-                  {recipe.source && (
+                  {communityRecipe.source && (
                     <Badge 
                       variant="outline" 
                       className={cn(
                         "capitalize",
-                        recipe.source === 'admin_upload' && "bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-100",
-                        recipe.source === 'user_upload' && "bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-100"
+                        communityRecipe.source === 'admin_upload' && "bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-100",
+                        communityRecipe.source === 'user_upload' && "bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-100"
                       )}
                     >
-                      {recipe.source === 'admin_upload' ? 'Admin Created' : 
-                       recipe.source === 'user_upload' ? 'User Created' : 
-                       recipe.source?.replace('_', ' ')}
+                      {communityRecipe.source === 'admin_upload' ? 'Admin Created' : 
+                       communityRecipe.source === 'user_upload' ? 'User Created' : 
+                       communityRecipe.source?.replace('_', ' ')}
                     </Badge>
                   )}
                 </div>
                 
-                {recipe.tags && recipe.tags.length > 0 && (
+                {communityRecipe.tags && communityRecipe.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {recipe.tags.map((tag, index) => (
+                    {communityRecipe.tags.map((tag: string, index: number) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {tag}
                       </Badge>
@@ -199,12 +200,12 @@ export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
               </div>
               
               {/* Creation Date */}
-              {recipe.createdAt && (
+              {communityRecipe.createdAt && (
                 <div className="pt-4 border-t">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>
-                      Created: {new Date(recipe.createdAt).toLocaleDateString('de-DE', {
+                      Created: {new Date(communityRecipe.createdAt).toLocaleDateString('de-DE', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
@@ -226,9 +227,9 @@ export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
             <CardTitle>Ingredients</CardTitle>
           </CardHeader>
           <CardContent>
-            {recipe.ingredients && recipe.ingredients.length > 0 ? (
+            {communityRecipe.ingredients && communityRecipe.ingredients.length > 0 ? (
               <ul className="space-y-3">
-                {recipe.ingredients.map((ingredient, index) => (
+                {communityRecipe.ingredients.map((ingredient, index: number) => (
                   <li key={index} className="flex items-start gap-3">
                     <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                     <span className="text-sm leading-relaxed">
@@ -252,9 +253,9 @@ export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
             <CardTitle>Instructions</CardTitle>
           </CardHeader>
           <CardContent>
-            {recipe.instructions && recipe.instructions.length > 0 ? (
+            {communityRecipe.instructions && communityRecipe.instructions.length > 0 ? (
               <ol className="space-y-4">
-                {recipe.instructions.map((instruction, index) => (
+                {communityRecipe.instructions.map((instruction, index: number) => (
                   <li key={index} className="flex gap-3">
                     <span className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
                       {index + 1}
@@ -262,7 +263,7 @@ export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
                     <p className="text-sm leading-relaxed">
                       {typeof instruction === 'string' 
                         ? instruction 
-                        : instruction?.instruction || instruction?.step || ''}
+                        : instruction?.instruction || (instruction as any)?.step || ''}
                     </p>
                   </li>
                 ))}
@@ -275,14 +276,14 @@ export function CommunityRecipeDetail({ recipe }: CommunityRecipeDetailProps) {
       </div>
 
       {/* Nutrition Info (if available) */}
-      {recipe.nutrition && Object.keys(recipe.nutrition).length > 0 && (
+      {communityRecipe.nutrition && Object.keys(communityRecipe.nutrition).length > 0 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Nutrition Information</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(recipe.nutrition).map(([key, value]) => (
+              {Object.entries(communityRecipe.nutrition).map(([key, value]: [string, any]) => (
                 <div key={key} className="text-center">
                   <p className="font-medium capitalize">{key}</p>
                   <p className="text-2xl font-bold text-primary">{value}</p>

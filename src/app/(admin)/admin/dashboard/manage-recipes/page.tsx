@@ -35,10 +35,15 @@ export default function RecipeManagementPage() {
   const [recipesPerPage] = useState(20);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  // Bei Spoonacular-Rezepten direkt zur _id navigieren
   const handleViewRecipe = (recipe: Recipe) => {
-    // Determine the correct recipe ID for the URL
-    const recipeId = recipe.spoonacularId ? `spoonacular-${recipe.spoonacularId}` : recipe._id;
-    router.push(`/recipe/${recipeId}`);
+    if (recipe.source === 'spoonacular_api' || recipe.spoonacularId) {
+      // Wir verwenden die MongoDB _id für alle Rezepte, auch für Spoonacular
+      router.push(`/recipe/${recipe._id}`);
+    } else {
+      // Für normale Rezepte einfach die _id
+      router.push(`/recipe/${recipe._id}`);
+    }
   };
 
   const handleDeleteRecipe = async (recipe: Recipe) => {

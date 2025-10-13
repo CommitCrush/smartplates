@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/authContext";
 import { ThemeProvider } from "@/context/themeContext";
 import { ToastProvider } from "@/components/ui/use-toast";
 import { themeScript } from "@/lib/theme-script";
+import { Toaster } from 'react-hot-toast';
 
 // Import debug tools in development
 if (process.env.NODE_ENV === 'development') {
@@ -45,6 +46,7 @@ export default function RootLayout({
             <AuthProvider>
               <ToastProvider>
                 {children}
+                <Toaster position="top-center" reverseOrder={false} />
               </ToastProvider>
             </AuthProvider>
           </ThemeProvider>

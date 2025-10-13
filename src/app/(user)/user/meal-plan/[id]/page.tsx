@@ -403,7 +403,7 @@ const TodayView: React.FC<TodayViewProps> = ({
                     }}
                   >
                     <Copy className="h-4 w-4 mr-1" />
-                    Paste "{copiedRecipe.recipeName || 'Recipe'}"
+                    Paste &quot;{copiedRecipe.recipeName || 'Recipe'}&quot;
                   </Button>
                 )}
               </div>
@@ -1514,7 +1514,7 @@ export default function MealPlanningPage() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setShowQuickAdd(true)}
+              onClick={() => window.open('/user/my-recipe/new', '_blank')}
               className="flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />

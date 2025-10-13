@@ -30,9 +30,15 @@ export async function connectToDatabase(): Promise<Db> {
     // Return existing connection if available
     if (database && client) {
       console.log('[DB] Using existing MongoDB connection');
-      // Verify connection is still alive
-      await database.admin().ping();
-      return database;
+      try {
+        // Verify connection is still alive
+        await database.admin().ping();
+        console.log('[DB] Connection verified successfully');
+        return database;
+      } catch (error) {
+        console.error('[DB] Existing connection failed, reconnecting:', error);
+        // Continue to reconnect below
+      }
     }
 
     // Validate environment configuration
@@ -112,11 +118,14 @@ export async function getCollection<T extends Document = Document>(collectionNam
  */
 export const COLLECTIONS = {
   USERS: 'users',
+  ADMINS: 'admins',
   RECIPES: 'recipes',
+  USER_RECIPES: 'userRecipes',
   CATEGORIES: 'categories',
   MEAL_PLANS: 'mealplans',
   GROCERY_LISTS: 'grocerylists',
   SAVED_GROCERY_LISTS: 'savedgrocerylists', // Added for saved lists
+  FAVORITES: 'favorites', // Added for favorite recipes
 } as const;
 
 /**

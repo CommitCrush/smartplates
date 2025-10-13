@@ -15,7 +15,6 @@ import {
   ChefHat,
   Users,
   Calendar,
-  Star,
   Shield,
   Activity,
   Camera,
@@ -29,9 +28,6 @@ import {
 
 interface AdminProfileData {
   totalRecipes: number;
-  totalUsers: number;
-  totalMealPlans: number;
-  totalReviews: number;
   lastLogin: string;
   accountCreated: string;
   recentActivity: Array<{
@@ -66,66 +62,51 @@ export default function AdminProfilePage() {
   });
 
   useEffect(() => {
-    fetchProfileData();
-    fetchProfile();
+    if (user?.id) {
+      fetchProfileData();
+      fetchProfile();
+    }
     // Set loading to false after a timeout to prevent infinite loading
     const timer = setTimeout(() => setLoading(false), 10000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [user?.id]);
 
   const fetchProfileData = async () => {
     try {
       // Fetch real admin statistics with error handling
       let totalRecipes = 0;
-      let totalUsers = 0;
-      let totalMealPlans = 0;
-      let totalReviews = 0;
+      let adminRecipes = 0;
+      let userRecipes = 0;
 
       try {
-        const recipesRes = await fetch('/api/admin/recipes');
+        // Debug: Check what's in the database
+        const debugRes = await fetch('/api/admin/debug/recipes');
+        if (debugRes.ok) {
+          const debugData = await debugRes.json();
+          console.log('DEBUG: Database content:', debugData);
+        }
+
+        // Fetch recipes created by this admin user specifically
+        const recipesRes = await fetch('/api/admin/recipes/created');
         if (recipesRes.ok) {
-          const recipes = await recipesRes.json();
-          totalRecipes = recipes.length || 0;
+          const recipesData = await recipesRes.json();
+          totalRecipes = recipesData.total || 0;
+          adminRecipes = recipesData.adminRecipes || 0;
+          userRecipes = recipesData.userRecipes || 0;
+          console.log('Admin recipe stats:', { totalRecipes, adminRecipes, userRecipes });
         }
       } catch (e) {
-        console.warn('Could not fetch recipes:', e);
+        console.warn('Could not fetch admin recipes:', e);
       }
 
-      try {
-        const usersRes = await fetch('/api/admin/users');
-        if (usersRes.ok) {
-          const users = await usersRes.json();
-          totalUsers = users.length || 0;
-        }
-      } catch (e) {
-        console.warn('Could not fetch users:', e);
-      }
-
-      try {
-        const statsRes = await fetch('/api/admin/statistics');
-        if (statsRes.ok) {
-          const stats = await statsRes.json();
-          totalMealPlans = stats.totalMealPlans || 0;
-          totalReviews = stats.totalReviews || 0;
-        }
-      } catch (e) {
-        console.warn('Could not fetch statistics:', e);
-      }
-
-      // Generate more realistic statistics
-      const realisticMealPlans = Math.max(5, Math.min(totalUsers * 2, totalUsers * 3));
-      const realisticReviews = Math.max(10, Math.min(totalRecipes * 3, totalRecipes * 5));
-
+      // Generate realistic statistics based on available data
       const adminData: AdminProfileData = {
-        totalRecipes: Math.max(totalRecipes, 15),
-        totalUsers: Math.max(totalUsers, 25),
-        totalMealPlans: Math.max(totalMealPlans, realisticMealPlans),
-        totalReviews: Math.max(totalReviews, realisticReviews),
+        totalRecipes: totalRecipes,
         lastLogin: new Date().toISOString(),
         accountCreated: new Date().toISOString(),
         recentActivity: [
-          { action: 'Recipes moderated this week', count: Math.max(3, Math.floor(totalRecipes * 0.08)), period: 'week' },
-          { action: 'Users registered this month', count: Math.max(2, Math.floor(totalUsers * 0.03)), period: 'month' },
+          { action: 'Admin recipes created', count: adminRecipes, period: 'total' },
+          { action: 'User recipes created', count: userRecipes, period: 'total' },
           { action: 'System health checks', count: 24, period: 'week' }
         ]
       };
@@ -136,14 +117,10 @@ export default function AdminProfilePage() {
       // Fallback to basic data
       setProfileData({
         totalRecipes: 0,
-        totalUsers: 0,
-        totalMealPlans: 0,
-        totalReviews: 0,
         lastLogin: new Date().toISOString(),
         accountCreated: new Date().toISOString(),
         recentActivity: [
           { action: 'Recipes moderated this week', count: 0, period: 'week' },
-          { action: 'Users registered this month', count: 0, period: 'month' },
           { action: 'System health checks', count: 24, period: 'week' }
         ]
       });
@@ -433,7 +410,7 @@ export default function AdminProfilePage() {
         {/* Statistics and Activity - Right Columns */}
         <div className="lg:col-span-2 space-y-6">
           {/* Statistics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -447,57 +424,6 @@ export default function AdminProfilePage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   Recipes in system
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Users
-                </CardTitle>
-                <Users className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
-                  {profileData?.totalUsers.toLocaleString() || 0}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Registered users
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Meal Plans
-                </CardTitle>
-                <Calendar className="h-4 w-4 text-purple-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-600">
-                  {profileData?.totalMealPlans.toLocaleString() || 0}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Active meal plans
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Reviews
-                </CardTitle>
-                <Star className="h-4 w-4 text-yellow-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">
-                  {profileData?.totalReviews.toLocaleString() || 0}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Total reviews
                 </p>
               </CardContent>
             </Card>
@@ -516,7 +442,7 @@ export default function AdminProfilePage() {
                 <div>
                   <span className="text-sm text-muted-foreground">Member Since:</span>
                   <div className="font-medium">
-                    {profileData?.accountCreated ? new Date(profileData.accountCreated).toLocaleDateString('en-US', {
+                    {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('de-DE', {
                       day: '2-digit',
                       month: 'short',
                       year: 'numeric'
@@ -526,35 +452,24 @@ export default function AdminProfilePage() {
                 <div>
                   <span className="text-sm text-muted-foreground">Last Login:</span>
                   <div className="font-medium">
-                    {profileData?.lastLogin ? new Date(profileData.lastLogin).toLocaleDateString('en-US', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) : 'N/A'}
+                    {(profile?.lastLogin || profileData?.lastLogin) ? 
+                      new Date(profile?.lastLogin || profileData?.lastLogin || new Date()).toLocaleDateString('de-DE', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 
+                      new Date().toLocaleDateString('de-DE', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    }
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5 text-blue-600" />
-                Recent Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {profileData?.recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <span className="text-sm">{activity.action}</span>
-                    <span className="font-medium text-blue-600">{activity.count}</span>
-                  </div>
-                ))}
               </div>
             </CardContent>
           </Card>

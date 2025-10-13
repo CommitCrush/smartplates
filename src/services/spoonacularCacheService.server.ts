@@ -152,8 +152,15 @@ async function searchAndCache<T>(
 // --- Exposed Service Functions ---
 
 export async function getRecipeWithCache(recipeId: string): Promise<{ recipe: Recipe | null; fromCache: boolean }> {
-  const numericId = parseInt(recipeId.replace('spoonacular-', ''));
-  if (isNaN(numericId)) {
+  let numericId;
+  try {
+    // Better handling of ID formats
+    numericId = parseInt(recipeId.replace('spoonacular-', ''));
+    if (isNaN(numericId)) {
+      throw new Error(`Invalid recipe ID format: ${recipeId}`);
+    }
+  } catch (error) {
+    console.error(`Error parsing recipe ID: ${recipeId}`, error);
     throw new Error(`Invalid recipe ID format: ${recipeId}`);
   }
   

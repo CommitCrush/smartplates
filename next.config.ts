@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    domains: [
+      // 'img.spoonacular.com', // REMOVED: Causes 429 errors
+      'images.unsplash.com',
+      // 'spoonacular.com', // REMOVED: Causes 429 errors
+      'res.cloudinary.com',
+      'cloudinary.com'
+    ],
+   
+    
     remotePatterns: [
       {
         protocol: 'https',
@@ -21,12 +30,19 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      {
+      // {
+      //   protocol: 'https',
+      //   hostname: 'res.cloudinary.com',
+      //   port: '',
+      //   pathname: '/**',
+      // },
+        {
         protocol: 'https',
-        hostname: 'res.cloudinary.com',
+        hostname: '*.cloudinary.com',
         port: '',
         pathname: '/**',
       },
+      
       {
         protocol: 'https',
         hostname: 'via.placeholder.com',

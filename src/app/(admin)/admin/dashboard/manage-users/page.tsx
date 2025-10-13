@@ -138,34 +138,15 @@ export default function ManageUsersPage() {
                     <Mail className="w-4 h-4" />
                     <span className="text-sm">{user.email}</span>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Joined:</span>
-                      <span>{formatDate(user.createdAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Activity className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Last Login:</span>
-                      <span>{formatDate(user.lastLoginAt)}</span>
-                    </div>
-                  </div>
                 </div>
               </div>
 
               {/* User Stats & Actions */}
               <div className="flex flex-col lg:flex-row gap-4 lg:items-center">
                 {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="text-center">
-                    <div className="font-semibold text-primary-600">{user.savedRecipes}</div>
-                    <div className="text-muted-foreground">Saved</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-semibold text-coral-600">{user.createdRecipes}</div>
-                    <div className="text-muted-foreground">Created</div>
-                  </div>
+                <div className="text-center text-sm">
+                  <div className="font-semibold text-coral-600">{user.createdRecipes}</div>
+                  <div className="text-muted-foreground">Created</div>
                 </div>
 
                 {/* Actions */}

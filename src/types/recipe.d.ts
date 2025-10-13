@@ -25,6 +25,7 @@ export interface Recipe {
   spoonacularId?: number;            // Spoonacular's unique ID
   title: string;                     // Recipe name
   description: string;               // Short description of the recipe
+  source?: string;                   // Recipe source: 'spoonacular', 'community', 'chef', etc.
   
   // Recipe details
   summary: string;
@@ -34,11 +35,28 @@ export interface Recipe {
   preparationMinutes?: number;
   cookingMinutes?: number;
   servings: number;
-  extendedIngredients: RecipeIngredient[];
-  analyzedInstructions: RecipeInstructionBlock[];
-  cuisines: string[];
-  dishTypes: string[];
-  diets: string[];
+  
+  // Spoonacular format (for API recipes)
+  extendedIngredients?: RecipeIngredient[];
+  analyzedInstructions?: RecipeInstructionBlock[];
+  
+  // Community format (for user/admin created recipes)
+  ingredients?: Array<{
+    id?: string;
+    name: string;
+    amount: number | string;
+    unit?: string;
+    notes?: string;
+  } | string>; // Support both object and string formats
+  instructions?: Array<{
+    id?: string;
+    stepNumber?: number;
+    instruction: string;
+  } | string>; // Support both object and string formats
+  
+  cuisines?: string[];
+  dishTypes?: string[];
+  diets?: string[];
   occasions?: string[];
   nutrition?: RecipeNutrition;
 

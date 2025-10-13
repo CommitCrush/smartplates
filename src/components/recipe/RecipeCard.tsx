@@ -10,11 +10,14 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Clock, ChefHat, Star } from 'lucide-react';
+import { Clock, ChefHat, Star, Heart } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Recipe, RecipeCard as RecipeCardData } from '@/types/recipe';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/context/authContext';
 
 interface RecipeCardProps {
   recipe: RecipeCardData | Recipe;
@@ -29,7 +32,10 @@ export function RecipeCard({
   showAuthor = true,
   priority = false 
 }: RecipeCardProps) {
-  // Helper: Handle Spoonacular images with direct loading (bypassing Next.js Image proxy)
+  const { toggleFavorite, isFavorited } = useFavorites();
+  const { isAuthenticated } = useAuth();
+  
+  // Helper: Handle different image sources properly
   function getRecipeImage(url?: string) {
     if (!url || typeof url !== 'string') {
       return { src: '/placeholder-recipe.svg', useNextImage: true };
@@ -39,6 +45,12 @@ export function RecipeCard({
       return { src: url, useNextImage: false }; // Direct HTML img tag
     }
     
+    // For Cloudinary URLs: use Next.js Image optimization
+    if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
+      return { src: url, useNextImage: true }; // Use Next.js Image for Cloudinary
+    }
+    
+    // For other URLs: use Next.js Image optimization
     if (!/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url)) {
       return { src: '/placeholder-recipe.svg', useNextImage: true };
     }
@@ -46,7 +58,11 @@ export function RecipeCard({
     return { src: url, useNextImage: true };
   }
 
-  const imageConfig = getRecipeImage(recipe.image);
+  const imageConfig = getRecipeImage(
+    recipe.image || 
+    ('primaryImageUrl' in recipe ? recipe.primaryImageUrl : undefined) ||
+    ('images' in recipe && Array.isArray(recipe.images) && recipe.images.length > 0 ? recipe.images[0]?.url : undefined)
+  );
 
   // Calculate total time
   const totalTime = (() => {
@@ -62,11 +78,44 @@ export function RecipeCard({
   const recipeId = (recipe as any)._id || (recipe as any).id;
   const href = `/recipe/${recipeId}`;
 
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isAuthenticated) {
+      toggleFavorite(
+        recipeId, 
+        recipe.title, 
+        recipe.image || '/placeholder-recipe.svg'
+      );
+    }
+  };
+
   return (
     <Card className={cn(
-      "group cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
+      "group cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative",
       className
     )}>
+      {/* Favorite Button - Top Right Corner */}
+      {isAuthenticated && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleFavoriteClick}
+          className={cn(
+            "absolute top-2 right-2 z-10 w-8 h-8 p-0 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all duration-200",
+            isFavorited(recipeId) && "text-red-500 hover:text-red-600"
+          )}
+        >
+          <Heart 
+            className={cn(
+              "w-4 h-4 transition-all duration-200",
+              isFavorited(recipeId) && "fill-current"
+            )} 
+          />
+        </Button>
+      )}
+
       <Link href={href}>
         {/* Recipe Image */}
         <div className="relative aspect-[4/3] overflow-hidden">
@@ -105,6 +154,23 @@ export function RecipeCard({
               <Badge variant="secondary" className="bg-white/90 text-gray-900 backdrop-blur-sm flex items-center gap-1">
                 <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                 {recipe.rating.toFixed(1)}
+              </Badge>
+            </div>
+          )}
+
+          {/* Community Source Badge */}
+          {('source' in recipe) && (recipe.source === 'chef' || recipe.source === 'community') && (
+            <div className="absolute bottom-3 right-3">
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "text-xs backdrop-blur-sm border-white/50",
+                  recipe.source === 'chef' && "bg-blue-500/90 text-white border-blue-500",
+                  recipe.source === 'community' && "bg-green-500/90 text-white border-green-500"
+                )}
+              >
+                {recipe.source === 'chef' && '👨‍🍳 Chef'}
+                {recipe.source === 'community' && '👥 Community'}
               </Badge>
             </div>
           )}

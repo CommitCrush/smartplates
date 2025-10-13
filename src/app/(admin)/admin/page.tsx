@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import AdminStatisticsWidgets from '@/components/admin/AdminStatisticsWidgets';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Users,
   ChefHat,
   Settings,
-  BarChart3,
   UserCog,
-  Package
+  Package,
+  AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -24,10 +24,87 @@ interface ActivityEvent {
 export default function AdminPage() {
   const [recentActivities, setRecentActivities] = useState<ActivityEvent[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
+  const [communityRecipes, setCommunityRecipes] = useState<number>(0);
+  const [communityRecipesLoading, setCommunityRecipesLoading] = useState(true);
+  const [totalRecipes, setTotalRecipes] = useState<number>(0);
+  const [totalRecipesLoading, setTotalRecipesLoading] = useState(true);
+  const [onlineUsers, setOnlineUsers] = useState<number>(0);
+  const [onlineUsersLoading, setOnlineUsersLoading] = useState(true);
 
   useEffect(() => {
     fetchRecentActivities();
+    fetchCommunityRecipes();
+    fetchTotalRecipes();
+    fetchOnlineUsers();
+
+    // Update online users every minute
+    const interval = setInterval(fetchOnlineUsers, 60000);
+    return () => clearInterval(interval);
   }, []);
+
+  const fetchOnlineUsers = async () => {
+    try {
+      setOnlineUsersLoading(true);
+      const response = await fetch('/api/admin/users/online');
+      if (response.ok) {
+        const data = await response.json();
+        setOnlineUsers(data.onlineCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch online users:', error);
+    } finally {
+      setOnlineUsersLoading(false);
+    }
+  };
+
+  const fetchCommunityRecipes = async () => {
+    try {
+      setCommunityRecipesLoading(true);
+      const response = await fetch('/api/admin/recipes');
+      if (response.ok) {
+        const data = await response.json();
+        // Count recipes from admin_upload and user_upload sources
+        const communityCount = data.recipes ? 
+          data.recipes.filter((recipe: any) => 
+            recipe.source === 'admin_upload' || recipe.source === 'user_upload'
+          ).length : 0;
+        setCommunityRecipes(communityCount);
+      }
+    } catch (error) {
+      console.error('Failed to fetch community recipes:', error);
+    } finally {
+      setCommunityRecipesLoading(false);
+    }
+  };
+
+  const fetchTotalRecipes = async () => {
+    try {
+      setTotalRecipesLoading(true);
+      // Fetch ONLY Spoonacular recipes count
+      const response = await fetch('/api/admin/recipes/count?type=spoonacular');
+      if (response.ok) {
+        const data = await response.json();
+        setTotalRecipes(data.spoonacularCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch Spoonacular recipes count:', error);
+      // Fallback: try to get count from existing recipes endpoint
+      try {
+        const response = await fetch('/api/admin/recipes');
+        if (response.ok) {
+          const data = await response.json();
+          // Count only Spoonacular recipes (those with spoonacularId)
+          const spoonacularRecipes = data.recipes ? 
+            data.recipes.filter((recipe: any) => recipe.spoonacularId || recipe.source === 'spoonacular').length : 0;
+          setTotalRecipes(spoonacularRecipes);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
+    } finally {
+      setTotalRecipesLoading(false);
+    }
+  };
 
   const fetchRecentActivities = async () => {
     try {
@@ -45,30 +122,23 @@ export default function AdminPage() {
 
   const quickActions = [
     {
-      title: 'Manage Users',
+      title: 'User Management',
       description: 'Manage and moderate user accounts',
-      href: '/admin/manage-users',
+      href: '/admin/dashboard/manage-users',
       icon: Users,
       color: 'text-blue-600'
     },
     {
       title: 'Manage Recipes',
       description: 'Review and moderate recipes',
-      href: '/admin/manage-recipes',
+      href: '/admin/dashboard/manage-recipes',
       icon: ChefHat,
       color: 'text-green-600'
     },
     {
-      title: 'Analytics',
-      description: 'Detailed system analytics',
-      href: '/admin/statistics',
-      icon: BarChart3,
-      color: 'text-purple-600'
-    },
-    {
       title: 'Cookware Commissions',
       description: 'Manage cookware commissions',
-      href: '/admin/commission-management',
+      href: '/admin/dashboard/manage_cookware_commissions',
       icon: Package,
       color: 'text-orange-600'
     },
@@ -78,13 +148,6 @@ export default function AdminPage() {
       href: '/admin/settings',
       icon: Settings,
       color: 'text-gray-600'
-    },
-    {
-      title: 'Enhanced API Management',
-      description: 'Monitor and optimize Spoonacular API',
-      href: '/admin/api-management',
-      icon: UserCog,
-      color: 'text-indigo-600'
     }
   ];
 
@@ -93,28 +156,118 @@ export default function AdminPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold"> Admin Statistics</h1>
           <p className="text-muted-foreground mt-1">
             SmartPlates system management and overview
           </p>
         </div>
-        <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Button variant="outline" asChild>
-            <Link href="/admin/settings">
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Link>
-          </Button>
-        </div>
+     
       </div>
 
-      {/* Statistics Section */}
+      {/* Dashboard Overview Section */}
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
+          <Settings className="h-5 w-5 text-primary" />
           <h2 className="text-xl font-semibold">System Overview</h2>
         </div>
-        <AdminStatisticsWidgets />
+        {/* System Status Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Users</p>
+                <p className="text-2xl font-bold">{/* TODO: fetch from API */}11</p>
+               
+              </div>
+              <Users className="h-8 w-8 text-blue-500" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Online Now</p>
+                {onlineUsersLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-6 w-8 bg-gray-200 rounded mb-1"></div>
+                    <div className="h-3 w-16 bg-gray-200 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold text-green-600">{onlineUsers}</p>
+                    <p className="text-xs text-green-600">Active in last 5min</p>
+                  </>
+                )}
+              </div>
+              <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                <div className={`h-3 w-3 rounded-full ${onlineUsers > 0 ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Recipes</p>
+                {totalRecipesLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-6 w-12 bg-gray-200 rounded mb-1"></div>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold">{totalRecipes}</p>
+                )}
+                <p className="text-xs text-orange-600">0 pending</p>
+              </div>
+              <ChefHat className="h-8 w-8 text-green-500" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Community Recipes</p>
+                {communityRecipesLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-6 w-12 bg-gray-200 rounded mb-1"></div>
+                    <div className="h-3 w-20 bg-gray-200 rounded"></div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold text-purple-600">{communityRecipes.toLocaleString()}</p>
+                   
+                  </>
+                )}
+              </div>
+              <ChefHat className="h-8 w-8 text-purple-500" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Reports</p>
+                <p className="text-2xl font-bold text-red-600">0</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            </div>
+          </Card>
+        </div>
+        {/* System Status */}
+        <Card className="p-6 mb-8">
+          <h3 className="text-lg font-semibold mb-4">System Status</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">Uptime</p>
+              <p className="text-lg font-semibold">99.9%</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">Storage Used</p>
+              <p className="text-lg font-semibold">2.3 GB</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">System Status</p>
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                Online
+              </Badge>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Quick Actions */}

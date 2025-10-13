@@ -9,11 +9,13 @@ interface ActiveFiltersProps {
   selectedDifficulty: string;
   selectedDiet: string;
   selectedAllergy: string;
+  communityOnly: boolean;
   onRemoveSearch: () => void;
   onRemoveCategory: () => void;
   onRemoveDifficulty: () => void;
   onRemoveDiet: () => void;
   onRemoveAllergy: () => void;
+  onRemoveCommunity: () => void;
   onClearAll: () => void;
 }
 
@@ -69,11 +71,13 @@ export function ActiveFilters({
   selectedDifficulty,
   selectedDiet,
   selectedAllergy,
+  communityOnly,
   onRemoveSearch,
   onRemoveCategory,
   onRemoveDifficulty,
   onRemoveDiet,
   onRemoveAllergy,
+  onRemoveCommunity,
   onClearAll,
 }: ActiveFiltersProps) {
   const activeFilters = [];
@@ -121,6 +125,15 @@ export function ActiveFilters({
       id: 'allergy',
       label: `No ${selectedAllergy.charAt(0).toUpperCase() + selectedAllergy.slice(1)}`,
       onRemove: onRemoveAllergy,
+    });
+  }
+
+  // Community Filter
+  if (communityOnly) {
+    activeFilters.push({
+      id: 'community',
+      label: 'Community Recipes (Chef + User)',
+      onRemove: onRemoveCommunity,
     });
   }
 

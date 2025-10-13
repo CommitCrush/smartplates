@@ -55,6 +55,7 @@ export default function ImageUpload({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage || null);
   const [error, setError] = useState<string | null>(null);
+  const [justUploaded, setJustUploaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): string | null => {
@@ -157,24 +158,26 @@ export default function ImageUpload({
           bytes: uploadResult.bytes
         };
 
-        setPreviewUrl(transformedResult.url);
+        // Only set preview for single uploads, not multiple
+        if (!multiple) {
+          setPreviewUrl(transformedResult.url);
+        } else {
+          // Show brief success indication for multiple uploads
+          setJustUploaded(true);
+          setTimeout(() => setJustUploaded(false), 2000);
+        }
         onUpload(transformedResult);
       } else {
         // Traditional upload through our API
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('type', uploadType);
-        
-        if (recipeId) {
-          formData.append('recipeId', recipeId);
-        }
 
         // Simulate progress for traditional upload
         const progressInterval = setInterval(() => {
           setUploadProgress(prev => Math.min(prev + 10, 90));
         }, 200);
 
-        const response = await fetch('/api/upload', {
+        const response = await fetch('/api/upload/simple', {
           method: 'POST',
           body: formData,
         });
@@ -185,21 +188,18 @@ export default function ImageUpload({
         const result = await response.json();
 
         if (!response.ok) {
-          // Handle structured error responses
-          if (result.code === 'RATE_LIMIT_EXCEEDED') {
-            const retryAfter = result.retryAfter || 60;
-            throw new Error(`Rate limit exceeded. Please try again in ${retryAfter} seconds.`);
-          } else if (result.code === 'FILE_TOO_LARGE') {
-            throw new Error('File size too large. Maximum size is 10MB.');
-          } else if (result.code === 'INVALID_FILE_TYPE') {
-            throw new Error('Invalid file type. Only JPEG, PNG, and WebP images are allowed.');
-          } else {
-            throw new Error(result.message || 'Upload failed');
-          }
+          throw new Error(result.message || 'Upload failed');
         }
         
         if (result.success && result.data) {
-          setPreviewUrl(result.data.url);
+          // Only set preview for single uploads, not multiple
+          if (!multiple) {
+            setPreviewUrl(result.data.url);
+          } else {
+            // Show brief success indication for multiple uploads
+            setJustUploaded(true);
+            setTimeout(() => setJustUploaded(false), 2000);
+          }
           onUpload(result.data);
         } else {
           throw new Error('Invalid response from server');
@@ -299,7 +299,33 @@ export default function ImageUpload({
                 <Progress value={uploadProgress} className="mt-2" />
               </div>
             </div>
-          ) : previewUrl && showPreview ? (
+          ) : justUploaded && multiple ? (
+            // Brief success message for multiple uploads
+            <div className="space-y-4">
+              <div className="flex items-center justify-center text-green-600">
+                <Check className="h-5 w-5 mr-2" />
+                <span className="text-sm font-medium">Image uploaded successfully!</span>
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <ImageIcon className="h-12 w-12 text-gray-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    Ready for next image
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Click to upload another image
+                  </p>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Add Another Image
+                </Button>
+              </div>
+            </div>
+          ) : previewUrl && showPreview && !multiple ? (
+            // Only show preview for single uploads, not multiple uploads
             <div className="space-y-4">
               <div className="relative inline-block">
                 <Image

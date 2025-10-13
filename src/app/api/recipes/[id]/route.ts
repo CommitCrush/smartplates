@@ -1,28 +1,23 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { findRecipeById, deleteRecipe, updateRecipe } from '@/services/recipeService';
-import { getSpoonacularRecipe } from '@/services/spoonacularService';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } } // Corrected parameter handling
+  context: { params: { id: string } } 
 ) {
   try {
-    const { id } = context.params; // Corrected destructuring
+    // Correct async pattern for Next.js params
+    const id = await context.params.id; 
 
     if (!id) {
       return NextResponse.json({ error: 'Recipe ID is required' }, { status: 400 });
     }
 
-    let recipe;
-    // Check if the ID is for Spoonacular or a local recipe
-    if (id.startsWith('spoonacular-')) {
-      recipe = await getSpoonacularRecipe(id);
-    } else {
-      recipe = await findRecipeById(id);
-    }
+    // Direkt zur MongoDB gehen ohne Spoonacular
+    const recipe = await findRecipeById(id);
 
     if (!recipe) {
       console.log(`Recipe with id ${id} not found in any collection.`);
@@ -42,7 +37,7 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } } // Corrected parameter handling
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -50,7 +45,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { id } = context.params; // Corrected destructuring
+    // Correct async pattern for Next.js params
+    const id = await context.params.id;
 
     if (id.startsWith('spoonacular-')) {
       return NextResponse.json({ error: 'Cannot delete external recipes' }, { status: 403 });
@@ -80,7 +76,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } } // Corrected parameter handling
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -88,7 +84,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { id } = context.params; // Corrected destructuring
+    // Correct async pattern for Next.js params
+    const id = await context.params.id;
 
     if (id.startsWith('spoonacular-')) {
       return NextResponse.json({ error: 'Cannot update external recipes' }, { status: 403 });

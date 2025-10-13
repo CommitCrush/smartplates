@@ -26,12 +26,15 @@ export default function AdminPage() {
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [communityRecipes, setCommunityRecipes] = useState<number>(0);
   const [communityRecipesLoading, setCommunityRecipesLoading] = useState(true);
+  const [totalRecipes, setTotalRecipes] = useState<number>(0);
+  const [totalRecipesLoading, setTotalRecipesLoading] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState<number>(0);
   const [onlineUsersLoading, setOnlineUsersLoading] = useState(true);
 
   useEffect(() => {
     fetchRecentActivities();
     fetchCommunityRecipes();
+    fetchTotalRecipes();
     fetchOnlineUsers();
 
     // Update online users every minute
@@ -71,6 +74,35 @@ export default function AdminPage() {
       console.error('Failed to fetch community recipes:', error);
     } finally {
       setCommunityRecipesLoading(false);
+    }
+  };
+
+  const fetchTotalRecipes = async () => {
+    try {
+      setTotalRecipesLoading(true);
+      // Fetch ONLY Spoonacular recipes count
+      const response = await fetch('/api/admin/recipes/count?type=spoonacular');
+      if (response.ok) {
+        const data = await response.json();
+        setTotalRecipes(data.spoonacularCount || 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch Spoonacular recipes count:', error);
+      // Fallback: try to get count from existing recipes endpoint
+      try {
+        const response = await fetch('/api/admin/recipes');
+        if (response.ok) {
+          const data = await response.json();
+          // Count only Spoonacular recipes (those with spoonacularId)
+          const spoonacularRecipes = data.recipes ? 
+            data.recipes.filter((recipe: any) => recipe.spoonacularId || recipe.source === 'spoonacular').length : 0;
+          setTotalRecipes(spoonacularRecipes);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
+    } finally {
+      setTotalRecipesLoading(false);
     }
   };
 
@@ -124,7 +156,7 @@ export default function AdminPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold"> Admin Statistics</h1>
           <p className="text-muted-foreground mt-1">
             SmartPlates system management and overview
           </p>
@@ -175,7 +207,13 @@ export default function AdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Recipes</p>
-                <p className="text-2xl font-bold">159</p>
+                {totalRecipesLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-6 w-12 bg-gray-200 rounded mb-1"></div>
+                  </div>
+                ) : (
+                  <p className="text-2xl font-bold">{totalRecipes}</p>
+                )}
                 <p className="text-xs text-orange-600">0 pending</p>
               </div>
               <ChefHat className="h-8 w-8 text-green-500" />

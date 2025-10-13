@@ -24,6 +24,45 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type');
+
+    if (type === 'total') {
+      // Count ALL recipes from all collections
+      const [spoonacularCount, adminCount, userCount] = await Promise.all([
+        // Spoonacular recipes collection
+        getCollection('spoonacular_recipes').then(col => col.countDocuments()).catch(() => 0),
+        
+        // Admin uploaded recipes collection
+        getCollection(COLLECTIONS.RECIPES).then(col => col.countDocuments()).catch(() => 0),
+        
+        // User uploaded recipes collection  
+        getCollection(COLLECTIONS.USER_RECIPES).then(col => col.countDocuments()).catch(() => 0)
+      ]);
+
+      const totalCount = spoonacularCount + adminCount + userCount;
+
+      return NextResponse.json({
+        totalCount,
+        breakdown: {
+          spoonacular: spoonacularCount,
+          admin: adminCount,
+          user: userCount
+        }
+      });
+    }
+
+    if (type === 'spoonacular') {
+      // Count ONLY Spoonacular recipes
+      const spoonacularCount = await getCollection('spoonacular_recipes')
+        .then(col => col.countDocuments())
+        .catch(() => 0);
+
+      return NextResponse.json({
+        spoonacularCount,
+        type: 'spoonacular'
+      });
+    }
+
+    // Original functionality for specific user recipes
     const userEmail = session.user.email;
     const userId = session.user.id;
 

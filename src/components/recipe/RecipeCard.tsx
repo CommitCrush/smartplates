@@ -10,11 +10,14 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Clock, ChefHat, Star } from 'lucide-react';
+import { Clock, ChefHat, Star, Heart } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Recipe, RecipeCard as RecipeCardData } from '@/types/recipe';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/context/authContext';
 
 interface RecipeCardProps {
   recipe: RecipeCardData | Recipe;
@@ -29,6 +32,9 @@ export function RecipeCard({
   showAuthor = true,
   priority = false 
 }: RecipeCardProps) {
+  const { toggleFavorite, isFavorited } = useFavorites();
+  const { isAuthenticated } = useAuth();
+  
   // Helper: Handle different image sources properly
   function getRecipeImage(url?: string) {
     if (!url || typeof url !== 'string') {
@@ -72,11 +78,44 @@ export function RecipeCard({
   const recipeId = (recipe as any)._id || (recipe as any).id;
   const href = `/recipe/${recipeId}`;
 
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isAuthenticated) {
+      toggleFavorite(
+        recipeId, 
+        recipe.title, 
+        recipe.image || '/placeholder-recipe.svg'
+      );
+    }
+  };
+
   return (
     <Card className={cn(
-      "group cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
+      "group cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative",
       className
     )}>
+      {/* Favorite Button - Top Right Corner */}
+      {isAuthenticated && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleFavoriteClick}
+          className={cn(
+            "absolute top-2 right-2 z-10 w-8 h-8 p-0 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all duration-200",
+            isFavorited(recipeId) && "text-red-500 hover:text-red-600"
+          )}
+        >
+          <Heart 
+            className={cn(
+              "w-4 h-4 transition-all duration-200",
+              isFavorited(recipeId) && "fill-current"
+            )} 
+          />
+        </Button>
+      )}
+
       <Link href={href}>
         {/* Recipe Image */}
         <div className="relative aspect-[4/3] overflow-hidden">

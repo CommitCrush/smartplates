@@ -66,22 +66,11 @@ export default function RecipePage() {
 
   // Client-side filtering for all filter combinations
   const allFilteredRecipes = useMemo(() => {
-    console.log('🔍 Client-side filtering started:', {
-      totalRecipes: rawRecipes.length,
-      hasSearchQuery,
-      searchQuery: `"${searchQuery}"`,
-      selectedCategory,
-      selectedDiet,
-      selectedAllergy,
-      selectedDifficulty
-    });
-
     let filtered = rawRecipes;
 
     // 1. Search Filter (Title & Ingredients) - only when Search Query present
     if (hasSearchQuery && searchQuery.trim()) {
       filtered = fuzzySearchRecipes(filtered, searchQuery);
-      console.log(`After Search "${searchQuery}":`, filtered.length);
     }
 
     // 2. Category Filter (client-side when Search active)
@@ -94,7 +83,6 @@ export default function RecipePage() {
           cuisine.toLowerCase() === selectedCategory.toLowerCase()
         )
       );
-      console.log(`After Category "${selectedCategory}":`, filtered.length);
     }
 
     // 3. Diet Filter (client-side when Search active)
@@ -104,7 +92,6 @@ export default function RecipePage() {
           diet.toLowerCase() === selectedDiet.toLowerCase()
         )
       );
-      console.log(`After Diet "${selectedDiet}":`, filtered.length);
     }
 
     // 4. Allergy/Intolerance Filter (client-side when Search active)
@@ -117,13 +104,11 @@ export default function RecipePage() {
           return ingredientName.includes(selectedAllergy.toLowerCase());
         });
       });
-      console.log(`After Allergy filter "${selectedAllergy}":`, filtered.length);
     }
 
     // 5. Difficulty Filter (always client-side)
     if (selectedDifficulty) {
       filtered = filterRecipesByDifficulty(filtered, selectedDifficulty);
-      console.log(`After Difficulty "${selectedDifficulty}":`, filtered.length);
     }
 
     // 6. Community Filter (always client-side) - includes both admin (chef) and user-created recipes
@@ -131,10 +116,8 @@ export default function RecipePage() {
       filtered = filtered.filter(recipe => 
         recipe.source === 'community' || recipe.source === 'chef'
       );
-      console.log(`After Community filter (chef + user recipes):`, filtered.length);
     }
 
-    console.log('🎯 Final filtered results:', filtered.length);
     return filtered;
   }, [rawRecipes, hasSearchQuery, searchQuery, selectedCategory, selectedDiet, selectedAllergy, selectedDifficulty, communityOnly]);
 
@@ -142,28 +125,11 @@ export default function RecipePage() {
   const RECIPES_PER_PAGE = isAuthenticated ? 30 : 15; // Authenticated: 3×10, Viewer: 3×5
   const totalFilteredPages = Math.ceil(allFilteredRecipes.length / RECIPES_PER_PAGE);
   
-  // Debug pagination
-  console.log('Pagination Debug:', {
-    totalRecipes: allFilteredRecipes.length,
-    recipesPerPage: RECIPES_PER_PAGE,
-    currentPage: page,
-    totalPages: totalFilteredPages,
-    isAuthenticated
-  });
-  
   const displayedRecipes = useMemo(() => {
     // Always apply client-side pagination
     const startIndex = (page - 1) * RECIPES_PER_PAGE;
     const endIndex = startIndex + RECIPES_PER_PAGE;
     const sliced = allFilteredRecipes.slice(startIndex, endIndex);
-    
-    console.log('Display Debug:', {
-      startIndex,
-      endIndex,
-      slicedLength: sliced.length,
-      page,
-      recipesPerPage: RECIPES_PER_PAGE
-    });
     
     return sliced;
   }, [allFilteredRecipes, page, RECIPES_PER_PAGE]); // Always paginate
@@ -288,13 +254,6 @@ export default function RecipePage() {
         {/* Recipe Grid */}
         {!loading && !error && (
           <>
-            {/* Debug Info */}
-            <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-sm">
-              Debug: Seite {page} von {totalFilteredPages} | 
-              Zeige {displayedRecipes.length} von {allFilteredRecipes.length} Rezepten |
-              Pro Seite: {RECIPES_PER_PAGE}
-            </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedRecipes.map((recipe: Recipe) => (
                 <RecipeCard key={generateUniqueKey(recipe)} recipe={recipe} />

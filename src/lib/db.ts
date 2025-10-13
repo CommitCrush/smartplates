@@ -125,6 +125,7 @@ export const COLLECTIONS = {
   MEAL_PLANS: 'mealplans',
   GROCERY_LISTS: 'grocerylists',
   SAVED_GROCERY_LISTS: 'savedgrocerylists', // Added for saved lists
+  FAVORITES: 'favorites', // Added for favorite recipes
 } as const;
 
 /**

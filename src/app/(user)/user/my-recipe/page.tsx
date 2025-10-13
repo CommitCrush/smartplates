@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Heart, Upload, Calendar, Plus, Search, Filter, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useFavorites } from '@/hooks/useFavorites';
 
 interface Recipe {
   id: string;
@@ -45,6 +46,7 @@ export default function MyRecipesPage() {
   const [activeTab, setActiveTab] = useState<TabType>('uploaded');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const { favorites, refetch: fetchFavorites } = useFavorites();
   const [data, setData] = useState<{
     uploaded: Recipe[];
     saved: Recipe[];
@@ -69,6 +71,32 @@ export default function MyRecipesPage() {
     }
   }, [status, router]);
 
+  // Update saved recipes when favorites change
+  useEffect(() => {
+    if (favorites.length > 0) {
+      setData(prevData => ({
+        ...prevData,
+        saved: favorites.map(fav => ({
+          id: fav.recipeId,
+          title: fav.recipeTitle || 'Recipe',
+          description: '',
+          image: fav.recipeImage || '/placeholder-recipe.svg',
+          cookingTime: 30,
+          difficulty: 'medium' as const,
+          category: 'Various',
+          isPublic: true,
+          createdAt: fav.createdAt
+        }))
+      }));
+    } else if (favorites.length === 0 && status === 'authenticated') {
+      // Clear saved recipes if no favorites
+      setData(prevData => ({
+        ...prevData,
+        saved: []
+      }));
+    }
+  }, [favorites, status]);
+
   const loadUserData = async () => {
     setLoading(true);
     try {
@@ -89,22 +117,30 @@ export default function MyRecipesPage() {
             seenIds.add(recipe.id);
             return true;
           });
-          
-          console.log('Loaded planned recipes:', plannedRecipes.length);
         }
       } catch (error) {
         console.error('Error loading planned recipes:', error);
       }
+
+      // Load favorites
+      await fetchFavorites();
 
       const mockData = {
         uploaded: [
           { id: '1', title: 'My Famous Pasta Carbonara', description: 'A family recipe passed down for generations', image: '/placeholder-recipe.svg', cookingTime: 25, difficulty: 'medium' as const, category: 'Italian', isPublic: true, createdAt: '2024-09-20' },
           { id: '2', title: 'Homemade Pizza Margherita', description: 'Fresh mozzarella and basil on homemade dough', image: '/placeholder-recipe.svg', cookingTime: 45, difficulty: 'hard' as const, category: 'Italian', isPublic: false, createdAt: '2024-09-18' }
         ],
-        saved: [
-          { id: '3', title: 'Chicken Tikka Masala', description: 'Creamy and flavorful Indian curry', image: '/placeholder-recipe.svg', cookingTime: 40, difficulty: 'medium' as const, category: 'Indian', isPublic: true, createdAt: '2024-09-19' },
-          { id: '4', title: 'Chocolate Chip Cookies', description: 'Classic homemade cookies', image: '/placeholder-recipe.svg', cookingTime: 15, difficulty: 'easy' as const, category: 'Dessert', isPublic: true, createdAt: '2024-09-17' }
-        ],
+        saved: favorites.map(fav => ({
+          id: fav.recipeId,
+          title: fav.recipeTitle || 'Recipe',
+          description: '',
+          image: fav.recipeImage || '/placeholder-recipe.svg',
+          cookingTime: 30,
+          difficulty: 'medium' as const,
+          category: 'Various',
+          isPublic: true,
+          createdAt: fav.createdAt
+        })),
         planned: plannedRecipes,
         'shopping-list': [
           { id: 'sl1', name: 'Weekly Groceries', recipeCount: 5, createdAt: '2024-09-21' },

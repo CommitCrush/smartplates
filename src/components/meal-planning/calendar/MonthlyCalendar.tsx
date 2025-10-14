@@ -28,7 +28,6 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { IMealPlan, DayMeals, MealSlot } from '@/types/meal-planning';
 import { getWeekStartDate } from '@/types/meal-planning';
-import { RecipeDetailModal } from '../modals/RecipeDetailModal';
 
 
 // ========================================
@@ -380,10 +379,6 @@ export function MonthlyCalendar({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   
   // Modal state for recipe details
-  const [selectedMeal, setSelectedMeal] = useState<MealSlot | null>(null);
-  const [selectedMealContext, setSelectedMealContext] = useState<{dayName: string, mealType: string} | null>(null);
-  const [showRecipeModal, setShowRecipeModal] = useState(false);
-
   // Sync with parent currentDate prop
   useEffect(() => {
     if (currentDate) {
@@ -393,11 +388,10 @@ export function MonthlyCalendar({
 
   // Handle showing recipe details
   const handleShowRecipe = (meal: MealSlot, date: Date, mealType: string) => {
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayName = dayNames[date.getDay()];
-    setSelectedMeal(meal);
-    setSelectedMealContext({ dayName, mealType });
-    setShowRecipeModal(true);
+    // Navigate to the full recipe detail page instead of showing popup
+    if (meal.recipeId) {
+      window.open(`/recipe/${meal.recipeId}`, '_blank');
+    }
   };
 
   // Handle copying recipe
@@ -592,15 +586,6 @@ export function MonthlyCalendar({
           </div>
         </div>
       </CardContent>
-      
-      {/* Recipe Detail Modal */}
-      <RecipeDetailModal
-        meal={selectedMeal}
-        open={showRecipeModal}
-        onOpenChange={setShowRecipeModal}
-        dayName={selectedMealContext?.dayName}
-        mealType={selectedMealContext?.mealType}
-      />
     </Card>
   );
 }

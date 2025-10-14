@@ -148,30 +148,6 @@ export function SavePlanModal({
                 </div>
               </CardContent>
             </Card>
-
-            {/* Include Shopping List */}
-            <Card className="border-2 hover:border-primary-200 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-start space-x-3">
-                  <input
-                    type="checkbox"
-                    id="include-shopping"
-                    checked={saveOptions.includeShoppingList}
-                    onChange={(e) => handleOptionChange('includeShoppingList', e.target.checked)}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
-                  <div className="flex-1">
-                    <label htmlFor="include-shopping" className="flex items-center gap-2 font-medium text-gray-900 cursor-pointer">
-                      <Check className="h-4 w-4 text-green-600" />
-                      Generate Shopping List
-                    </label>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Automatically create a shopping list based on your planned meals.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Action Buttons */}

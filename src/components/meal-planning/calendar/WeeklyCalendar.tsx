@@ -25,8 +25,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { DayColumn } from './DayColumn';
-// MealPlanningToolbar removed - not used in this component
-import { RecipeDetailModal } from '../modals/RecipeDetailModal';
 import { MealPlanService } from '@/services/mealPlanService';
 import { useAuth } from '@/context/authContext';
 import type { 
@@ -90,9 +88,6 @@ export function WeeklyCalendar({
   const [weekDates, setWeekDates] = useState<Date[]>([]);
   const [, setIsLoading] = useState(false);
   const [dateSearchValue, setDateSearchValue] = useState<string>('');
-  const [selectedMeal, setSelectedMeal] = useState<MealSlot | null>(null);
-  const [selectedMealContext, setSelectedMealContext] = useState<{dayName: string, mealType: string} | null>(null);
-  const [showRecipeModal, setShowRecipeModal] = useState(false);
   
   // MongoDB integration state
   const [currentMealPlan, setCurrentMealPlan] = useState<IMealPlan | null>(mealPlan || null);
@@ -101,11 +96,10 @@ export function WeeklyCalendar({
   // Handle showing recipe details
   const handleShowRecipe = (meal: MealSlot, dayIndex: number, mealType: string) => {
     console.log('📅 WeeklyCalendar: handleShowRecipe called', { meal: meal.recipeName, dayIndex, mealType });
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayName = weekDates[dayIndex] ? dayNames[weekDates[dayIndex].getDay()] : 'Unknown';
-    setSelectedMeal(meal);
-    setSelectedMealContext({ dayName, mealType });
-    setShowRecipeModal(true);
+    // Navigate to the full recipe detail page instead of showing popup
+    if (meal.recipeId) {
+      window.open(`/recipe/${meal.recipeId}`, '_blank');
+    }
   };
 
   // Handle copying recipe - delegate to parent
@@ -641,15 +635,6 @@ export function WeeklyCalendar({
             </Card>
           )}
         </div>
-
-        {/* Recipe Detail Modal */}
-        <RecipeDetailModal
-          meal={selectedMeal}
-          open={showRecipeModal}
-          onOpenChange={setShowRecipeModal}
-          dayName={selectedMealContext?.dayName}
-          mealType={selectedMealContext?.mealType}
-        />
       </div>
   );
 }

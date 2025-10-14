@@ -41,7 +41,6 @@ import { MonthlyCalendar } from '@/components/meal-planning/calendar/MonthlyCale
 
 import { QuickAddRecipeModal } from '@/components/meal-planning/modals/QuickAddRecipeModal';
 import { SavePlanModal, type SaveOptions } from '@/components/meal-planning/modals/SavePlanModal';
-import { RecipeDetailModal } from '@/components/meal-planning/modals/RecipeDetailModal';
 import { getWeekStartDate, createEmptyMealPlan } from '@/types/meal-planning';
 import type { IMealPlan, MealSlot as MealSlotType, MealPlanningSlot } from '@/types/meal-planning';
 import { useSession } from 'next-auth/react';
@@ -158,20 +157,9 @@ const TodayView: React.FC<TodayViewProps> = ({
         className={`${config.cardBg} border ${config.borderColor} rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer relative`}
         onClick={() => {
           console.log('🍽️ Meal card clicked', { meal: meal.recipeName });
-          if (onShowRecipe) { 
-            // Convert the meal data to MealSlot format
-            const mealSlot: MealSlotType = {
-              recipeId: meal.recipeId || '',
-              recipeName: meal.recipeName || 'Unknown Recipe',
-              servings: meal.servings || 2,
-              prepTime: meal.prepTime || 30,
-              cookingTime: meal.cookingTime || 0,
-              notes: meal.notes || '',
-              image: meal.image || ''
-            };
-            // Call the passed handler
-            onShowRecipe(mealSlot);
-            console.log('🍽️ Called onShowRecipe with meal:', mealSlot);
+          // Navigate to the full recipe detail page instead of showing popup
+          if (meal.recipeId) {
+            window.open(`/recipe/${meal.recipeId}`, '_blank');
           }
         }}
       >
@@ -463,8 +451,6 @@ export default function MealPlanningPage() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [, setIsSaving] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<MealPlanningSlot | null>(null);
-  const [showRecipeModal, setShowRecipeModal] = useState(false);
-  const [selectedRecipe, setSelectedRecipe] = useState<MealSlotType | null>(null);
   const [copiedRecipe, setCopiedRecipe] = useState<MealSlot | null>(null);
   const [dateSearchValue, setDateSearchValue] = useState<string>('');
 
@@ -1232,16 +1218,13 @@ export default function MealPlanningPage() {
     setShowQuickAdd(true);
   };
 
-  // Recipe modal handlers
+  // Recipe navigation handlers
   const handleShowRecipe = (meal: MealSlot) => {
     console.log('👁️ handleShowRecipe called for meal:', meal.recipeName);
-    setSelectedRecipe(meal);
-    setShowRecipeModal(true);
-  };
-
-  const handleCloseRecipeModal = () => {
-    setShowRecipeModal(false);
-    setSelectedRecipe(null);
+    // Navigate to the full recipe detail page instead of showing popup
+    if (meal.recipeId) {
+      window.open(`/recipe/${meal.recipeId}`, '_blank');
+    }
   };
 
   // Handle adding meal from MonthlyCalendar (date-based)
@@ -1408,35 +1391,120 @@ export default function MealPlanningPage() {
 
   const handleSavePlan = async (options: SaveOptions) => {
     setIsSaving(true);
+    
     try {
+      console.log('🔄 Starting save plan with options:', options);
+      
+      // Enhanced PDF Export
       if (options.exportFormat === 'pdf' && mealPlan) {
-        await exportMealPlanToPDF(mealPlan, { format: 'pdf' });
+        console.log('📄 Generating enhanced PDF export...');
+        await exportMealPlanToPDF(mealPlan, { 
+          format: 'pdf',
+          filename: options.mealPlanTitle ? 
+            `${options.mealPlanTitle.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf` :
+            `SmartPlates-MealPlan-${format(new Date(), 'yyyy-MM-dd')}.pdf`
+        });
+        console.log('✅ Enhanced PDF export completed');
       }
-      if (options.includeShoppingList && mealPlan) {
-        // Generate grocery list from meal plan ingredients
-        const groceryList = mealPlan.days.flatMap(day => 
-          [...day.breakfast, ...day.lunch, ...day.dinner, ...day.snacks]
-            .flatMap(meal => {
-              // Get ingredients from recipe.extendedIngredients or direct ingredients array
-              const ingredients = meal.recipe?.extendedIngredients || meal.ingredients || [];
-              return ingredients;
-            })
-            .map(ingredient => ({
-              name: ingredient.name || ingredient.nameClean || 'Unknown ingredient',
-              amount: ingredient.amount?.toString() || '',
-              unit: ingredient.unit || '',
-              category: 'general'
-            }))
-        );
+      
+      // Google Calendar Integration
+      if (options.saveToGoogleCalendar && mealPlan) {
+        console.log('📅 Adding meal plan to Google Calendar...');
         
-        if (groceryList.length > 0) {
-          exportGroceryListAsText(groceryList);
+        try {
+          // Import the Google Calendar service
+          const { exportToGoogleCalendar } = await import('@/services/googleCalendarService');
+          
+          const result = await exportToGoogleCalendar(mealPlan);
+          
+          if (result.success) {
+            console.log('✅ Google Calendar export successful:', result.message);
+            alert(`✅ Success! ${result.message}`);
+          } else {
+            console.error('❌ Google Calendar export failed:', result.message);
+            alert(`❌ Google Calendar export failed: ${result.message}`);
+          }
+        } catch (calendarError) {
+          console.error('❌ Google Calendar integration error:', calendarError);
+          alert('❌ Failed to add to Google Calendar. Please check your browser settings and try again.');
         }
       }
       
+      // Enhanced Grocery List Export
+      if (options.includeShoppingList && mealPlan) {
+        console.log('🛒 Generating enhanced grocery list...');
+        
+        // Collect ingredients from all meal types with better organization
+        const ingredientMap = new Map<string, { amount: string; unit: string; category: string }>();
+        
+        mealPlan.days.forEach(day => {
+          [...day.breakfast, ...day.lunch, ...day.dinner, ...day.snacks].forEach(meal => {
+            // Get ingredients from recipe.extendedIngredients or direct ingredients array
+            const ingredients = meal.recipe?.extendedIngredients || meal.ingredients || [];
+            
+            ingredients.forEach((ingredient: any) => {
+              const name = ingredient.name || ingredient.nameClean || ingredient.original || 'Unknown ingredient';
+              const cleanName = name.toLowerCase().trim();
+              
+              if (ingredientMap.has(cleanName)) {
+                // Ingredient already exists, could combine amounts here
+                const existing = ingredientMap.get(cleanName)!;
+                // For now, just keep the first occurrence
+              } else {
+                ingredientMap.set(cleanName, {
+                  amount: ingredient.amount?.toString() || ingredient.measures?.metric?.amount?.toString() || '',
+                  unit: ingredient.unit || ingredient.measures?.metric?.unitShort || '',
+                  category: ingredient.aisle || 'General'
+                });
+              }
+            });
+          });
+        });
+        
+        // Convert to array and sort by category
+        const groceryList = Array.from(ingredientMap.entries()).map(([name, details]) => ({
+          name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize first letter
+          amount: details.amount,
+          unit: details.unit,
+          category: details.category
+        })).sort((a, b) => {
+          // Sort by category first, then by name
+          if (a.category !== b.category) {
+            return a.category.localeCompare(b.category);
+          }
+          return a.name.localeCompare(b.name);
+        });
+        
+        if (groceryList.length > 0) {
+          const filename = options.mealPlanTitle ? 
+            `${options.mealPlanTitle.replace(/\s+/g, '-')}-grocery-list-${format(new Date(), 'yyyy-MM-dd')}.txt` :
+            `SmartPlates-GroceryList-${format(new Date(), 'yyyy-MM-dd')}.txt`;
+          
+          exportGroceryListAsText(groceryList, filename);
+          console.log('✅ Enhanced grocery list exported');
+        } else {
+          console.log('⚠️ No ingredients found for grocery list');
+          alert('No ingredients found in your meal plan to create a grocery list.');
+        }
+      }
+      
+      // Close modal
       setShowSaveModal(false);
+      
+      // Show success message
+      const actions = [];
+      if (options.exportFormat === 'pdf') actions.push('PDF downloaded');
+      if (options.saveToGoogleCalendar) actions.push('Google Calendar events created');
+      if (options.includeShoppingList) actions.push('Grocery list downloaded');
+      
+      if (actions.length > 0) {
+        const message = `✅ Success! ${actions.join(', ')}.`;
+        console.log(message);
+      }
+      
     } catch (error) {
-      console.error('Save failed:', error);
+      console.error('❌ Save plan failed:', error);
+      alert(`❌ Save failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setIsSaving(false);
     }
@@ -1638,16 +1706,7 @@ export default function MealPlanningPage() {
                     className="pl-10 w-96 h-8 bg-white border-blue-200 text-sm"
                   />
                 </div>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportMealPlan}
-                  className="flex items-center gap-2 bg-white hover:bg-blue-50 border-blue-200"
-                  title="Take Screenshot"
-                >
-                  📸 Screenshot
-                </Button>
+    
                 <Button
                   variant="outline"
                   size="sm"
@@ -1802,7 +1861,7 @@ export default function MealPlanningPage() {
               setShowQuickAdd(false);
               setSelectedSlot(null);
             }}
-            onAddRecipe={(recipeId: string, recipeName: string, servings?: number, cookingTime?: number, image?: string) => {
+            onAddRecipe={(recipeId: string, recipeName: string, servings: number, cookingTime: number, image?: string) => {
               handleQuickAddSubmit({ id: recipeId, name: recipeName, servings, cookingTime, image });
             }}
             mealType={selectedSlot.mealType || 'breakfast'}
@@ -1817,17 +1876,6 @@ export default function MealPlanningPage() {
             onSave={handleSavePlan}
           />
         )}
-
-        {/* Recipe Detail Modal */}
-        <RecipeDetailModal
-          meal={selectedRecipe}
-          open={showRecipeModal}
-          onOpenChange={(open) => {
-            if (!open) handleCloseRecipeModal();
-          }}
-          dayName="Today"
-          mealType="Unknown"
-        />
         </div>
     </DndProvider>
   );

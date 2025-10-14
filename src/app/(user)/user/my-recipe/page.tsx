@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/context/authContext";
+import { useMealPlanSync } from "@/hooks/useMealPlanSync";
 
 interface Recipe {
   id: string;
@@ -65,6 +66,7 @@ export default function MyRecipesPage() {
     isFavorited,
   } = useFavorites();
   const { isAuthenticated } = useAuth();
+  const { syncCounter, triggerSync } = useMealPlanSync();
   const [data, setData] = useState<{
     uploaded: Recipe[];
     saved: Recipe[];
@@ -156,6 +158,14 @@ export default function MyRecipesPage() {
       loadUserData();
     }
   }, [status, router]);
+
+  // 🔄 SYNC: Reload data when meal plans change on other pages
+  useEffect(() => {
+    if (status === "authenticated" && syncCounter > 0) {
+      console.log('🔄 My Recipes: Syncing data due to meal plan changes');
+      loadUserData();
+    }
+  }, [syncCounter, status]);
 
   // Update saved recipes when favorites change
   useEffect(() => {

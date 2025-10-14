@@ -49,6 +49,7 @@ import { exportMealPlanToPDF } from '@/utils/mealPlanExport';
 import Link from 'next/link';
 import { slugify, cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { useMealPlanSync } from '@/hooks/useMealPlanSync';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'date' | 'name' | 'meals' | 'created';
@@ -68,12 +69,21 @@ export default function SavedMealPlansPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
+  const { syncCounter, triggerSync } = useMealPlanSync();
 
   useEffect(() => {
     if (session?.user?.id) {
       loadSavedPlans();
     }
   }, [session]);
+
+  // 🔄 SYNC: Reload data when meal plans change on other pages
+  useEffect(() => {
+    if (session?.user?.id && syncCounter > 0) {
+      console.log('🔄 My Saved Meal Plans: Syncing data due to meal plan changes');
+      loadSavedPlans();
+    }
+  }, [syncCounter, session?.user?.id]);
 
   const loadSavedPlans = async () => {
     try {

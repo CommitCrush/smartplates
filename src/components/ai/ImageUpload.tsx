@@ -24,10 +24,10 @@ export default function ImageUpload({ image, onUpload, onNewImage, analyzing, la
           <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
         </>
       ) : (
-        <div className="w-full flex flex-col items-center gap-2">
+        <div className="w-full flex flex-col items-center gap-4">
           <img src={URL.createObjectURL(image)} alt="Preview" className="max-h-48 rounded shadow border-2 border-primary" />
           <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-primary bg-[#232b3e] text-primary font-semibold shadow hover:bg-primary hover:text-white transition" onClick={onNewImage} disabled={analyzing}>
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 bg-white text-primary font-semibold  hover:text-red-400 transition" onClick={onNewImage} disabled={analyzing}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A2 2 0 0021 6.382V5a2 2 0 00-2-2H5a2 2 0 00-2 2v1.382a2 2 0 001.447 1.342L9 10m6 0v4m0 0l-4 4m4-4l4-4" /></svg>
               <span>Choose new image</span>
             </button>

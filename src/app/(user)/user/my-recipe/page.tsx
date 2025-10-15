@@ -8,7 +8,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   BookOpen,
   Heart,
@@ -18,6 +18,7 @@ import {
   Search,
   Filter,
   ShoppingCart,
+  Trash2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,14 +27,17 @@ import { cn } from "@/lib/utils";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/context/authContext";
 import { useMealPlanSync } from "@/hooks/useMealPlanSync";
+import { toast } from "react-hot-toast";
 
 interface Recipe {
+  _id?: string; // MongoDB ID for uploaded recipes
   id: string;
   title: string;
   description: string;
-  image: string;
+  primaryImageUrl?: string; // MongoDB field
+  image?: string; // Spoonacular/other sources
   cookingTime: number;
-  difficulty?: "easy" | "medium" | "hard"; // Make optional since we calculate it dynamically
+  difficulty?: "easy" | "medium" | "hard"; // Optional for dynamic calculation
   category: string;
   isPublic: boolean;
   createdAt: string;
@@ -42,6 +46,18 @@ interface Recipe {
   mealType?: string;
   servings?: number;
   notes?: string;
+  // Additional fields for recipe ID resolution
+  recipeId?: string;
+  originalRecipeId?: string;
+  spoonacularId?: string;
+  sourceRecipeId?: string;
+}
+
+interface Favorite {
+  recipeId: string;
+  recipeTitle: string;
+  recipeImage: string;
+  createdAt: string;
 }
 
 interface ShoppingList {
@@ -54,7 +70,7 @@ interface ShoppingList {
 type TabType = "uploaded" | "saved" | "planned" | "shopping-list";
 
 export default function MyRecipesPage() {
-  const { data: _session, status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("uploaded");
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,6 +95,7 @@ export default function MyRecipesPage() {
     "shopping-list": [],
   });
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   // Helper function to calculate total time like in RecipeCard
   const getTotalTime = (recipe: Recipe) => {
@@ -132,6 +149,101 @@ export default function MyRecipesPage() {
     return recipeId;
   };
 
+  // MongoDB User Recipes Fetcher
+  const fetchUserRecipes = useCallback(async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/recipes?userId=${userId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch recipes");
+      }
+      const data = await response.json();
+      // Map _id to id for consistency and calculate difficulty
+      return (data.recipes || []).map((recipe: Recipe) => {
+        const totalTime = getTotalTime(recipe);
+        const calculatedDifficulty = getDifficultyFromTime(totalTime);
+
+        return {
+          ...recipe,
+          id: recipe._id || recipe.id,
+          image: recipe.primaryImageUrl || recipe.image || "/placeholder-recipe.svg",
+          difficulty: recipe.difficulty || calculatedDifficulty,
+          cookingTime: totalTime,
+        };
+      });
+    } catch (error) {
+      console.error("Error fetching user recipes:", error);
+      return [];
+    }
+  }, []);
+
+  // Handle Recipe Deletion
+  const handleDeleteRecipe = async (recipeId: string) => {
+    setDeleting(recipeId);
+    try {
+      const response = await fetch("/api/users/recipes", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ recipeId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete recipe");
+      }
+
+      toast.success("Recipe deleted successfully!");
+      // Refresh data after deletion
+      loadUserData();
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      toast.error(`Error: ${errorMessage}`);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // Delete Confirmation Toast
+  const showDeleteConfirmation = (recipeId: string) => {
+    toast(
+      (t) => (
+        <div className="bg-white p-4 rounded-lg shadow-lg flex flex-col gap-4">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">Confirm Deletion</h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Are you sure you want to delete this recipe? This action cannot be
+              undone.
+            </p>
+          </div>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                handleDeleteRecipe(recipeId);
+              }}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        duration: 6000, // Persist until user action
+        position: "top-center",
+      }
+    );
+  };
+
   // Handle favorite click for saved recipes (remove when clicked)
   const handleFavoriteClick = async (e: React.MouseEvent, recipe: Recipe) => {
     e.preventDefault();
@@ -148,64 +260,36 @@ export default function MyRecipesPage() {
     }
   };
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/");
+  // Load User Data with MongoDB Integration
+  const loadUserData = useCallback(async () => {
+    if (status !== "authenticated" || !session?.user?.id) {
+      setLoading(false);
       return;
     }
 
-    if (status === "authenticated") {
-      loadUserData();
-    }
-  }, [status, router]);
-
-  // 🔄 SYNC: Reload data when meal plans change on other pages
-  useEffect(() => {
-    if (status === "authenticated" && syncCounter > 0) {
-      console.log('🔄 My Recipes: Syncing data due to meal plan changes');
-      loadUserData();
-    }
-  }, [syncCounter, status]);
-
-  // Update saved recipes when favorites change
-  useEffect(() => {
-    if (favorites.length > 0) {
-      setData((prevData) => ({
-        ...prevData,
-        saved: favorites.map((fav) => ({
-          id: fav.recipeId,
-          title: fav.recipeTitle || "Recipe",
-          description: "",
-          image: fav.recipeImage || "/placeholder-recipe.svg",
-          cookingTime: 30,
-          // Don't hard-code difficulty - let it be calculated
-          category: "Various",
-          isPublic: true,
-          createdAt: fav.createdAt,
-        })),
-      }));
-    } else if (favorites.length === 0 && status === "authenticated") {
-      // Clear saved recipes if no favorites
-      setData((prevData) => ({
-        ...prevData,
-        saved: [],
-      }));
-    }
-  }, [favorites, status]);
-
-  const loadUserData = async () => {
     setLoading(true);
     try {
+      // Parallel fetching for better performance
+      const [plannedResponse, userRecipes, favoritesResponse] = await Promise.all([
+        fetch("/api/users/planned-recipes").catch((e) => {
+          console.error("Error fetching planned recipes:", e);
+          return null;
+        }),
+        fetchUserRecipes(session.user.id),
+        fetch("/api/favorites").catch((e) => {
+          console.error("Error fetching favorites:", e);
+          return null;
+        }),
+      ]);
+
       let plannedRecipes: Recipe[] = [];
+      if (plannedResponse && plannedResponse.ok) {
+        const plannedData = await plannedResponse.json();
+        let rawPlannedRecipes = plannedData.data || [];
 
-      try {
-        const plannedResponse = await fetch("/api/users/planned-recipes");
-        if (plannedResponse.ok) {
-          const plannedData = await plannedResponse.json();
-          let rawPlannedRecipes = plannedData.data || [];
-
-          const seenIds = new Set();
-          plannedRecipes = rawPlannedRecipes.filter((recipe: Recipe) => {
+        const seenIds = new Set();
+        plannedRecipes = rawPlannedRecipes
+          .filter((recipe: Recipe) => {
             if (seenIds.has(recipe.id)) {
               console.warn(
                 `Duplicate recipe ID found: ${recipe.id}, skipping duplicate`
@@ -214,62 +298,45 @@ export default function MyRecipesPage() {
             }
             seenIds.add(recipe.id);
             return true;
+          })
+          .map((recipe: Recipe) => {
+            const totalTime = getTotalTime(recipe);
+            const calculatedDifficulty = getDifficultyFromTime(totalTime);
+
+            return {
+              ...recipe,
+              // Override difficulty and time calculation for proper display
+              difficulty: calculatedDifficulty, // Force calculated difficulty
+              cookingTime: totalTime,
+            };
           });
-        }
-      } catch (error) {
-        console.error("Error loading planned recipes:", error);
       }
 
-      // Load favorites
-      await fetchFavorites();
-
-      const mockData = {
-        uploaded: [
-          {
-            id: "1",
-            title: "My Famous Pasta Carbonara",
-            description: "A family recipe passed down for generations",
-            image: "/placeholder-recipe.svg",
-            cookingTime: 25,
-            // Don't hard-code difficulty - let it be calculated
-            category: "Italian",
-            isPublic: true,
-            createdAt: "2024-09-20",
-          },
-          {
-            id: "2",
-            title: "Homemade Pizza Margherita", 
-            description: "Fresh mozzarella and basil on homemade dough",
-            image: "/placeholder-recipe.svg",
-            cookingTime: 45,
-            // Don't hard-code difficulty - let it be calculated
-            category: "Italian",
-            isPublic: false,
-            createdAt: "2024-09-18",
-          },
-        ],
-        saved: favorites.map((fav) => ({
-          id: fav.recipeId,
-          title: fav.recipeTitle || "Recipe",
-          description: "",
-          image: fav.recipeImage || "/placeholder-recipe.svg",
-          cookingTime: 30, // This might be the issue - hard-coded cookingTime  
-          // Don't hard-code difficulty - let it be calculated dynamically
-          category: "Various",
-          isPublic: true,
-          createdAt: fav.createdAt,
-        })),
-        planned: plannedRecipes.map((recipe) => {
-          const totalTime = getTotalTime(recipe);
+      let savedRecipes: Recipe[] = [];
+      if (favoritesResponse && favoritesResponse.ok) {
+        const favoritesData = await favoritesResponse.json();
+        savedRecipes = (favoritesData.favorites || []).map((fav: Favorite) => {
+          const totalTime = 30; // Default for favorites
           const calculatedDifficulty = getDifficultyFromTime(totalTime);
 
           return {
-            ...recipe,
-            // Override difficulty and time calculation for proper display
-            difficulty: calculatedDifficulty, // Force calculated difficulty
+            id: fav.recipeId,
+            title: fav.recipeTitle || "Recipe",
+            description: "",
+            image: fav.recipeImage || "/placeholder-recipe.svg",
             cookingTime: totalTime,
+            difficulty: calculatedDifficulty,
+            category: "Various",
+            isPublic: true,
+            createdAt: fav.createdAt,
           };
-        }),
+        });
+      }
+
+      setData({
+        uploaded: userRecipes,
+        saved: savedRecipes,
+        planned: plannedRecipes,
         "shopping-list": [
           {
             id: "sl1",
@@ -284,15 +351,32 @@ export default function MyRecipesPage() {
             createdAt: "2024-09-20",
           },
         ],
-      };
-
-      setData(mockData);
+      });
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, session, fetchUserRecipes]);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/");
+      return;
+    }
+
+    if (status === "authenticated") {
+      loadUserData();
+    }
+  }, [status, router, loadUserData]);
+
+  // 🔄 SYNC: Reload data when meal plans change on other pages
+  useEffect(() => {
+    if (status === "authenticated" && syncCounter > 0) {
+      console.log("🔄 My Recipes: Syncing data due to meal plan changes");
+      loadUserData();
+    }
+  }, [syncCounter, status, loadUserData]);
 
   const filteredItems = data[activeTab].filter((item) => {
     if (activeTab === "shopping-list") {
@@ -402,6 +486,40 @@ export default function MyRecipesPage() {
         </button>
       </div>
 
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder={
+              activeTab === "shopping-list"
+                ? "Search shopping lists..."
+                : "Search recipes..."
+            }
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+        </div>
+        {activeTab !== "shopping-list" && (
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category === "all" ? "All Categories" : category}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
       {/* Content Grid */}
       {filteredItems.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -441,17 +559,17 @@ export default function MyRecipesPage() {
             : (filteredItems as Recipe[]).map((recipe) => {
                 const totalTime = getTotalTime(recipe);
                 // Always calculate difficulty based on time, regardless of recipe source
-                const calculatedDifficulty = getDifficultyFromTime(totalTime);
+                const calculatedDifficulty = recipe.difficulty || getDifficultyFromTime(totalTime);
 
                 // For planned recipes, check if there's a separate recipeId field
                 let actualRecipeId = recipe.id;
                 if (recipe.id.startsWith("planned-")) {
                   // Try to get the original recipeId if available from multiple possible fields
                   const originalRecipeId =
-                    (recipe as any).recipeId ||
-                    (recipe as any).originalRecipeId ||
-                    (recipe as any).spoonacularId ||
-                    (recipe as any).sourceRecipeId;
+                    recipe.recipeId ||
+                    recipe.originalRecipeId ||
+                    recipe.spoonacularId ||
+                    recipe.sourceRecipeId;
 
                   if (originalRecipeId) {
                     // If we have an original recipe ID, use it
@@ -469,6 +587,9 @@ export default function MyRecipesPage() {
                     );
                   }
                 }
+
+                // Use MongoDB _id for uploaded recipes, actualRecipeId for others
+                const linkId = activeTab === "uploaded" ? (recipe._id || recipe.id) : actualRecipeId;
 
                 return (
                   <div
@@ -489,10 +610,14 @@ export default function MyRecipesPage() {
                       </Button>
                     )}
 
-                    <Link href={`/recipe/${actualRecipeId}`}>
+                    <Link href={`/recipe/${linkId}`}>
                       <div className="relative h-48">
                         <Image
-                          src={recipe.image}
+                          src={
+                            recipe.primaryImageUrl ||
+                            recipe.image ||
+                            "/placeholder-recipe.svg"
+                          }
                           alt={recipe.title}
                           fill
                           className="object-cover rounded-t-lg"
@@ -529,13 +654,20 @@ export default function MyRecipesPage() {
                         <h3 className="font-semibold text-lg mb-2 line-clamp-1">
                           {recipe.title}
                         </h3>
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                          {recipe.description}
+                        </p>
 
-                        {/* {activeTab === 'planned' && recipe.notes && (
-                        <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                          <span className="font-medium text-yellow-800">Note:</span>
-                          <span className="text-yellow-700 ml-1">{recipe.notes}</span>
-                        </div>
-                      )} */}
+                        {activeTab === "planned" && recipe.notes && (
+                          <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                            <span className="font-medium text-yellow-800">
+                              Note:
+                            </span>
+                            <span className="text-yellow-700 ml-1">
+                              {recipe.notes}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="flex items-center justify-between text-sm">
                           <div className="flex items-center space-x-3">
@@ -550,6 +682,9 @@ export default function MyRecipesPage() {
                               {calculatedDifficulty}
                             </span>
                           </div>
+                          <span className="text-primary font-medium">
+                            {recipe.category}
+                          </span>
                         </div>
                         <div className="mt-3 pt-3 border-t flex justify-between items-center">
                           <div className="text-xs text-gray-500">
@@ -576,6 +711,26 @@ export default function MyRecipesPage() {
                                   recipe.createdAt
                                 ).toLocaleDateString()}
                               </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {activeTab === "uploaded" && (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  showDeleteConfirmation(recipe._id || recipe.id);
+                                }}
+                                disabled={deleting === (recipe._id || recipe.id)}
+                                className="p-1 text-red-500 hover:text-red-700 disabled:text-gray-400"
+                                aria-label="Delete recipe"
+                              >
+                                {deleting === (recipe._id || recipe.id) ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </button>
                             )}
                           </div>
                         </div>

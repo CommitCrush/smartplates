@@ -6,7 +6,7 @@ interface UserLayoutProps {
 export default function UserLayout({ children }: UserLayoutProps) {
   return (
     <Layout>
-      <div >
+      <div>
         {children}
       </div>
     </Layout>

@@ -43,9 +43,10 @@ const getCategoryDisplayName = (category: string): string => {
 const getCorrectSpelling = (query: string): string => {
   const commonMisspellings: { [key: string]: string[] } = {
     'pasta': ['pata', 'past', 'pasta'],
+    'pepper': ['pep', 'peppe', 'peppr', 'peper'],
     'chicken': ['chiken', 'chicen', 'chikken', 'chicken'],
     'tomato': ['tomate', 'tomatoe', 'tomatos', 'tomato'],
-    'potato': ['potatoe', 'kartoffel', 'kartoffeln', 'potato'],
+    'potato': ['potatoe', 'kartoffel', 'kartoffeln', 'potato', 'potat'],
     'cheese': ['chese', 'ches', 'käse', 'cheese'],
     'mushroom': ['mushrom', 'pilz', 'pilze', 'mushroom'],
     'salmon': ['salomon', 'lachs', 'salmon'],

@@ -18,6 +18,7 @@ export const fuzzySearchRecipes = (recipes: Recipe[], searchQuery: string): Reci
   // Simple but effective typo corrections - Array-based
   const commonMisspellings: { [key: string]: string[] } = {
     'pasta': ['pata', 'past', 'pasta'],
+    'pepper': ['pep', 'peppe', 'peppr', 'peper'],
     'chicken': ['chiken', 'chicen', 'chikken', 'chicken'],
     'tomato': ['tomate', 'tomatoe', 'tomatos', 'tomato'],
     'potato': ['potatoe', 'kartoffel', 'kartoffeln', 'potato'],

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, ChevronDown, Users } from 'lucide-react';
+import { Search, ChevronDown, Users, BarChart3 } from 'lucide-react';
 
 interface RecipeFiltersProps {
   searchQuery: string;
@@ -47,44 +47,44 @@ export function RecipeFilters({
 
   // Filter options
   const categories = [
-    { value: '', label: 'All Categories' },
-    { value: 'breakfast', label: 'Breakfast' },
-    { value: 'main course', label: 'Lunch' },
-    { value: 'dinner', label: 'Dinner' },
-    { value: 'dessert', label: 'Dessert' },
-    { value: 'snack', label: 'Snack' },
+    { value: '', label: '🍽️ All Categories' },
+    { value: 'breakfast', label: '🥞 Breakfast' },
+    { value: 'main course', label: '🥗 Lunch' },
+    { value: 'dinner', label: '🍖 Dinner' },
+    { value: 'dessert', label: '🍰 Dessert' },
+    { value: 'snack', label: '🥨 Snack' },
   ];
 
   const difficulties = [
-    { value: '', label: 'All Difficulties' },
-    { value: 'easy', label: 'Easy' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'hard', label: 'Hard' },
+    { value: '', label: '⏰ All Difficulties' },
+    { value: 'easy', label: '⚡ Easy' },
+    { value: 'medium', label: '🔥 Medium' },
+    { value: 'hard', label: '💪 Hard' },
   ];
 
   const diets = [
-    { value: '', label: 'All Diets' },
-    { value: 'vegetarian', label: 'Vegetarian' },
-    { value: 'vegan', label: 'Vegan' },
-    { value: 'gluten free', label: 'Gluten-Free' },
-    { value: 'ketogenic', label: 'Ketogenic' },
-    { value: 'paleo', label: 'Paleo' },
-    { value: 'primal', label: 'Primal' },
-    { value: 'whole30', label: 'Whole30' },
+    { value: '', label: '🌱 All Diets' },
+    { value: 'vegetarian', label: '🥬 Vegetarian' },
+    { value: 'vegan', label: '🌿 Vegan' },
+    { value: 'gluten free', label: '🌾 Gluten-Free' },
+    { value: 'ketogenic', label: '🥑 Ketogenic' },
+    { value: 'paleo', label: '🥩 Paleo' },
+    { value: 'primal', label: '🍖 Primal' },
+    { value: 'whole30', label: '🥕 Whole30' },
   ];
 
   const allergies = [
-    { value: '', label: 'Allergies (None)' },
-    { value: 'dairy', label: 'Dairy' },
-    { value: 'egg', label: 'Egg' },
-    { value: 'gluten', label: 'Gluten' },
-    { value: 'peanut', label: 'Peanut' },
-    { value: 'seafood', label: 'Seafood' },
-    { value: 'sesame', label: 'Sesame' },
-    { value: 'soy', label: 'Soy' },
-    { value: 'sulfite', label: 'Sulfite' },
-    { value: 'tree nut', label: 'Tree Nut' },
-    { value: 'wheat', label: 'Wheat' },
+    { value: '', label: '⚠️ Allergies (None)' },
+    { value: 'dairy', label: '🧀 Dairy' },
+    { value: 'egg', label: '🥚 Egg' },
+    { value: 'gluten', label: '🍞 Gluten' },
+    { value: 'peanut', label: '🥜 Peanut' },
+    { value: 'seafood', label: '🦐 Seafood' },
+    { value: 'sesame', label: '🌰 Sesame' },
+    { value: 'soy', label: '🫘 Soy' },
+    { value: 'sulfite', label: '🧪 Sulfite' },
+    { value: 'tree nut', label: '🌰 Tree Nut' },
+    { value: 'wheat', label: '🌾 Wheat' },
   ];
 
   // Close dropdowns on outside click
@@ -154,7 +154,10 @@ export function RecipeFilters({
             onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
             className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
           >
-            <span>{categories.find(c => c.value === selectedCategory)?.label || 'All Categories'}</span>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-gray-500" />
+              <span>{categories.find(c => c.value === selectedCategory)?.label || '🍽️ All Categories'}</span>
+            </div>
             <ChevronDown className="h-4 w-4" />
           </button>
           {categoryDropdownOpen && (
@@ -182,7 +185,10 @@ export function RecipeFilters({
             onClick={() => setDietDropdownOpen(!dietDropdownOpen)}
             className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
           >
-            <span>{diets.find(d => d.value === selectedDiet)?.label || 'All Diets'}</span>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-gray-500" />
+              <span>{diets.find(d => d.value === selectedDiet)?.label || '🌱 All Diets'}</span>
+            </div>
             <ChevronDown className="h-4 w-4" />
           </button>
           {dietDropdownOpen && (
@@ -210,7 +216,10 @@ export function RecipeFilters({
             onClick={() => setAllergyDropdownOpen(!allergyDropdownOpen)}
             className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
           >
-            <span>{allergies.find(a => a.value === selectedAllergy)?.label || 'Allergies (None)'}</span>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-gray-500" />
+              <span>{allergies.find(a => a.value === selectedAllergy)?.label || '⚠️ Allergies (None)'}</span>
+            </div>
             <ChevronDown className="h-4 w-4" />
           </button>
           {allergyDropdownOpen && (
@@ -238,7 +247,10 @@ export function RecipeFilters({
             onClick={() => setDifficultyDropdownOpen(!difficultyDropdownOpen)}
             className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between"
           >
-            <span>{difficulties.find(d => d.value === selectedDifficulty)?.label || 'All Difficulties'}</span>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-gray-500" />
+              <span>{difficulties.find(d => d.value === selectedDifficulty)?.label || '⏰ All Difficulties'}</span>
+            </div>
             <ChevronDown className="h-4 w-4" />
           </button>
           {difficultyDropdownOpen && (

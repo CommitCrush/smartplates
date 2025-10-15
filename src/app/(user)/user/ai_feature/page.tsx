@@ -513,7 +513,7 @@ export default function AiRecipePage() {
 
         {/* Success popup notification */}
         {showSuccessPopup && (
-          <div className="mb-4 px-3 py-2 rounded-lg shadow-md bg-[#7D966D]/90 text-white border border-[#7D966D] text-sm text-center animate-in slide-in-from-top duration-300">
+          <div className="mb-4 px-3 py-2 rounded-lg shadow-md bg-green-600/90 text-white border-green-400 text-sm text-center animate-in slide-in-from-top duration-300">
             🎯 {recognizedIngredients.length} ingredients successfully detected!
           </div>
         )}

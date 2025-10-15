@@ -654,9 +654,7 @@ export default function MyRecipesPage() {
                         <h3 className="font-semibold text-lg mb-2 line-clamp-1">
                           {recipe.title}
                         </h3>
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                          {recipe.description}
-                        </p>
+                       
 
                         {activeTab === "planned" && recipe.notes && (
                           <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
@@ -682,9 +680,7 @@ export default function MyRecipesPage() {
                               {calculatedDifficulty}
                             </span>
                           </div>
-                          <span className="text-primary font-medium">
-                            {recipe.category}
-                          </span>
+                        
                         </div>
                         <div className="mt-3 pt-3 border-t flex justify-between items-center">
                           <div className="text-xs text-gray-500">

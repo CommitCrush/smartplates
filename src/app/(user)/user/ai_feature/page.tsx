@@ -21,6 +21,7 @@ export default function AiRecipePage() {
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   
   // ✅ Neue States für automatische Rezept-Generierung
   const [hasInitialGeneration, setHasInitialGeneration] = useState(false);
@@ -171,8 +172,8 @@ export default function AiRecipePage() {
     setAnalyzing(true);
     setError(null);
     setRecognizedIngredients([]);
-    addNotification('info', '🤖 AI is analyzing your fridge photo...', 'ingredients');
-    
+    // Remove notification - will show inline below upload box instead
+
     try {
       const res = await fetch('/api/ai/analyze-fridge', {
         method: 'POST',
@@ -185,19 +186,21 @@ export default function AiRecipePage() {
         setError(data.error || 'No ingredients recognized.');
         setRecognizedIngredients([]);
         setShowConfirm(false);
-        addNotification('error', '❌ No ingredients detected. Try a clearer photo.', 'ingredients');
+        // Remove notification - will show inline below upload box instead
       } else {
         // Extract only ingredient names if objects are returned
         const names = data.data.ingredients.map((ing: any) => typeof ing === 'string' ? ing : ing.name).filter(Boolean);
         setRecognizedIngredients(names);
         setShowConfirm(true);
-        addNotification('success', `🎯 ${names.length} ingredients successfully detected!`, 'ingredients');
+        // Show success popup for 5 seconds
+        setShowSuccessPopup(true);
+        setTimeout(() => setShowSuccessPopup(false), 5000);
       }
     } catch (err) {
       setError('Image analysis failed. Please try again.');
       setRecognizedIngredients([]);
       setShowConfirm(false);
-      addNotification('error', '🚨 AI analysis failed. Please try again.', 'ingredients');
+      // Remove notification - will show inline below upload box instead
     } finally {
       setAnalyzing(false);
     }
@@ -432,68 +435,88 @@ export default function AiRecipePage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#23293a] via-[#181e2a] to-[#232b3e] flex flex-col items-center justify-start">
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#7D966D] via-[#AABC91] to-[#CDE7C0] flex flex-col items-center justify-start p-4 md:p-6 lg:p-8">
       {/* Hero Section */}
       <div className="w-full flex justify-center items-center pt-10 pb-2 px-0">
-        <div className="flex flex-row items-stretch justify-center w-full max-w-5xl gap-0 h-[340px]">
+        <div className="flex flex-row items-stretch justify-center w-full max-w-6xl gap-0 h-[400px] shadow-2xl rounded-3xl overflow-hidden">
           {/* Left: Headline & Button */}
-          <div className="flex-1 flex flex-col justify-center items-start pl-16 pr-8 bg-transparent z-10">
-                        <h1 className="text-5xl font-extrabold text-white mb-6 leading-tight drop-shadow-lg">
+          <div className="flex-1 flex flex-col justify-center items-start pl-20 pr-12 bg-gradient-to-br from-white/95 to-[#EFF4E6]/95 backdrop-blur-sm z-10">
+                        <h1 className="text-5xl font-extrabold mb-6 leading-tight text-[#2d4a2d]">
               Smart Fridge AI<br />
-              <span className="text-primary">Your Fridge's Potential. Unlocked by AI!</span>
+              <span className="text-[#b83d2a]">Your Fridge's Potential. Unlocked by AI!</span>
             </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-lg">
+            <p className="text-xl mb-8 max-w-lg text-[#2d4a2d] font-medium">
               Discover meal ideas based on your fridge contents. Scan or upload a fridge photo and let AI inspire your next recipe.
             </p>
-          
+
           </div>
           {/* Right: Fridge image as background */}
           <div className="flex-1 relative h-full">
             <div
-              className="absolute inset-0 w-full h-full rounded-r-2xl"
+              className="absolute inset-0 w-full h-full"
               style={{
                 backgroundImage: "url('/ein-kuehlschrank-voller-lebensmittel_1021598-278.jpg')",
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                filter: 'brightness(0.98)',
+                filter: 'brightness(1.05) contrast(1.1) saturate(1.2)',
               }}
             />
+            {/* Overlay gradient for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-white/20"></div>
           </div>
         </div>
       </div>
             <div className="w-full max-w-4xl mx-auto px-0 py-10">
         {/* Section 1: Input options */}
-        <h2 className="text-2xl font-bold text-white mb-6">
+        <h2 className="text-2xl font-bold text-[#2d4a2d] mb-6">
           Add your ingredients
           {hasInitialGeneration && (
-            <span className="ml-3 text-lg text-primary font-normal">
+            <span className="ml-3 text-lg text-[#b83d2a] font-normal">
               ✨ Auto-generating recipes as you add ingredients
             </span>
           )}
         </h2>
         <div className="flex gap-6 mb-8">
-          <div className="flex-1 bg-[#232b3e] rounded-xl border border-gray-700 flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
-            <div className="mb-2 text-3xl text-primary"><i className="lucide lucide-image" /></div>
-            <div className="font-semibold text-white mb-1">Scan your fridge or upload a photo 📷</div>
-            <div className="text-gray-400 text-sm mb-4 text-center">Let AI analyze what's inside your fridge.</div>
+          <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-xl border border-[#AABC91] flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
+            <div className="mb-2 text-3xl text-[#7D966D]"><i className="lucide lucide-image" /></div>
+            <div className="font-semibold mb-1 text-[#2d4a2d]">Scan your fridge or upload a photo 📷</div>
+            <div className="text-[#2d4a2d] text-sm mb-4 text-center">Let AI analyze what's inside your fridge.</div>
             <ImageUpload image={image} onUpload={handleImageUpload} onNewImage={handleNewImage} analyzing={analyzing} />
+
+            {/* Inline notification for analyzing */}
+            {analyzing && (
+              <div className="mt-4 px-3 py-2 rounded-lg shadow-md bg-[#7D966D]/90 text-white border border-[#7D966D] text-sm text-center">
+                🤖 AI is analyzing your fridge photo...
+              </div>
+            )}
+
+            {/* Inline notification for errors */}
+            {error && !analyzing && recognizedIngredients.length === 0 && (
+              <div className="mt-4 px-3 py-2 rounded-lg shadow-md bg-[#F96850]/90 text-white border border-[#F96850] text-sm text-center">
+                ❌ No ingredients detected. Try a clearer photo.
+              </div>
+            )}
           </div>
-          <div className="flex-1 bg-[#232b3e] rounded-xl border border-gray-700 flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
-            <div className="mb-2 text-3xl text-primary"><i className="lucide lucide-pencil" /></div>
-            <div className="font-semibold text-white mb-1">Enter what you have ✍️</div>
+          <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-xl border border-[#AABC91] flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
+            <div className="mb-2 text-3xl text-[#7D966D]"><i className="lucide lucide-pencil" /></div>
+            <div className="font-semibold mb-1 text-[#7D966D]">Enter what you have ✍️</div>
 
             <IngredientInput ingredients={ingredients} onChange={handleIngredientsChange} />
           </div>
-          
+
         </div>
         
-        {/* ✅ Zutaten-bezogene Notifications */}
-        <ContextualNotifications category="ingredients" />
-        
-        <div className="border-t border-gray-700 my-8" />
+        <div className="border-t border-[#AABC91] my-8" />
         {/* Section 2: Ingredient list and filters */}
-        <h2 className="text-2xl font-bold text-white mb-6">Your current ingredients</h2>
+        <h2 className="text-2xl font-bold text-[#2d4a2d] mb-6">Your current ingredients</h2>
+
+        {/* Success popup notification */}
+        {showSuccessPopup && (
+          <div className="mb-4 px-3 py-2 rounded-lg shadow-md bg-[#7D966D]/90 text-white border border-[#7D966D] text-sm text-center animate-in slide-in-from-top duration-300">
+            🎯 {recognizedIngredients.length} ingredients successfully detected!
+          </div>
+        )}
         <div className="flex flex-wrap gap-2 mb-6">
           {/* Ingredient chips: green, red, gray */}
           {[...ingredients, ...recognizedIngredients].map((ing, idx) => (
@@ -501,12 +524,12 @@ export default function AiRecipePage() {
               key={idx}
               className={cn(
                 "px-6 py-2 rounded-full flex items-center gap-3 font-semibold text-base",
-                "bg-[#232b3e] border-2 border-lime-400 text-white shadow"
+                "bg-[#EFF4E6] border-2 border-[#7D966D] text-[#7D966D] shadow"
               )}
             >
               {ing}
               <button
-                className="ml-2 w-7 h-7 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 transition text-white text-lg font-bold border-2 border-white"
+                className="ml-2 w-7 h-7 flex items-center justify-center rounded-full bg-[#F96850] hover:bg-[#F96850]/80 transition text-white text-lg font-bold border-2 border-white"
                 onClick={() => {
                   // ✅ Zutat entfernen und automatische Regenerierung triggern
                   let wasRemoved = false;
@@ -520,7 +543,7 @@ export default function AiRecipePage() {
                     setRecognizedIngredients(newRecognizedIngredients);
                     wasRemoved = true;
                   }
-                  
+
                   // ✅ Entferne verwirrende Notification - Loading-Animation ist genug Feedback
                   // if (wasRemoved && hasInitialGeneration) {
                   //   addNotification('success', `"${ing}" removed - updating recipes...`, 'ingredients');
@@ -539,7 +562,7 @@ export default function AiRecipePage() {
         {recognizedIngredients.length > 0 && (
           <div className="flex justify-center mb-6">
             <button
-              className="bg-gray-700 text-white rounded-full px-6 py-3 font-semibold shadow hover:bg-gray-600 transition border border-gray-600"
+              className="bg-[#7D966D] text-white rounded-full px-6 py-3 font-semibold shadow hover:bg-[#7D966D]/80 transition border border-[#7D966D]"
               onClick={() => {
                 // Focus the manual input field by triggering IngredientInput's input
                 const inputEl = document.querySelector('#ingredient-manual-input') as HTMLInputElement;
@@ -558,29 +581,29 @@ export default function AiRecipePage() {
         {/* Loading indicator for auto-generation - centered */}
         {isAutoGenerating && (
           <div className="flex justify-center mb-6">
-            <div className="flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-lg border border-primary/20 shadow-sm">
-              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm font-medium text-primary">Generating recipes automatically...</span>
+            <div className="flex items-center gap-3 bg-[#7D966D]/10 px-4 py-2 rounded-lg border border-[#7D966D]/20 shadow-sm">
+              <div className="w-5 h-5 border-2 border-[#7D966D] border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm font-medium text-[#7D966D]">Generating recipes automatically...</span>
             </div>
           </div>
         )}
-        
+
         {/* Error display */}
         {error && (
-          <div className="mb-8 rounded-xl shadow-lg bg-gradient-to-r from-red-900 to-red-800 p-6">
-            <h2 className="text-xl font-bold mb-4 text-red-200">Error</h2>
-            <div className="text-red-300">{error}</div>
+          <div className="mb-8 rounded-xl shadow-lg bg-gradient-to-r from-[#F96850] to-[#F96850]/80 p-6">
+            <h2 className="text-xl font-bold mb-4 text-white">Error</h2>
+            <div className="text-white/90">{error}</div>
           </div>
         )}
-        
+
         {/* Main recipe search button - nur anzeigen wenn keine Rezepte UND kein Error UND Zutaten vorhanden */}
         {recipes.length === 0 && !error && (ingredients.length > 0 || recognizedIngredients.length > 0) && (
           <div className="flex justify-center mb-4">
             <button
               className={cn(
                 "w-full max-w-md py-3 text-lg font-bold rounded-xl",
-                "bg-lime-400 text-gray-900 shadow-lg border border-lime-500",
-                "hover:bg-lime-500 hover:shadow-xl transition-all duration-150",
+                "bg-[#F96850] text-white shadow-lg border border-[#F96850]",
+                "hover:bg-[#F96850]/90 hover:shadow-xl transition-all duration-150",
                 analyzing ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
               )}
               onClick={() => handleSearchRecipes(false)}
@@ -590,10 +613,10 @@ export default function AiRecipePage() {
             </button>
           </div>
         )}
-        
+
         {/* Conditional text based on recipe state */}
         {recipes.length === 0 && !error && (ingredients.length === 0 && recognizedIngredients.length === 0) && (
-          <div className="text-center text-gray-400 text-sm mt-2">
+          <div className="text-center text-[#2d4a2d] text-sm mt-2">
             Upload ingredients to get started! Your next meal idea is waiting.
           </div>
         )}
@@ -607,9 +630,9 @@ export default function AiRecipePage() {
                 className={cn(
                   "px-4 py-3 rounded-lg shadow-lg transition-all duration-300 transform animate-in slide-in-from-top",
                   "flex items-center justify-between border-l-4 mx-auto max-w-lg",
-                  notification.type === 'success' && "bg-green-600/90 text-white border-green-400",
-                  notification.type === 'error' && "bg-red-600/90 text-white border-red-400",
-                  notification.type === 'info' && "bg-blue-600/90 text-white border-blue-400"
+                  notification.type === 'success' && "bg-[#7D966D]/90 text-white border-[#7D966D]",
+                  notification.type === 'error' && "bg-[#F96850]/90 text-white border-[#F96850]",
+                  notification.type === 'info' && "bg-[#AABC91]/90 text-white border-[#AABC91]"
                 )}
               >
                 <span className="text-sm font-medium">{notification.message}</span>
@@ -624,22 +647,22 @@ export default function AiRecipePage() {
           </div>
         )}        {/* No recipes found message */}
         {recipes.length === 0 && error && (
-          <div className="text-center mt-6 p-6 rounded-xl bg-yellow-900/30 border border-yellow-600">
-            <div className="text-yellow-200 text-lg font-semibold mb-2">
+          <div className="text-center mt-6 p-6 rounded-xl bg-[#F96850]/20 border border-[#F96850]/40">
+            <div className="text-[#F96850] text-lg font-semibold mb-2">
               😔 No recipes found
             </div>
-            <div className="text-yellow-300 text-sm mb-4">
+            <div className="text-[#F96850]/80 text-sm mb-4">
               Try different ingredients or fewer filters. Your ingredients might be very specific.
             </div>
-            
+
             {/* ✅ Action Buttons für No Results Scenario */}
             <div className="flex gap-3 justify-center">
               <button
                 className={cn(
                   "px-6 py-3 rounded-xl font-bold transition-all duration-200",
-                  isRefreshing 
-                    ? "bg-gray-600 text-gray-300 cursor-not-allowed" 
-                    : "bg-accent text-white hover:bg-accent/80"
+                  isRefreshing
+                    ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                    : "bg-[#7D966D] text-white hover:bg-[#7D966D]/80"
                 )}
                 onClick={handleRefreshRecipes}
                 disabled={isRefreshing}
@@ -655,9 +678,9 @@ export default function AiRecipePage() {
                   </>
                 )}
               </button>
-              
+
               <button
-                className="px-6 py-3 rounded-xl bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
+                className="px-6 py-3 rounded-xl bg-[#AABC91] text-[#7D966D] font-bold hover:bg-[#AABC91]/80 transition"
                 onClick={() => {
                   // ✅ Complete page refresh - reset ALL state
                   window.location.reload();
@@ -772,9 +795,9 @@ export default function AiRecipePage() {
                 <button
                 className={cn(
                   "px-6 py-3 rounded-xl font-bold transition-all duration-200",
-                  isRefreshing 
-                    ? "bg-gray-600 text-gray-300 cursor-not-allowed" 
-                    : "bg-accent text-white hover:bg-accent/80 hover:scale-105"
+                  isRefreshing
+                    ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                    : "bg-[#7D966D] text-white hover:bg-[#7D966D]/80 hover:scale-105"
                 )}
                 onClick={handleRefreshRecipes}
                 disabled={analyzing || isRefreshing}
@@ -790,9 +813,9 @@ export default function AiRecipePage() {
                   </>
                 )}
               </button>
-              
+
               <button
-                className="px-6 py-3 rounded-xl bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
+                className="px-6 py-3 rounded-xl bg-[#AABC91] text-[#7D966D] font-bold hover:bg-[#AABC91]/80 transition"
                 onClick={() => {
                   // ✅ Complete page refresh - reset ALL state
                   window.location.reload();
@@ -808,8 +831,8 @@ export default function AiRecipePage() {
         {/* Filter Loading Anzeige */}
         {isFiltering && (
           <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2 text-gray-400 text-sm bg-gray-800/50 px-4 py-2 rounded-lg">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-r-transparent" />
+            <div className="flex items-center gap-2 text-[#2d4a2d] text-sm bg-[#EFF4E6]/50 px-4 py-2 rounded-lg">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#7D966D] border-r-transparent" />
               Applying filters...
             </div>
           </div>

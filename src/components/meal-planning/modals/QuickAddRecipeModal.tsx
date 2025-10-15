@@ -109,10 +109,10 @@ export function QuickAddRecipeModal({
       diet: selectedDiet,
       intolerances: selectedAllergy,
       ...(maxReadyTime && { maxReadyTime }),
-      number: '15',
-      page: String(page),
+      number: '500', // Lade alle Rezepte für client-side Pagination (wie Recipe Page)
+      page: '1', // Immer erste Seite da wir client-side paginieren
     }),
-    [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime, page]
+    [selectedCategory, selectedDiet, selectedAllergy, maxReadyTime] // Entfernt page dependency
   );
 
   const { recipes, loading, error, total } = useAllRecipes(searchQuery, fetchOptions);
@@ -130,6 +130,16 @@ export function QuickAddRecipeModal({
       return true;
     });
   }, [recipes, selectedDifficulty]);
+
+  // Client-side Pagination (wie Recipe Page)
+  const RECIPES_PER_PAGE = 15;
+  const totalFilteredPages = Math.ceil(filteredRecipes.length / RECIPES_PER_PAGE);
+  
+  const displayedRecipes = useMemo(() => {
+    const startIndex = (page - 1) * RECIPES_PER_PAGE;
+    const endIndex = startIndex + RECIPES_PER_PAGE;
+    return filteredRecipes.slice(startIndex, endIndex);
+  }, [filteredRecipes, page]);
 
   const handleAddRecipe = (recipe: Recipe) => {
     const recipeId = recipe.spoonacularId ? String(recipe.spoonacularId) : recipe.title;
@@ -341,7 +351,7 @@ export function QuickAddRecipeModal({
             <>
               <div className="flex-1 overflow-y-auto pr-2">
                 <div className="grid grid-cols-3 gap-4 pb-4">
-                  {filteredRecipes.slice(0, 15).map((recipe) => {
+                  {displayedRecipes.map((recipe) => {
                     const safeKey = recipe.spoonacularId ? String(recipe.spoonacularId) : recipe.title;
                     const imageConfig = getRecipeImage(recipe.image);
 
@@ -406,11 +416,11 @@ export function QuickAddRecipeModal({
                 </div>
               </div>
 
-              {filteredRecipes.length > 0 && (
+              {filteredRecipes.length > 0 && totalFilteredPages > 1 && (
                 <div className="pt-4 border-t border-gray-200">
                   <Pagination
                     currentPage={page}
-                    totalPages={Math.ceil((total || filteredRecipes.length) / 15)}
+                    totalPages={totalFilteredPages}
                     onPageChange={setPage}
                   />
                 </div>

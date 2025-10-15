@@ -488,12 +488,13 @@ async function captureFullVisualCalendar(element: HTMLElement, options: ExportOp
       ignoreElements: (el) => {
         const ignoredTags = ['SCRIPT', 'STYLE', 'NOSCRIPT'];
         const ignoredClasses = ['ignore-screenshot', 'btn', 'button', 'edit-btn', 'delete-btn', 'copy-btn'];
+        const htmlEl = el as HTMLElement;
         
         return (
           ignoredTags.includes(el.tagName) ||
           ignoredClasses.some(cls => el.classList?.contains(cls)) ||
-          el.style.display === 'none' ||
-          el.style.visibility === 'hidden'
+          htmlEl.style.display === 'none' ||
+          htmlEl.style.visibility === 'hidden'
         );
       },
       onclone: (clonedDoc: Document) => {
@@ -501,8 +502,8 @@ async function captureFullVisualCalendar(element: HTMLElement, options: ExportOp
         
         // Remove any problematic color functions
         const problematicElements = clonedDoc.querySelectorAll('[style*="lab("], [style*="lch("], [style*="oklab("], [style*="oklch("]');
-        problematicElements.forEach((el: HTMLElement) => {
-          el.removeAttribute('style');
+        problematicElements.forEach((el: Element) => {
+          (el as HTMLElement).removeAttribute('style');
         });
         
         // Ensure professional styles are applied
@@ -626,96 +627,221 @@ export async function exportMealPlanToPDF(
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 20;
+    const margin = 15;
 
-    // Add title
+    // Define color scheme - Soft Sage Green Theme with sharper coral
+    const colors = {
+      primary: [185, 195, 180],    // #b9c3b4 - Softer sage green
+      secondary: [160, 180, 160],  // #a0b4a0 - Gentle green
+      accent: [240, 130, 130],     // #f08282 - Sharper coral for week bar
+      background: [250, 252, 250], // #fafcfa - Very light background
+      text: {
+        dark: [60, 75, 60],        // #3c4b3c - Sharper dark green text for recipes
+        medium: [90, 105, 90],     // #5a695a - Medium green text
+        light: [155, 170, 155]     // #9baa9b - Light green text
+      },
+      meal: {
+        breakfast: [240, 210, 140], // #f0d28c - Soft warm amber
+        lunch: [185, 195, 180],     // #b9c3b4 - Soft sage green
+        dinner: [160, 175, 190],    // #a0afbe - Gentle blue
+        snacks: [235, 190, 140]     // #ebbe8c - Soft orange
+      }
+    };
+
+    // Helper function to set RGB color
+    const setColor = (colorArray: number[]) => {
+      pdf.setTextColor(colorArray[0], colorArray[1], colorArray[2]);
+    };
+
+    const setFillColor = (colorArray: number[]) => {
+      pdf.setFillColor(colorArray[0], colorArray[1], colorArray[2]);
+    };
+
+    // Add green header background
+    setFillColor(colors.primary);
+    pdf.rect(0, 0, pageWidth, 60, 'F');
+
+    // Add SmartPlates logo area with chef hat icon (exact match to UI)
+    const logoY = 25;
+    const logoX = pageWidth / 2 - 30;
+    
+    // Create simple chef hat icon (matching ChefHat component style)
+    setFillColor([255, 255, 255]);
+    
+    // Chef hat outline - simple and clean like the UI
+    // Hat base (wider, flatter)
+    pdf.roundedRect(logoX, logoY - 2, 10, 6, 1, 1, 'F');
+    
+    // Hat top (single rounded top)
+    pdf.roundedRect(logoX + 1, logoY - 6, 8, 5, 2, 2, 'F');
+    
+    // Hat brim (thin line at bottom)
+    pdf.rect(logoX - 1, logoY + 3, 12, 1, 'F');
+    
+    // Add SmartPlates text logo (exactly like in the attachments)
+    setColor([255, 255, 255]);
     pdf.setFontSize(20);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Weekly Meal Plan', margin, margin + 10);
+    pdf.text('SmartPlates', logoX + 15, logoY + 2);
 
-    // Add date range
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'normal');
-    const dateText = mealPlanData.title || 'Meal Plan';
-    pdf.text(dateText, margin, margin + 25);
-
-    let yPosition = margin + 40;
-    const lineHeight = 8;
-    const dayWidth = (pageWidth - 2 * margin) / 7;
-
-    // Add day headers
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    
-    pdf.setFontSize(10);
+    // Add main title
+    setColor([255, 255, 255]);
+    pdf.setFontSize(24);
     pdf.setFont('helvetica', 'bold');
     
-    days.forEach((day, index) => {
-      const xPosition = margin + (index * dayWidth);
-      pdf.text(day.substring(0, 3), xPosition, yPosition);
-    });
-
-    yPosition += lineHeight * 2;
-
-    // Add meals for each day
-    const mealTypes = ['breakfast', 'lunch', 'dinner'];
+    // Get the week date range
+    const startDate = mealPlanData.weekStartDate ? new Date(mealPlanData.weekStartDate) : new Date();
+    const weekTitle = `Week of ${startDate.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
     
-    mealTypes.forEach(mealType => {
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(mealType.charAt(0).toUpperCase() + mealType.slice(1), margin, yPosition);
-      yPosition += lineHeight;
+    const titleWidth = pdf.getTextWidth(weekTitle);
+    pdf.text(weekTitle, (pageWidth - titleWidth) / 2, 40);
 
-      // Add meals for each day
-      days.forEach((_, dayIndex) => {
-        const xPosition = margin + (dayIndex * dayWidth);
-        const dayMeals = mealPlanData.days?.[dayIndex]?.[mealType] || [];
-        
-        pdf.setFont('helvetica', 'normal');
-        dayMeals.forEach((meal: any, mealIndex: number) => {
-          if (yPosition > pageHeight - margin) {
-            pdf.addPage();
-            yPosition = margin;
-          }
-          
-          const mealText = meal.recipeName || meal.name || 'Meal';
-          const truncatedText = mealText.length > 15 ? mealText.substring(0, 12) + '...' : mealText;
-          pdf.text(truncatedText, xPosition, yPosition + (mealIndex * lineHeight));
-        });
-      });
+    // Add "Created with SmartPlates" subtitle
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    const subtitleText = 'Your Weekly Meal Plan';
+    const subtitleWidth = pdf.getTextWidth(subtitleText);
+    pdf.text(subtitleText, (pageWidth - subtitleWidth) / 2, 50);
 
-      yPosition += lineHeight * 3;
-    });
+    // Add coral week range bar
+    setFillColor(colors.accent);
+    pdf.rect(margin, 55, pageWidth - 2 * margin, 12, 'F');
+    
+    // Week range text on coral bar
+    setColor([255, 255, 255]);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6);
+    const weekRange = `${startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+    const weekRangeWidth = pdf.getTextWidth(weekRange);
+    pdf.text(weekRange, (pageWidth - weekRangeWidth) / 2, 63);
 
-    // Add grocery list if available
-    if (mealPlanData.groceryList && mealPlanData.groceryList.length > 0) {
-      if (yPosition > pageHeight - 60) {
+    let yPosition = 80;
+    const dayHeight = 45;
+    const dayWidth = pageWidth - 2 * margin;
+
+    // Process each day
+    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
+    mealPlanData.days?.forEach((day: any, dayIndex: number) => {
+      // Check if we need a new page
+      if (yPosition + dayHeight > pageHeight - margin) {
         pdf.addPage();
         yPosition = margin;
       }
 
-      yPosition += lineHeight;
+      const dayName = daysOfWeek[dayIndex] || `Day ${dayIndex + 1}`;
+      const dayDate = day.date ? new Date(day.date) : new Date(startDate.getTime() + dayIndex * 24 * 60 * 60 * 1000);
+      const formattedDate = `${dayName}, ${dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+
+      // Day header background
+      setFillColor(colors.primary);
+      pdf.rect(margin, yPosition, dayWidth, 12, 'F');
+
+      // Day title
+      setColor([255, 255, 255]);
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Grocery List', margin, yPosition);
-      yPosition += lineHeight * 2;
+      pdf.text(formattedDate, margin + 5, yPosition + 8);
 
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
+      yPosition += 15;
 
-      mealPlanData.groceryList.forEach((item: any) => {
-        if (yPosition > pageHeight - margin) {
-          pdf.addPage();
-          yPosition = margin;
+      // Meal types row
+      const mealTypes = [
+        { name: 'Breakfast', key: 'breakfast', color: colors.meal.breakfast },
+        { name: 'Lunch', key: 'lunch', color: colors.meal.lunch },
+        { name: 'Dinner', key: 'dinner', color: colors.meal.dinner },
+        { name: 'Snacks', key: 'snacks', color: colors.meal.snacks }
+      ];
+
+      const mealWidth = dayWidth / 4;
+
+      mealTypes.forEach((mealType, mealIndex) => {
+        const xPosition = margin + (mealIndex * mealWidth);
+        
+        // Meal type header
+        setFillColor(mealType.color);
+        pdf.rect(xPosition, yPosition, mealWidth, 8, 'F');
+        
+        // Meal type title
+        setColor([255, 255, 255]);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        const mealTitleWidth = pdf.getTextWidth(mealType.name);
+        pdf.text(mealType.name, xPosition + (mealWidth - mealTitleWidth) / 2, yPosition + 6);
+
+        // Meal content area background
+        setFillColor([255, 255, 255]);
+        pdf.rect(xPosition, yPosition + 8, mealWidth, 30, 'F'); // Increased height for more content
+        
+        // Add border
+        pdf.setDrawColor(colors.text.light[0], colors.text.light[1], colors.text.light[2]);
+        pdf.setLineWidth(0.1);
+        pdf.rect(xPosition, yPosition + 8, mealWidth, 30, 'S');
+
+        // Meal content
+        const meals = day[mealType.key] || [];
+        setColor(colors.text.dark);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+
+        meals.forEach((meal: any, index: number) => {
+          if (index < 4) { // Allow up to 4 meals per slot for better coverage
+            const mealText = meal.recipeName || meal.name || 'Meal';
+            // Show full title, but wrap if too long
+            const maxLineLength = 20;
+            const truncatedText = mealText.length > maxLineLength ? mealText.substring(0, maxLineLength - 3) + '...' : mealText;
+            const textYPos = yPosition + 13 + (index * 6); // Slightly more space between items
+            
+            // Add bullet point
+            setColor(colors.text.dark);
+            pdf.text('•', xPosition + 2, textYPos);
+            
+            // Add meal name with sharper text
+            pdf.setFontSize(9);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(truncatedText, xPosition + 5, textYPos);
+            
+            // Add servings and prep time if available
+            if (meal.servings || meal.prepTime || meal.cookingTime) {
+              const details = [];
+              if (meal.servings) details.push(`${meal.servings} srv`);
+              if (meal.prepTime) details.push(`${meal.prepTime}min prep`);
+              if (meal.cookingTime) details.push(`${meal.cookingTime}min cook`);
+              
+              const detailText = details.join(' • ');
+              if (detailText) {
+                setColor(colors.text.dark);
+                pdf.setFontSize(7);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(detailText, xPosition + 5, textYPos + 3);
+              }
+            }
+          }
+        });
+
+        if (meals.length > 4) {
+          setColor(colors.text.medium);
+          pdf.setFontSize(7);
+          pdf.text(`+${meals.length - 4} more`, xPosition + 5, yPosition + 35);
         }
-
-        const itemText = `• ${item.name} ${item.amount ? `(${item.amount} ${item.unit || ''})` : ''}`;
-        pdf.text(itemText, margin + 5, yPosition);
-        yPosition += lineHeight;
       });
-    }
+
+      yPosition += 43; // Adjusted for increased meal content area height
+    });
+
+    // Add footer with SmartPlates branding
+    const footerY = pageHeight - 15;
+    setColor(colors.text.light);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    const footerText = `Generated by SmartPlates • ${new Date().toLocaleDateString('en-US')}`;
+    const footerWidth = pdf.getTextWidth(footerText);
+    pdf.text(footerText, (pageWidth - footerWidth) / 2, footerY);
 
     // Generate filename
-    const filename = options.filename || `meal-plan-${new Date().toISOString().split('T')[0]}.pdf`;
+    const filename = options.filename || `smartplates-meal-plan-${new Date().toISOString().split('T')[0]}.pdf`;
 
     // Save the PDF
     pdf.save(filename);
@@ -802,6 +928,290 @@ export function exportGroceryListAsText(groceryList: any[], filename?: string): 
   } catch (error) {
     console.error('Grocery list export failed:', error);
     throw new Error('Failed to export grocery list');
+  }
+}
+
+/**
+ * Exports grocery list as professional PDF with SmartPlates branding
+ */
+export function exportGroceryListAsPDF(groceryList: any[], filename?: string): void {
+  try {
+    console.log('🛒 Creating professional grocery list PDF...');
+    
+    // Create PDF document
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 15;
+
+    // Define the same color scheme as meal plan PDF - Soft Sage Green Theme
+    const colors = {
+      primary: [185, 195, 180],    // Soft sage green
+      secondary: [160, 180, 160],  // Deeper sage
+      accent: [240, 130, 130],     // Sharp coral accent
+      background: [250, 252, 250], // Very light sage
+      text: {
+        dark: [60, 75, 60],        // Dark sage for headers
+        medium: [90, 105, 90],     // Medium sage for body
+        light: [155, 170, 155]     // Light sage for metadata
+      },
+      category: {
+        vegetables: [130, 180, 140],   // Green for vegetables
+        fruits: [255, 200, 100],       // Orange for fruits
+        dairy: [200, 220, 255],        // Light blue for dairy
+        meat: [255, 180, 180],         // Light red for meat
+        grains: [240, 210, 140],       // Yellow for grains
+        general: [220, 220, 220]       // Gray for general items
+      }
+    };
+
+    // Helper functions for colors
+    const setColor = (colorArray: number[]) => {
+      pdf.setTextColor(colorArray[0], colorArray[1], colorArray[2]);
+    };
+
+    const setFillColor = (colorArray: number[]) => {
+      pdf.setFillColor(colorArray[0], colorArray[1], colorArray[2]);
+    };
+
+    // Add green header background (same as meal plan)
+    setFillColor(colors.primary);
+    pdf.rect(0, 0, pageWidth, 60, 'F');
+
+    // Add SmartPlates logo area with chef hat icon (exact match to meal plan)
+    const logoY = 25;
+    const logoX = pageWidth / 2 - 30;
+    
+    // Create simple chef hat icon (same as meal plan)
+    setFillColor([255, 255, 255]);
+    
+    // Chef hat outline - simple and clean
+    pdf.roundedRect(logoX, logoY - 2, 10, 6, 1, 1, 'F');
+    pdf.roundedRect(logoX + 1, logoY - 6, 8, 5, 2, 2, 'F');
+    pdf.rect(logoX - 1, logoY + 3, 12, 1, 'F');
+    
+    // Add SmartPlates text logo
+    setColor([255, 255, 255]);
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('SmartPlates', logoX + 15, logoY + 2);
+
+    // Add main title
+    setColor([255, 255, 255]);
+    pdf.setFontSize(24);
+    pdf.setFont('helvetica', 'bold');
+    
+    const titleText = 'Shopping List';
+    const titleWidth = pdf.getTextWidth(titleText);
+    pdf.text(titleText, (pageWidth - titleWidth) / 2, 40);
+
+    // Add subtitle
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    const subtitleText = 'Your Smart Grocery List';
+    const subtitleWidth = pdf.getTextWidth(subtitleText);
+    pdf.text(subtitleText, (pageWidth - subtitleWidth) / 2, 50);
+
+    // Add coral date bar
+    setFillColor(colors.accent);
+    pdf.rect(margin, 55, pageWidth - 2 * margin, 12, 'F');
+    
+    // Date text on coral bar
+    setColor([255, 255, 255]);
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    const dateText = `Generated on ${new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })}`;
+    const dateWidth = pdf.getTextWidth(dateText);
+    pdf.text(dateText, (pageWidth - dateWidth) / 2, 63);
+
+    // Group items by category
+    const groupedItems = groceryList.reduce((groups: Record<string, any[]>, item) => {
+      const category = item.category || 'General';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(item);
+      return groups;
+    }, {});
+
+    // Sort categories to put common ones first
+    const categoryOrder = ['Vegetables', 'Fruits', 'Dairy', 'Meat', 'Grains', 'General'];
+    const sortedCategories = Object.keys(groupedItems).sort((a, b) => {
+      const indexA = categoryOrder.indexOf(a);
+      const indexB = categoryOrder.indexOf(b);
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+
+    let yPosition = 75; // Start much closer to the header
+    const itemHeight = 6; // Reduce item height to fit more items
+    const categoryHeaderHeight = 12; // Reduce category header height
+
+    // Add total items count
+    setColor(colors.text.medium);
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    const totalItems = groceryList.length;
+    const totalText = `Total Items: ${totalItems}`;
+    pdf.text(totalText, margin, yPosition);
+    yPosition += 10; // Reduce space after total items
+
+    // Process each category
+    sortedCategories.forEach((categoryName, categoryIndex) => {
+      const items = groupedItems[categoryName];
+      
+      // Check if we need a new page for the whole category - be less aggressive
+      const estimatedHeight = categoryHeaderHeight + (items.length * itemHeight) + 5;
+      if (categoryIndex > 0 && yPosition + estimatedHeight > pageHeight - 25) { // Only break for subsequent categories
+        pdf.addPage();
+        yPosition = margin + 10;
+      }
+
+      // Category header with colored background
+      const categoryColor = colors.category[categoryName.toLowerCase() as keyof typeof colors.category] || colors.category.general;
+      setFillColor(categoryColor);
+      pdf.roundedRect(margin, yPosition - 2, pageWidth - 2 * margin, categoryHeaderHeight - 2, 3, 3, 'F');
+
+      // Category title
+      setColor([255, 255, 255]);
+      pdf.setFontSize(12); // Slightly smaller category title
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`${categoryName} (${items.length} items)`, margin + 5, yPosition + 5);
+      
+      yPosition += categoryHeaderHeight;
+
+      // Items in this category
+      items.forEach((item, itemIndex) => {
+        // Check if we need a new page for individual items - less aggressive
+        if (yPosition + itemHeight + 5 > pageHeight - 15) {
+          pdf.addPage();
+          yPosition = margin + 10;
+        }
+
+        // Alternating row background for readability
+        if (itemIndex % 2 === 0) {
+          setFillColor([248, 250, 248]);
+          pdf.rect(margin, yPosition - 2, pageWidth - 2 * margin, itemHeight, 'F');
+        }
+
+        // Checkbox - draw a proper checkbox instead of Unicode symbol
+        setColor(colors.text.dark);
+        pdf.setLineWidth(0.3);
+        
+        // Draw checkbox square
+        const checkboxSize = 3;
+        const checkboxX = margin + 3;
+        const checkboxY = yPosition - 1;
+        
+        pdf.rect(checkboxX, checkboxY, checkboxSize, checkboxSize, 'S');
+        
+        // If item is checked, add a checkmark
+        if (item.checked) {
+          pdf.setLineWidth(0.5);
+          // Draw checkmark
+          pdf.line(checkboxX + 0.5, checkboxY + 1.5, checkboxX + 1.2, checkboxY + 2.2);
+          pdf.line(checkboxX + 1.2, checkboxY + 2.2, checkboxX + 2.5, checkboxY + 0.8);
+        }
+
+        // Item details
+        const amount = item.quantity || item.amount || '';
+        const unit = item.unit || '';
+        const name = item.name || 'Unknown item';
+        
+        // Format item text
+        let itemText = name;
+        if (amount && unit) {
+          itemText = `${amount} ${unit} ${name}`;
+        } else if (amount) {
+          itemText = `${amount} ${name}`;
+        }
+
+        // Main item text
+        setColor(colors.text.dark);
+        pdf.setFontSize(10); // Slightly smaller font to fit more
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(itemText, margin + 12, yPosition + 2);
+
+        // Item notes or additional info (if available)
+        if (item.notes) {
+          setColor(colors.text.light);
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'italic');
+          pdf.text(item.notes, margin + 12, yPosition + 4.5);
+        }
+
+        yPosition += itemHeight;
+      });
+
+      yPosition += 3; // Minimal space between categories
+    });
+
+    // Add summary section - don't force a new page, use available space
+    yPosition += 10; // More space before summary for better separation
+    // Remove the page break logic - let it flow naturally on the same page
+
+    // Summary box - make it bigger to contain all text properly
+    setFillColor(colors.background);
+    pdf.roundedRect(margin, yPosition, pageWidth - 2 * margin, 35, 5, 5, 'F');
+    
+    // Summary border
+    setColor(colors.primary);
+    pdf.setLineWidth(1);
+    pdf.roundedRect(margin, yPosition, pageWidth - 2 * margin, 35, 5, 5, 'S');
+
+    // Summary title
+    setColor(colors.text.dark);
+    pdf.setFontSize(12); // Smaller title
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Shopping Summary', margin + 8, yPosition + 8);
+
+    // Summary details
+    setColor(colors.text.medium);
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    
+    const summaryLines = [
+      `Total Categories: ${sortedCategories.length}`,
+      `Total Items: ${totalItems}`,
+      `Generated: ${new Date().toLocaleString('en-US')}`
+    ];
+
+    summaryLines.forEach((line, index) => {
+      pdf.text(line, margin + 8, yPosition + 18 + (index * 6)); // More spacing between lines
+    });
+
+    // Add footer with SmartPlates branding (same as meal plan) - place it outside the summary box
+    const footerY = pageHeight - 10;
+    setColor(colors.text.light);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    const footerText = `Generated by SmartPlates • ${new Date().toLocaleDateString('en-US')}`;
+    const footerWidth = pdf.getTextWidth(footerText);
+    pdf.text(footerText, (pageWidth - footerWidth) / 2, footerY);
+
+    // Generate filename with clear grocery list identifier
+    const pdfFilename = filename || `SmartPlates-GroceryList-${new Date().toISOString().split('T')[0]}.pdf`;
+
+    // Save the PDF
+    pdf.save(pdfFilename);
+    
+    console.log('✅ Professional grocery list PDF created successfully!');
+    
+  } catch (error) {
+    console.error('❌ Grocery list PDF export failed:', error);
+    throw new Error('Failed to export grocery list to PDF');
   }
 }
 

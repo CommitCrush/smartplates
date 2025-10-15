@@ -116,22 +116,31 @@ export interface IMealPlan {
 
 /**
  * Get the start of the week (Monday) for any given date
+ * Timezone-safe version that doesn't modify the original date
  */
 export function getWeekStartDate(date: Date): Date {
-  const d = new Date(date);
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate()); // Create new date without time
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  return new Date(d.setDate(diff));
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0); // Ensure time is set to start of day
+  return d;
 }
 
 /**
  * Get all dates in a week starting from a given Monday
+ * Timezone-safe version that creates proper local dates
  */
 export function getWeekDates(weekStartDate: Date): Date[] {
   const dates: Date[] = [];
   for (let i = 0; i < 7; i++) {
-    const date = new Date(weekStartDate);
-    date.setDate(weekStartDate.getDate() + i);
+    // Create new date based on year, month, day to avoid timezone issues
+    const date = new Date(
+      weekStartDate.getFullYear(),
+      weekStartDate.getMonth(), 
+      weekStartDate.getDate() + i
+    );
+    date.setHours(0, 0, 0, 0); // Ensure time is set to start of day
     dates.push(date);
   }
   return dates;

@@ -101,7 +101,7 @@ export function MealSlotComponent({
   });
 
   // Calculate total time
-  const totalTime = (meal.cookingTime || 0) + (meal.prepTime || 0);
+  const totalTime = (meal.cookingTime || 0) && (meal.prepTime || 0);
 
   // Handle servings update
   const handleServingsChange = (newServings: number) => {
@@ -123,7 +123,7 @@ export function MealSlotComponent({
     <div
       ref={ref}
       className={cn(
-        'relative bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-2.5',
+        'relative bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-2.5',
         'hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200',
         onShowRecipe ? 'cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700' : 'cursor-default',
         isDragging && 'opacity-50 rotate-2 scale-105',
@@ -253,7 +253,7 @@ export function MealSlotComponent({
             )}
 
             {/* Servings - Responsive Editable */}
-            <div className="flex items-center space-x-1 bg-blue-50 dark:bg-blue-900 px-1 sm:px-1.5 py-0.5 rounded">
+            <div className="flex items-center space-x-1 bg-blue-50 dark:bg-gray-700 px-1 sm:px-1.5 py-0.5 rounded">
               <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-blue-600 dark:text-blue-400" />
               <span className="font-medium text-blue-700 dark:text-blue-300 text-xs">{meal.servings || 1}</span>
               {onUpdate && (
@@ -264,7 +264,7 @@ export function MealSlotComponent({
                       handleServingsChange((meal.servings || 1) - 1);
                     }}
                     disabled={(meal.servings || 1) <= 1}
-                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-blue-200 dark:border-blue-700 transition-colors"
+                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white dark:bg-[#a8b89c] hover:bg-blue-100 dark:hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-blue-200 dark:border-blue-700 transition-colors"
                     title="Decrease servings"
                   >
                     <span className="text-xs leading-none">−</span>
@@ -275,7 +275,7 @@ export function MealSlotComponent({
                       handleServingsChange((meal.servings || 1) + 1);
                     }}
                     disabled={(meal.servings || 1) >= 20}
-                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-blue-200 dark:border-blue-700 transition-colors"
+                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-white dark:bg-[#a8b89c] hover:bg-blue-100 dark:hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xs border border-blue-200 dark:border-blue-700 transition-colors"
                     title="Increase servings"
                   >
                     <span className="text-xs leading-none">+</span>

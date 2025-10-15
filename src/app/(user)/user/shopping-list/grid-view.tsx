@@ -4,8 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import jsPDF from 'jspdf';
 import toast, { Toaster } from 'react-hot-toast';
+import { exportGroceryListAsPDF } from '@/utils/mealPlanExport';
 
 // --- Iconos SVG ---
 const BackIcon = () => (
@@ -279,22 +279,19 @@ export default function ShoppingListGridView() {
   const handlePrint = () => window.print();
 
   const handleDownloadPdf = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(22);
-    doc.text(activeListTitle, 20, 20);
-    doc.setFontSize(12);
-    let y = 30;
-    if (recipeInfo) {
-      doc.text(`Serves: ${servings}`, 20, y); y += 10;
-    }
-    ingredients.forEach(ingredient => {
-      const text = `${ingredient.checked ? '[X]' : '[ ]'} ${ingredient.name} - ${ingredient.quantity} ${ingredient.unit}`;
-      const splitText = doc.splitTextToSize(text, 170);
-      if (y > 280) { doc.addPage(); y = 20; }
-      doc.text(splitText, 20, y);
-      y += (splitText.length * 5) + 5;
-    });
-    doc.save(`${listName || 'shopping-list'}.pdf`);
+    // Convert shopping list ingredients to the format expected by our professional PDF function
+    const ingredientsList = ingredients.map(ingredient => ({
+      name: ingredient.name,
+      quantity: ingredient.quantity,
+      unit: ingredient.unit,
+      checked: ingredient.checked
+    }));
+
+    // Use our professional SmartPlates-branded PDF export
+    exportGroceryListAsPDF(
+      ingredientsList,
+      listName || 'shopping-list'
+    );
   };
 
   if (loading) return <div className="w-full min-h-screen flex justify-center items-center bg-[#FEFEFD] dark:bg-[#373739] text-[#7D966D] dark:text-[#CDE7C0]">Loading your shopping list...</div>;

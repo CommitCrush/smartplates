@@ -43,11 +43,11 @@ export default function IngredientInput({ ingredients = [], onChange, label }: {
         <button type="button" className="btn btn-secondary" onClick={handleAdd}>+</button>
       </div>
       {showDropdown && filteredSuggestions.length > 0 && (
-        <ul className="absolute z-10 bg-white dark:bg-gray-900 border rounded w-full mt-1 shadow-lg max-h-40 overflow-auto">
+        <ul className="absolute z-10 border rounded w-full mt-1 shadow-lg max-h-40 overflow-auto">
           {filteredSuggestions.map((s, idx) => (
             <li
               key={idx}
-              className="px-3 py-2 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900"
+              className="px-3 py-2 bg-white cursor-pointer hover:bg-green-100 dark:hover:bg-green-900"
               onClick={() => {
                 onChange([...ingredients, s]);
                 setInput('');

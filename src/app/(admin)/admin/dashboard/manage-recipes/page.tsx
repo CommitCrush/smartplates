@@ -33,6 +33,7 @@ export default function RecipeManagementPage() {
   const [filterSource, setFilterSource] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [recipesPerPage] = useState(20);
+  const [totalRecipes, setTotalRecipes] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Bei Spoonacular-Rezepten direkt zur _id navigieren
@@ -126,35 +127,37 @@ export default function RecipeManagementPage() {
   // Reset to first page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
+    loadRecipes(1);
   }, [searchTerm, filterSource]);
 
-  const loadRecipes = async () => {
+  const loadRecipes = async (page: number = 1) => {
     if (!user || user.role !== 'admin') return;
-    
+
     try {
       setLoading(true);
-      
-      // Add cache-busting query parameter to prevent caching
-      const response = await fetch(`/api/admin/recipes?_t=${Date.now()}`);
+
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: recipesPerPage.toString(),
+        search: searchTerm,
+        source: filterSource,
+        _t: Date.now().toString() // cache-busting
+      });
+
+      const response = await fetch(`/api/admin/recipes?${params}`);
       const data = await response.json();
-      
+
       console.log('API Response:', data);
-      
+
       if (response.ok) {
-        // Sort by creation date to ensure consistent ordering
-        const sortedRecipes = [...(data.recipes || [])].sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        
-        setRecipes(sortedRecipes);
-        console.log('Loaded recipes:', sortedRecipes.length);
-        console.log('Recipe sources:', sortedRecipes.reduce((acc, recipe) => {
+        setRecipes(data.recipes || []);
+        setTotalRecipes(data.total || 0);
+        console.log('Loaded recipes:', data.recipes?.length || 0, 'of', data.total || 0);
+        console.log('Recipe sources:', (data.recipes || []).reduce((acc: Record<string, number>, recipe: Recipe) => {
           acc[recipe.source] = (acc[recipe.source] || 0) + 1;
           return acc;
         }, {}));
-        
-        // Reset to first page when new data is loaded
-        setCurrentPage(1);
       } else {
         console.error('API error:', data.error);
       }
@@ -169,45 +172,43 @@ export default function RecipeManagementPage() {
     console.log('User state changed:', user?.email, user?.role);
     if (user?.role === 'admin') {
       console.log('Loading recipes for admin...');
-      loadRecipes();
+      loadRecipes(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Filter recipes based on search and filter criteria
-  const filteredRecipes = recipes.filter(recipe => {
-    const matchesSearch = recipe.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSource = filterSource === 'all' || recipe.source === filterSource;
-    return matchesSearch && matchesSource;
-  });
-  
-  // Calculate pagination
-  const indexOfLastRecipe = currentPage * recipesPerPage;
-  const indexOfFirstRecipe = indexOfLastRecipe - recipesPerPage;
-  const currentRecipes = filteredRecipes.slice(indexOfFirstRecipe, indexOfLastRecipe);
-  const totalPages = Math.max(1, Math.ceil(filteredRecipes.length / recipesPerPage));
-  
-  console.log('Pagination:', { 
-    total: filteredRecipes.length,
-    currentPage, 
+  // Recipes are now paginated on the server, so currentRecipes is just recipes
+  const currentRecipes = recipes;
+  const totalPages = Math.max(1, Math.ceil(totalRecipes / recipesPerPage));
+
+  console.log('Pagination:', {
+    total: totalRecipes,
+    currentPage,
     totalPages,
-    showing: `${indexOfFirstRecipe + 1}-${Math.min(indexOfLastRecipe, filteredRecipes.length)} of ${filteredRecipes.length}`
+    showing: `${(currentPage - 1) * recipesPerPage + 1}-${Math.min(currentPage * recipesPerPage, totalRecipes)} of ${totalRecipes}`
   });
   
   // Change page
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-  
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    loadRecipes(pageNumber);
+  };
+
   // Go to next page
   const nextPage = () => {
     if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+      const newPage = currentPage + 1;
+      setCurrentPage(newPage);
+      loadRecipes(newPage);
     }
   };
-  
+
   // Go to previous page
   const previousPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      loadRecipes(newPage);
     }
   };
 
@@ -219,7 +220,7 @@ export default function RecipeManagementPage() {
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold">Recipe Management</h3>
-        <Button onClick={loadRecipes} disabled={loading}>
+        <Button onClick={() => loadRecipes()} disabled={loading}>
           <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
           Refresh
         </Button>
@@ -306,17 +307,17 @@ export default function RecipeManagementPage() {
             </tbody>
           </table>
           
-          {filteredRecipes.length === 0 && (
+          {totalRecipes === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No recipes found.
             </div>
           )}
-          
+
           {/* Pagination */}
-          {filteredRecipes.length > 0 && (
+          {totalRecipes > 0 && (
             <div className="mt-6">
               <div className="text-sm text-muted-foreground text-center mb-2">
-                Showing {indexOfFirstRecipe + 1} to {Math.min(indexOfLastRecipe, filteredRecipes.length)} of {filteredRecipes.length} recipes
+                Showing {(currentPage - 1) * recipesPerPage + 1} to {Math.min(currentPage * recipesPerPage, totalRecipes)} of {totalRecipes} recipes
               </div>
               
               <div className="flex justify-center items-center gap-1">

@@ -10,7 +10,7 @@ import { authOptions } from '@/lib/auth';
 import { getCollection, COLLECTIONS } from '@/lib/db';
 import { shouldBeAdmin } from '@/config/team';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     // Check admin authentication using team config
     const session = await getServerSession(authOptions);
@@ -29,8 +29,14 @@ export async function GET(): Promise<NextResponse> {
       );
     }
 
-    console.log('[Admin API] Fetching recipes from MongoDB');
-    
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+    const search = url.searchParams.get('search') || '';
+    const source = url.searchParams.get('source') || 'all';
+
+    console.log('[Admin API] Fetching recipes from MongoDB with params:', { page, limit, search, source });
+
     // Get recipes from all sources
     const adminRecipesPromise = getCollection(COLLECTIONS.RECIPES)
       .then(collection => {
@@ -41,7 +47,7 @@ export async function GET(): Promise<NextResponse> {
         console.error('[Admin API] Error fetching admin recipes:', err);
         return [];
       });
-      
+
     const userRecipesPromise = getCollection(COLLECTIONS.USER_RECIPES)
       .then(collection => {
         console.log('[Admin API] Querying user recipes collection');
@@ -51,7 +57,7 @@ export async function GET(): Promise<NextResponse> {
         console.error('[Admin API] Error fetching user recipes:', err);
         return [];
       });
-      
+
     const spoonacularRecipesPromise = getCollection('spoonacular_recipes')
       .then(collection => {
         console.log('[Admin API] Querying spoonacular recipes collection');
@@ -61,13 +67,13 @@ export async function GET(): Promise<NextResponse> {
         console.error('[Admin API] Error fetching spoonacular recipes:', err);
         return [];
       });
-    
+
     const [adminRecipes, userRecipes, spoonacularRecipes] = await Promise.all([
       adminRecipesPromise,
       userRecipesPromise,
       spoonacularRecipesPromise
     ]);
-    
+
     console.log('[Admin API] Recipe counts:', {
       admin: adminRecipes.length,
       user: userRecipes.length,
@@ -140,13 +146,34 @@ export async function GET(): Promise<NextResponse> {
     // Sort by creation date (newest first)
     allRecipes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    return NextResponse.json({ 
-      recipes: allRecipes,
+    // Apply filters
+    let filteredRecipes = allRecipes;
+    if (search) {
+      filteredRecipes = filteredRecipes.filter(recipe =>
+        recipe.title.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    if (source !== 'all') {
+      filteredRecipes = filteredRecipes.filter(recipe => recipe.source === source);
+    }
+
+    // Paginate
+    const total = filteredRecipes.length;
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    const paginatedRecipes = filteredRecipes.slice(start, end);
+
+    return NextResponse.json({
+      recipes: paginatedRecipes,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
       counts: {
         admin: adminRecipes.length,
         user: userRecipes.length,
         spoonacular: spoonacularRecipes.length,
-        total: allRecipes.length
+        filtered: total
       }
     });
   } catch (error) {

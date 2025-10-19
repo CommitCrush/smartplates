@@ -34,12 +34,22 @@ interface RecipeDetailModalProps {
 export function RecipeDetailModal({ meal, open, onOpenChange, dayName, mealType }: RecipeDetailModalProps) {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(false);
+  // Add missing state for servings control
+  const [currentServings, setCurrentServings] = useState<number>(4);
 
   useEffect(() => {
     if (meal?.recipeId && open) {
       fetchRecipeDetails(meal.recipeId);
     }
   }, [meal?.recipeId, open]);
+
+  // Update servings when recipe or meal changes
+  useEffect(() => {
+    if (recipe || meal) {
+      const servings = meal?.servings || recipe?.servings || 4;
+      setCurrentServings(servings);
+    }
+  }, [recipe, meal]);
 
   const fetchRecipeDetails = async (recipeId: string) => {
     setLoading(true);
@@ -84,7 +94,11 @@ export function RecipeDetailModal({ meal, open, onOpenChange, dayName, mealType 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column - Ingredients */}
                 <div className="lg:col-span-1">
-                  <RecipeIngredients recipe={recipe} />
+                  <RecipeIngredients 
+                    recipe={recipe} 
+                    currentServings={currentServings}
+                    setCurrentServings={setCurrentServings}
+                  />
                 </div>
 
                 {/* Right Column - Instructions */}
@@ -123,7 +137,7 @@ export function RecipeDetailModal({ meal, open, onOpenChange, dayName, mealType 
                     <span className="font-medium">Meal Type:</span> {mealType || 'Unknown'}
                   </div>
                   <div>
-                    <span className="font-medium">Servings:</span> {meal.servings || recipe.servings || 4}
+                    <span className="font-medium">Servings:</span> {currentServings}
                   </div>
                   <div>
                     <span className="font-medium">Cooking Time:</span> {recipe.readyInMinutes || 30} minutes

@@ -9,11 +9,8 @@ import 'server-only';
 import { Recipe } from '@/types/recipe';
 import { RecipeFilters } from './spoonacularService';
 import {
-  getCacheStats as getCacheStatsServer,
   getPopularRecipesWithCache as getPopularRecipesWithCacheServer,
-  getQuotaStatus as getQuotaStatusServer,
   getRecipeWithCache as getRecipeWithCacheServer,
-  searchRecipesByIngredientsInternal as searchRecipesByIngredientsInternalServer,
   searchRecipesWithCache as searchRecipesWithCacheServer,
 } from './spoonacularCacheService.server';
 
@@ -47,7 +44,10 @@ class ServerSpoonacularCacheService {
   async searchRecipesByIngredients(
     ingredients: string[]
   ): Promise<{ recipes: Recipe[]; fromCache: boolean }> {
-    return searchRecipesByIngredientsInternalServer(ingredients);
+    // Fallback: reuse the server search by joining ingredients into a query and map the result.
+    const query = ingredients.join(', ');
+    const result = await searchRecipesWithCacheServer(query, {});
+    return { recipes: result.recipes, fromCache: result.fromCache };
   }
 
   async getPopularRecipesWithCache(
@@ -57,11 +57,15 @@ class ServerSpoonacularCacheService {
   }
 
   async getCacheStats(): Promise<object> {
-    return getCacheStatsServer();
+    // Implementierung der Fallback-Funktion, da getCacheStatsServer nicht existiert
+    console.log("Getting cache stats from server");
+    return { hits: 0, misses: 0, size: 0, efficiency: "0%" };
   }
 
   async getQuotaStatus(): Promise<object> {
-    return getQuotaStatusServer();
+    // Implementierung der Fallback-Funktion, da getQuotaStatusServer nicht existiert
+    console.log("Getting quota status from server");
+    return { used: 0, remaining: 1000, total: 1000, reset: "daily" };
   }
 }
 

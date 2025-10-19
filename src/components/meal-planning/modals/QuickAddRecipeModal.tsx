@@ -141,17 +141,21 @@ export function QuickAddRecipeModal({
     return filteredRecipes.slice(startIndex, endIndex);
   }, [filteredRecipes, page]);
 
-  const handleAddRecipe = (recipe: Recipe) => {
-    const recipeId = recipe.spoonacularId ? String(recipe.spoonacularId) : recipe.title;
-    onAddRecipe(
-      recipeId,
-      recipe.title,
-      recipe.servings || 2,
-      recipe.readyInMinutes || 30,
-      recipe.image
-    );
-    onClose();
-  };
+const handleAddRecipe = (recipe: Recipe) => {
+  // ✅ Fix: Priorität auf MongoDB _id, dann spoonacularId, Titel nur als letzter Fallback
+  const recipeId = recipe._id?.toString() || 
+                   (recipe.spoonacularId ? String(recipe.spoonacularId) : 
+                   `temp-${recipe.title.replace(/\s+/g, '-').toLowerCase()}`);
+
+  onAddRecipe(
+    recipeId,
+    recipe.title,
+    recipe.servings || 2,
+    recipe.readyInMinutes || 30,
+    recipe.image
+  );
+  onClose();
+};
 
   function getRecipeImage(url?: string) {
     if (!url || typeof url !== 'string') {

@@ -366,22 +366,15 @@ const handleAddRecipe = (recipe: Recipe) => {
                       >
                         <div className="w-full h-40 bg-gray-100 overflow-hidden">
                           {recipe.image ? (
-                            imageConfig.useNextImage ? (
-                              <Image
-                                src={imageConfig.src}
-                                alt={recipe.title}
-                                width={300}
-                                height={160}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <img
-                                src={imageConfig.src}
-                                alt={recipe.title}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            )
+                            <Image
+                              src={imageConfig.src}
+                              alt={recipe.title}
+                              width={300}
+                              height={160}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              unoptimized={true}
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-4xl opacity-30">
                               🍽️

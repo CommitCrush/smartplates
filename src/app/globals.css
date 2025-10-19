@@ -51,6 +51,12 @@
     --color-neutral-800: #27272a;
     --color-neutral-900: #18181b;
 
+    /* Custom Gradients - Light Mode */
+    --gradient-navigation: linear-gradient(to bottom right, #afbfa4, #b1be9f, #CDE7C0);
+    --gradient-navigation-from: #afbfa4;
+    --gradient-navigation-via: #b1be9f;
+    --gradient-navigation-to: #CDE7C0;
+
     /* Semantic Colors */
     --color-background: #fefefe;
     --color-background-secondary: #fbfcfa;
@@ -153,6 +159,12 @@
     --color-border: #4A4A4A;              /* Standard Ränder für Formularfelder */
     --color-border-muted: #3A3A3A;        /* Subtilere Ränder */
     --color-border-footer: #c1d3af;       /* Footer Border - Light Sage Green */
+    
+    /* Custom Gradients - Dark Mode */
+    --gradient-navigation: linear-gradient(to bottom right,#4a5d4a, #5d7055, #7d906b);
+    --gradient-navigation-from: #4a5d4a;
+    --gradient-navigation-via: #5d7055;
+    --gradient-navigation-to: #708060;
     
     /* SmartPlates Dark Mode Akzentfarben - Nach Spezifikation */
     --color-accent: #FF7A69;              /* Primäre Akzentfarbe - leuchtendes Korallenrot */
@@ -292,7 +304,23 @@
 }
 
 @layer utilities {
-  /* Background utilities */
+  /* ============================================ */
+  /* CUSTOM GRADIENT UTILITIES */
+  /* ============================================ */
+  
+  /* Navigation Gradient - Automatic Light/Dark Mode Support */
+  .bg-gradient-navigation {
+    background: var(--gradient-navigation);
+  }
+  
+  /* Individual gradient color utilities for TailwindCSS compatibility */
+  .from-navigation { --tw-gradient-from: var(--gradient-navigation-from); }
+  .via-navigation { --tw-gradient-via: var(--gradient-navigation-via); }
+  .to-navigation { --tw-gradient-to: var(--gradient-navigation-to); }
+  
+  /* ============================================ */
+  /* BACKGROUND UTILITIES */
+  /* ============================================ */
   .bg-background { background-color: var(--color-background); }
   .bg-background-secondary { background-color: var(--color-background-secondary); }
   .bg-background-card { background-color: var(--color-background-card); }
@@ -336,8 +364,10 @@
   .text-primary-900 { color: var(--color-primary-900); }
   .bg-primary-50 { background-color: var(--color-primary-50); }
   .bg-primary-100 { background-color: var(--color-primary-100); }
+  .bg-primary-200 { background-color: var(--color-primary-200); }
   .bg-primary-600 { background-color: var(--color-primary-600); }
   .bg-primary-700 { background-color: var(--color-primary-700); }
+  .bg-foreground-muted { background-color: var(--color-foreground-muted); }
   
   /* Coral colors */
   .text-coral-500 { color: var(--color-coral-500); }

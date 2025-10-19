@@ -2021,12 +2021,12 @@ export default function MealPlanningPage() {
         </div>
 
         {/* Navigation Section - Button-based Navigation */}
-        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+        <Card className="mb-6 bg-gradient-navigation">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             {/* View Mode Selector */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                <span className="text-sm font-medium text-gray-700 whitespace-nowrap">View:</span>
+                {/* <span className="text-sm font-medium text-gray-700 whitespace-nowrap">View:</span> */}
                 <div className="flex rounded-lg border border-blue-200 bg-white p-1 w-full sm:w-auto">
                   <Button
                     variant={viewMode === 'today' ? 'default' : 'ghost'}

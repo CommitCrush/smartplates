@@ -8,13 +8,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Clock, Users, X, Edit3, Copy } from 'lucide-react';
+import { Clock, Users, X, Edit3, MoreVertical, Copy } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { MealSlot } from '@/types/meal-planning';
 import { useDrag, useDrop } from 'react-dnd';
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // ========================================
 // Types

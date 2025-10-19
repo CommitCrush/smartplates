@@ -435,7 +435,7 @@ export default function AiRecipePage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#7D966D] via-[#AABC91] to-[#CDE7C0] flex flex-col items-center justify-start p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen w-full bg-gradient-navigation flex flex-col items-center justify-start p-4 md:p-6 lg:p-8">
       {/* Hero Section */}
       <div className="w-full flex justify-center items-center pt-10 pb-2 px-0">
         <div className="flex flex-row items-stretch justify-center w-full max-w-6xl gap-0 h-[400px] shadow-2xl rounded-3xl overflow-hidden">

@@ -308,7 +308,7 @@ export default function AboutPage() {
             </div>
 
             <div className="relative">
-              <div className="bg-primary-600 dark:bg-primary-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl hover:shadow-2xl transition-shadow duration-300 transform hover:scale-105">
+              <div className="bg-gradient-navigation rounded-2xl p-6 sm:p-8 text-white shadow-xl hover:shadow-2xl transition-shadow duration-300 transform hover:scale-105">
                 <div className="relative">
                   <Lightbulb className="h-10 w-10 sm:h-12 sm:w-12 mb-4 sm:mb-6" />
                   <blockquote className="text-base sm:text-lg italic mb-4">
@@ -318,7 +318,7 @@ export default function AboutPage() {
                     not more complicated.&rdquo;
                   </blockquote>
                   <cite className="font-semibold">
-                    Sarah Chen, Founder & CEO
+                    The SmartPlates Team
                   </cite>
                 </div>
               </div>
@@ -486,7 +486,7 @@ export default function AboutPage() {
           </div>
 
           <div className="relative">
-            <div className="absolute left-1/2 transform -translate-x-px h-full w-0.5 bg-primary-200 dark:bg-primary-800"></div>
+            {/* <div className="absolute left-1/2 transform -translate-x-px h-full w-0.5 bg-primary-200 dark:bg-primary-800"></div> */}
 
             <div className="space-y-6 sm:space-y-8">
               {milestones.map((milestone, index) => (
@@ -527,7 +527,7 @@ export default function AboutPage() {
       </section>
 
       {/* Values Section */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-primary-600 dark:bg-primary-700 text-white relative overflow-hidden">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gradient-navigation text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6 sm:mb-8 leading-tight">
             Our Core Values
@@ -540,7 +540,7 @@ export default function AboutPage() {
                 <h3 className="text-lg sm:text-xl font-semibold mb-3">
                   Innovation
                 </h3>
-                <p className="text-white/90 leading-relaxed">
+                <p className="text-white leading-relaxed">
                   We continuously push the boundaries of what&apos;s possible in
                   food technology to create solutions that truly make a
                   difference.
@@ -554,7 +554,7 @@ export default function AboutPage() {
                 <h3 className="text-lg sm:text-xl font-semibold mb-3">
                   Community
                 </h3>
-                <p className="text-white/90 leading-relaxed">
+                <p className="text-white leading-relaxed">
                   We believe in the power of community and collaboration to
                   solve complex challenges around nutrition and sustainability.
                 </p>
@@ -565,7 +565,7 @@ export default function AboutPage() {
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 sm:p-8 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
                 <Shield className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" />
                 <h3 className="text-lg sm:text-xl font-semibold mb-3">Trust</h3>
-                <p className="text-white/90 leading-relaxed">
+                <p className="text-white leading-relaxed">
                   We prioritize transparency, data security, and user privacy in
                   everything we do to earn and maintain your trust.
                 </p>

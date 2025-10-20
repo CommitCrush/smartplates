@@ -102,34 +102,34 @@ interface EnhancedRecipeUploadFormProps {
 }
 
 const CATEGORIES = [
-  { value: 'breakfast', label: 'Frühstück', icon: '🌅' },
-  { value: 'lunch', label: 'Mittagessen', icon: '🥗' },
-  { value: 'dinner', label: 'Abendessen', icon: '🍽️' },
+  { value: 'breakfast', label: 'Breakfast', icon: '🌅' },
+  { value: 'lunch', label: 'Lunch', icon: '🥗' },
+  { value: 'dinner', label: 'Dinner', icon: '🍽️' },
   { value: 'dessert', label: 'Dessert', icon: '🍰' },
   { value: 'snack', label: 'Snack', icon: '🍿' },
-  { value: 'appetizer', label: 'Vorspeise', icon: '🥙' },
-  { value: 'beverage', label: 'Getränke', icon: '🥤' },
+  { value: 'appetizer', label: 'Appetizer', icon: '🥙' },
+  { value: 'beverage', label: 'Beverages', icon: '🥤' },
 ];
 
 const CUISINES = [
-  'Deutsch', 'Italienisch', 'Französisch', 'Spanisch', 'Griechisch',
-  'Türkisch', 'Indisch', 'Chinesisch', 'Japanisch', 'Thailändisch',
-  'Mexikanisch', 'Amerikanisch', 'Mediterranean', 'Asiatisch'
+  'German', 'Italian', 'French', 'Spanish', 'Greek',
+  'Turkish', 'Indian', 'Chinese', 'Japanese', 'Thai',
+  'Mexican', 'American', 'Mediterranean', 'Asian'
 ];
 
 const DIETARY_TAGS = [
-  'Vegetarisch', 'Vegan', 'Glutenfrei', 'Laktosefrei', 'Nussfrei',
-  'Sojafrei', 'Zuckerfrei', 'Low-Carb', 'Keto', 'Paleo', 'Vollkorn'
+  'Vegetarian', 'Vegan', 'Gluten-Free', 'Lactose-Free', 'Nut-Free',
+  'Soy-Free', 'Sugar-Free', 'Low-Carb', 'Keto', 'Paleo', 'Whole Grain'
 ];
 
 const ALLERGEN_OPTIONS = [
-  'Nüsse', 'Erdnüsse', 'Milchprodukte', 'Eier', 'Soja', 
-  'Weizen/Gluten', 'Fisch', 'Meeresfrüchte', 'Sesam', 'Sulfite'
+  'Nuts', 'Peanuts', 'Dairy', 'Eggs', 'Soy', 
+  'Wheat/Gluten', 'Fish', 'Seafood', 'Sesame', 'Sulfites'
 ];
 
 const COMMON_UNITS = [
-  'g', 'kg', 'ml', 'l', 'Stück', 'TL', 'EL', 'Tasse', 'Prise', 
-  'Zehe', 'Bund', 'Dose', 'Packung', 'nach Geschmack'
+  'g', 'kg', 'ml', 'l', 'pieces', 'tsp', 'tbsp', 'cup', 'pinch', 
+  'clove', 'bunch', 'can', 'package', 'to taste'
 ];
 
 export function EnhancedRecipeUploadForm({
@@ -430,11 +430,11 @@ export function EnhancedRecipeUploadForm({
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Basic Information */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-6">Grundinformationen</h3>
+        <h3 className="text-lg font-semibold mb-6">Basic Information</h3>
         
         <div className="space-y-6">
           <div>
-            <Label htmlFor="title">Rezept-Titel *</Label>
+            <Label htmlFor="title">Recipe Title *</Label>
             <Input
               id="title"
               value={formData.title}
@@ -451,12 +451,12 @@ export function EnhancedRecipeUploadForm({
           </div>
 
           <div>
-            <Label htmlFor="description">Beschreibung *</Label>
+            <Label htmlFor="description">Description *</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => handleFieldChange('description', e.target.value)}
-              placeholder="Beschreibe dein Rezept: Was macht es besonders? Woher stammt es? Tipps für die Zubereitung..."
+              placeholder="Describe your recipe: What makes it special? Where does it come from? Tips for preparation..."
               rows={4}
               className={cn("mt-1", errors.description && "border-red-500")}
             />
@@ -477,17 +477,17 @@ export function EnhancedRecipeUploadForm({
                 onCheckedChange={(checked) => handleFieldChange('isOriginal', checked)}
                 className="data-[state=checked]:bg-green-600"
               />
-              <Label htmlFor="isOriginal">Das ist mein eigenes Originalrezept</Label>
+              <Label htmlFor="isOriginal">This is my own original recipe</Label>
             </div>
             
             {!formData.isOriginal && (
               <div>
-                <Label htmlFor="source">Quelle des Rezepts</Label>
+                <Label htmlFor="source">Source of the Recipe</Label>
                 <Input
                   id="source"
                   value={formData.source || ''}
                   onChange={(e) => handleFieldChange('source', e.target.value)}
-                  placeholder="z.B. Omas Kochbuch, Website-Name, etc."
+                  placeholder="e.g. Grandma's Cookbook, Website Name, etc."
                   className="mt-1"
                 />
               </div>
@@ -570,13 +570,13 @@ export function EnhancedRecipeUploadForm({
 
       {/* Recipe Classification */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-6">Kategorien & Eigenschaften</h3>
+        <h3 className="text-lg font-semibold mb-6">Categories & Properties</h3>
         
         <div className="space-y-6">
           {/* Category and Cuisine */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="category">Kategorie *</Label>
+              <Label htmlFor="category">Category *</Label>
               <select
                 id="category"
                 value={formData.category}
@@ -592,14 +592,14 @@ export function EnhancedRecipeUploadForm({
             </div>
 
             <div>
-              <Label htmlFor="cuisine">Küche (optional)</Label>
+              <Label htmlFor="cuisine">Cuisine (optional)</Label>
               <select
                 id="cuisine"
                 value={formData.cuisine || ''}
                 onChange={(e) => handleFieldChange('cuisine', e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background"
               >
-                <option value="">Küche wählen...</option>
+                <option value="">Select Cuisine...</option>
                 {CUISINES.map(cuisine => (
                   <option key={cuisine} value={cuisine}>
                     {cuisine}
@@ -612,21 +612,21 @@ export function EnhancedRecipeUploadForm({
           {/* Recipe Properties */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="difficulty">Schwierigkeit</Label>
+              <Label htmlFor="difficulty">Difficulty</Label>
               <select
                 id="difficulty"
                 value={formData.difficulty}
                 onChange={(e) => handleFieldChange('difficulty', e.target.value as 'easy' | 'medium' | 'hard')}
                 className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background"
               >
-                <option value="easy">🟢 Einfach</option>
-                <option value="medium">🟡 Mittel</option>
-                <option value="hard">🔴 Schwer</option>
+                <option value="easy">🟢 Easy</option>
+                <option value="medium">🟡 Medium</option>
+                <option value="hard">🔴 Hard</option>
               </select>
             </div>
 
             <div>
-              <Label htmlFor="prepTime">Vorbereitung (Min)</Label>
+              <Label htmlFor="prepTime">Preparation (Min)</Label>
               <Input
                 id="prepTime"
                 type="number"
@@ -639,7 +639,7 @@ export function EnhancedRecipeUploadForm({
             </div>
 
             <div>
-              <Label htmlFor="cookTime">Kochzeit (Min)</Label>
+              <Label htmlFor="cookTime">Cooking Time (Min)</Label>
               <Input
                 id="cookTime"
                 type="number"
@@ -667,8 +667,8 @@ export function EnhancedRecipeUploadForm({
 
           {/* Dietary Tags */}
           <div className="space-y-3">
-            <Label>Diätformen</Label>
-            <p className="text-sm text-gray-600">Wählen Sie alle Diätformen aus, die auf dieses Rezept zutreffen:</p>
+            <Label>Dietary Forms</Label>
+            <p className="text-sm text-gray-600">Select all dietary forms that apply to this recipe:</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {DIETARY_TAGS.map((diet) => (
                 <div key={diet} className="flex items-center space-x-2">
@@ -720,8 +720,8 @@ export function EnhancedRecipeUploadForm({
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm text-green-800 font-medium">Diätformen</p>
-                    <p className="text-sm text-green-700">Dieses Rezept ist geeignet für folgende Diätformen:</p>
+                    <p className="text-sm text-green-800 font-medium">Dietary Tags</p>
+                    <p className="text-sm text-green-700">This recipe is suitable for the following dietary tags:</p>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {formData.dietaryTags.map((diet) => (
                         <Badge key={diet} variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800">
@@ -741,8 +741,8 @@ export function EnhancedRecipeUploadForm({
 
           {/* Allergen Tags */}
           <div className="space-y-3">
-            <Label>Enthält Allergene</Label>
-            <p className="text-sm text-gray-600">Wählen Sie alle Allergene aus, die in diesem Rezept enthalten sind:</p>
+            <Label>Contains Allergens</Label>
+            <p className="text-sm text-gray-600">Select all allergens that are present in this recipe:</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {ALLERGEN_OPTIONS.map((allergen) => (
                 <div key={allergen} className="flex items-center space-x-2">
@@ -790,8 +790,8 @@ export function EnhancedRecipeUploadForm({
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-sm text-red-800 font-medium">Allergen-Warnung</p>
-                    <p className="text-sm text-red-700">Dieses Rezept enthält folgende Allergene:</p>
+                    <p className="text-sm text-red-800 font-medium">Allergen Warning</p>
+                    <p className="text-sm text-red-700">This recipe contains the following allergens:</p>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {formData.allergens.map((allergen) => (
                         <Badge key={allergen} variant="destructive" className="flex items-center gap-1">
@@ -855,7 +855,7 @@ export function EnhancedRecipeUploadForm({
 
       {/* Ingredients */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-6">Zutaten *</h3>
+        <h3 className="text-lg font-semibold mb-6">Ingredients *</h3>
         
         <div className="space-y-4">
           {/* Add Ingredient Form */}
@@ -881,7 +881,7 @@ export function EnhancedRecipeUploadForm({
               onChange={(e) => setNewIngredient(prev => ({ ...prev, unit: e.target.value }))}
               className="px-3 py-2 border border-border rounded-md bg-background"
             >
-              <option value="">Einheit</option>
+              <option value="">Unit</option>
               {COMMON_UNITS.map(unit => (
                 <option key={unit} value={unit}>{unit}</option>
               ))}
@@ -926,7 +926,7 @@ export function EnhancedRecipeUploadForm({
             ))}
             {formData.ingredients.length === 0 && (
               <p className="text-muted-foreground text-sm py-4">
-                Noch keine Zutaten hinzugefügt
+                No ingredients added yet
               </p>
             )}
           </div>
@@ -942,7 +942,7 @@ export function EnhancedRecipeUploadForm({
 
       {/* Instructions */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-6">Anweisungen *</h3>
+        <h3 className="text-lg font-semibold mb-6">Instructions *</h3>
         
         <div className="space-y-4">
           {/* Add Instruction Form */}
@@ -964,7 +964,7 @@ export function EnhancedRecipeUploadForm({
               className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Hinzufügen
+              Add
             </Button>
           </div>
 
@@ -990,7 +990,7 @@ export function EnhancedRecipeUploadForm({
             ))}
             {formData.instructions.length === 0 && (
               <p className="text-muted-foreground text-sm py-4">
-                Noch keine Anweisungen hinzugefügt
+                No instructions added yet
               </p>
             )}
           </div>
@@ -1006,7 +1006,7 @@ export function EnhancedRecipeUploadForm({
 
       {/* Privacy Settings */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-6">Datenschutz & Sichtbarkeit</h3>
+        <h3 className="text-lg font-semibold mb-6">Privacy & Visibility</h3>
         
         <div className="space-y-4">
           <div className="flex items-center space-x-3 p-4 rounded-lg border">
@@ -1021,12 +1021,12 @@ export function EnhancedRecipeUploadForm({
                 {formData.isPublic ? (
                   <span className="flex items-center gap-2">
                     <Globe className="h-5 w-5 text-green-600" />
-                    Öffentlich teilen
+                    Share Publicly
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
                     <Lock className="h-5 w-5 text-orange-600" />
-                    Privat behalten
+                    Keep Private
                   </span>
                 )}
               </Label>
@@ -1053,7 +1053,7 @@ export function EnhancedRecipeUploadForm({
             {isLoading ? (
               <>
                 <Upload className="h-4 w-4 mr-2 animate-pulse" />
-                Wird hochgeladen...
+                Uploading...
               </>
             ) : (
               <>
@@ -1065,13 +1065,13 @@ export function EnhancedRecipeUploadForm({
 
           {Object.keys(errors).length > 0 && (
             <p className="text-sm text-muted-foreground text-center">
-              Bitte korrigiere die Fehler oben und fülle alle Pflichtfelder aus
+              Please correct the errors above and fill in all required fields
             </p>
           )}
           
           <p className="text-xs text-muted-foreground text-center max-w-md">
-            Durch das Hochladen bestätigst du, dass du berechtigt bist, dieses Rezept zu teilen
-            {formData.isPublic && ' und dass es unseren Community-Richtlinien entspricht'}.
+            By uploading, you confirm that you are entitled to share this recipe
+            {formData.isPublic && ' and that it complies with our community guidelines'}.
           </p>
         </div>
       </Card>

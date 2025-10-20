@@ -51,6 +51,12 @@ interface Recipe {
   originalRecipeId?: string;
   spoonacularId?: string;
   sourceRecipeId?: string;
+  // Spoonacular specific fields
+  readyInMinutes?: number;
+  totalTime?: number;
+  preparationMinutes?: number;
+  cookingMinutes?: number;
+  summary?: string;
 }
 
 interface Favorite {
@@ -77,12 +83,10 @@ export default function MyRecipesPage() {
   const [filterCategory, setFilterCategory] = useState("all");
   const {
     favorites,
-    refetch: fetchFavorites,
     toggleFavorite,
-    isFavorited,
   } = useFavorites();
   const { isAuthenticated } = useAuth();
-  const { syncCounter, triggerSync } = useMealPlanSync();
+  const { syncCounter } = useMealPlanSync();
   const [data, setData] = useState<{
     uploaded: Recipe[];
     saved: Recipe[];
@@ -100,12 +104,12 @@ export default function MyRecipesPage() {
   // Helper function to calculate total time like in RecipeCard
   const getTotalTime = (recipe: Recipe) => {
     // Prioritize readyInMinutes to match filterByDifficulty logic
-    if ((recipe as any).readyInMinutes) return (recipe as any).readyInMinutes;
+    if (recipe.readyInMinutes) return recipe.readyInMinutes;
     if (recipe.cookingTime) return recipe.cookingTime; // Local recipe field
-    if ((recipe as any).totalTime) return (recipe as any).totalTime;
-    if ((recipe as any).preparationMinutes && (recipe as any).cookingMinutes) {
+    if (recipe.totalTime) return recipe.totalTime;
+    if (recipe.preparationMinutes && recipe.cookingMinutes) {
       return (
-        (recipe as any).preparationMinutes + (recipe as any).cookingMinutes
+        recipe.preparationMinutes + recipe.cookingMinutes
       );
     }
     return 30; // Default fallback
@@ -269,23 +273,22 @@ export default function MyRecipesPage() {
 
     setLoading(true);
     try {
-      // Parallel fetching for better performance
-      const [plannedResponse, userRecipes, favoritesResponse] = await Promise.all([
+      // Parallel fetching for better performance - use only necessary API calls
+      const [plannedResponse, userRecipes] = await Promise.all([
         fetch("/api/users/planned-recipes").catch((e) => {
           console.error("Error fetching planned recipes:", e);
           return null;
         }),
         fetchUserRecipes(session.user.id),
-        fetch("/api/favorites").catch((e) => {
-          console.error("Error fetching favorites:", e);
-          return null;
-        }),
       ]);
+      
+      // Use the already fetched favorites from the useFavorites hook
+      // instead of making a separate API call
 
       let plannedRecipes: Recipe[] = [];
       if (plannedResponse && plannedResponse.ok) {
         const plannedData = await plannedResponse.json();
-        let rawPlannedRecipes = plannedData.data || [];
+        const rawPlannedRecipes = plannedData.data || [];
 
         const seenIds = new Set();
         plannedRecipes = rawPlannedRecipes
@@ -312,26 +315,23 @@ export default function MyRecipesPage() {
           });
       }
 
-      let savedRecipes: Recipe[] = [];
-      if (favoritesResponse && favoritesResponse.ok) {
-        const favoritesData = await favoritesResponse.json();
-        savedRecipes = (favoritesData.favorites || []).map((fav: Favorite) => {
-          const totalTime = 30; // Default for favorites
-          const calculatedDifficulty = getDifficultyFromTime(totalTime);
+      // Use the favorites from the useFavorites hook directly
+      const savedRecipes: Recipe[] = favorites.map((fav: Favorite) => {
+        const totalTime = 30; // Default for favorites
+        const calculatedDifficulty = getDifficultyFromTime(totalTime);
 
-          return {
-            id: fav.recipeId,
-            title: fav.recipeTitle || "Recipe",
-            description: "",
-            image: fav.recipeImage || "/placeholder-recipe.svg",
-            cookingTime: totalTime,
-            difficulty: calculatedDifficulty,
-            category: "Various",
-            isPublic: true,
-            createdAt: fav.createdAt,
-          };
-        });
-      }
+        return {
+          id: fav.recipeId,
+          title: fav.recipeTitle || "Recipe",
+          description: "",
+          image: fav.recipeImage || "/placeholder-recipe.svg",
+          cookingTime: totalTime,
+          difficulty: calculatedDifficulty,
+          category: "Various",
+          isPublic: true,
+          createdAt: fav.createdAt,
+        };
+      });
 
       setData({
         uploaded: userRecipes,
@@ -357,7 +357,7 @@ export default function MyRecipesPage() {
     } finally {
       setLoading(false);
     }
-  }, [status, session, fetchUserRecipes]);
+  }, [status, session, fetchUserRecipes, favorites]);
 
   useEffect(() => {
     if (status === "unauthenticated") {

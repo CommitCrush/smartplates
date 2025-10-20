@@ -27,6 +27,8 @@ export interface User {
   isEmailVerified: boolean;          // Email verification status
   emailVerificationToken?: string;   // Token for email verification
   emailVerificationExpires?: Date;   // Expiration date for verification token
+  passwordResetToken?: string;       // Token for password reset
+  passwordResetExpires?: Date;       // Expiration date for password reset token
   
   // User preferences
   dietaryRestrictions?: string[];    // Array of dietary restrictions
@@ -63,6 +65,9 @@ export interface UpdateUserInput {
   isEmailVerified?: boolean;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  password?: string;
   lastLoginAt?: Date;
 }
 

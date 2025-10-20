@@ -156,13 +156,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: '/login',
-        destination: '/auth/signin',
+        source: '/auth/signin',
+        destination: '/login',
         permanent: true,
       },
       {
-        source: '/register',
-        destination: '/auth/signup',
+        source: '/auth/signup',
+        destination: '/register',
         permanent: true,
       },
     ];

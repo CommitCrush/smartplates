@@ -52,6 +52,12 @@ export interface EmailVerificationData {
   verificationToken: string;
 }
 
+export interface PasswordResetData {
+  email: string;
+  name: string;
+  resetToken: string;
+}
+
 /**
  * Send contact form email to admin using SendGrid
  */
@@ -460,12 +466,50 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
 }
 
 /**
- * Dummy-Implementierung für Passwort-Reset-Mail
- * In Produktion: Echte E-Mail-Logik einbauen!
+ * Send password reset email using Resend
  */
-export async function sendPasswordResetEmail(email: string, userId: string): Promise<void> {
-	// Hier würde die echte E-Mail-Logik stehen (z.B. mit nodemailer, SendGrid, etc.)
-	console.log(`Sende Passwort-Reset-Link an ${email} für User ${userId}`);
-	// Simuliere kurze Verzögerung
-	await new Promise((resolve) => setTimeout(resolve, 500));
+export async function sendPasswordResetEmail(resetData: PasswordResetData): Promise<void> {
+  if (!resend) {
+    console.warn('⚠️ Resend not configured, skipping password reset email');
+    return;
+  }
+
+  try {
+    const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetData.resetToken}`;
+
+    await resend.emails.send({
+      from: 'SmartPlates <noreply@smartplates.app>',
+      to: resetData.email,
+      subject: 'Passwort zurücksetzen - SmartPlates',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #22c55e;">Passwort zurücksetzen</h2>
+          <p>Hallo ${resetData.name},</p>
+          <p>Sie haben eine Anfrage zum Zurücksetzen Ihres Passworts für Ihr SmartPlates-Konto gestellt.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" 
+               style="background-color: #ff6b6b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Neues Passwort setzen
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            Falls der Button nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:<br>
+            <a href="${resetUrl}">${resetUrl}</a>
+          </p>
+          <p style="color: #666; font-size: 12px;">
+            Dieser Reset-Link ist 1 Stunde gültig. Falls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail.
+          </p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #999; font-size: 12px;">
+            SmartPlates - Ihre Meal-Planning-Plattform
+          </p>
+        </div>
+      `,
+    });
+
+    console.log('✅ Password reset email sent successfully via Resend');
+  } catch (error) {
+    console.error('❌ Password reset email failed:', error);
+    throw error;
+  }
 }

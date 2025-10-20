@@ -17,7 +17,7 @@ export default function NewRecipePage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/login');
+      router.push('/login');
     }
   }, [status, router]);
 

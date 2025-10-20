@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn, getSession } from 'next-auth/react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,40 +24,45 @@ export function LoginForm({ className, redirectTo = '/user/welcome' }: LoginForm
     setError('');
 
     try {
-      // Use NextAuth signIn instead of custom API
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false, // Don't redirect automatically
+      // Use custom API instead of NextAuth for better control
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
       });
 
-      if (result?.error) {
-        setError('Invalid email or password');
-      } else if (result?.ok) {
-        // Login successful - NextAuth will handle the session
-        // Wait for session to update, then redirect based on role
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Login successful - determine redirect based on role
+        const userRole = data.user?.role;
+        let redirectPath: string;
         
-        // Small delay to ensure session is updated
-        setTimeout(async () => {
-          // Get the updated session to determine redirect
-          const updatedSession = await getSession();
-          const userRole = updatedSession?.user?.role;
-          
-          let redirectPath: string;
-          switch (userRole) {
-            case 'admin':
-              redirectPath = '/admin';
-              break;
-            case 'user':
-              redirectPath = '/user/welcome';
-              break;
-            default:
-              redirectPath = redirectTo;
-          }
-          
-          console.log(`🔄 Redirecting ${userRole} to: ${redirectPath}`);
-          router.push(redirectPath);
-        }, 100);
+        switch (userRole) {
+          case 'admin':
+            redirectPath = '/admin';
+            break;
+          case 'user':
+            redirectPath = '/user';
+            break;
+          default:
+            redirectPath = redirectTo;
+        }
+        
+        console.log(`🔄 Redirecting ${userRole} to: ${redirectPath}`);
+        router.push(redirectPath);
+      } else {
+        // Handle specific error cases
+        if (data.emailNotVerified) {
+          setError('Please verify your email address before logging in. Check your inbox for the verification link.');
+        } else {
+          setError(data.error || 'Login failed. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -139,6 +143,16 @@ export function LoginForm({ className, redirectTo = '/user/welcome' }: LoginForm
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
         </button>
+
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => router.push('/forgot-password')}
+            className="text-sm text-coral-500 hover:text-coral-600 focus:outline-none focus:underline transition-colors"
+          >
+            Reset Your Password
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -17,7 +17,7 @@ export default function LoginPage() {
         </div>
         <LoginForm />
         <div className="pt-4">
-          <Link href="/register" passHref legacyBehavior>
+          <Link href="/register">
             <Button className="w-full mt-2" variant="default">
               Noch kein Account? Jetzt registrieren
             </Button>

@@ -174,6 +174,7 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
   const actualEmail = isDevelopment ? 'smartplates.group@gmail.com' : verificationData.email;
   
   console.log(`📧 ${isDevelopment ? '[DEV MODE]' : ''} Sending verification email to: ${actualEmail} (original: ${verificationData.email})`);
+  console.log(`🔗 Verification URL: ${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/verify-email?token=${verificationData.verificationToken}`);
 
   const verificationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/verify-email?token=${verificationData.verificationToken}`;
 
@@ -300,16 +301,61 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
   `;
 
   try {
-    await resend.emails.send({
+    console.log('🚀 Sending email via Resend...');
+    console.log(`   From: ${RESEND_FROM_EMAIL}`);
+    console.log(`   To: ${actualEmail}`);
+    console.log(`   Subject: Welcome to SmartPlates! Please verify your email 🍽️`);
+    
+    const result = await resend.emails.send({
       from: RESEND_FROM_EMAIL,
       to: actualEmail,
       subject: 'Welcome to SmartPlates! Please verify your email 🍽️',
       html: htmlTemplate,
     });
 
-    console.log('✅ Email verification sent successfully via Resend to:', actualEmail);
+    console.log('✅ Email verification sent successfully via Resend!');
+    console.log('📧 Resend Response:', result);
+    console.log(`📬 Email delivered to: ${actualEmail}`);
+    
+    if (isDevelopment) {
+      console.log('🧪 DEV MODE: Check smartplates.group@gmail.com for the verification email');
+    }
+
+    // Add to monitoring logs (development only)
+    if (isDevelopment) {
+      try {
+        const { addEmailLog } = await import('@/app/api/email-monitor/route');
+        addEmailLog({
+          type: 'verification',
+          email: actualEmail,
+          status: 'success',
+          message: `Verification email sent successfully`,
+          details: { originalEmail: verificationData.email, resendId: result.data?.id }
+        });
+      } catch (logError) {
+        console.log('Failed to add email log:', logError);
+      }
+    }
   } catch (error) {
     console.error('❌ Failed to send email verification via Resend:', error);
+    console.error('🔍 Error details:', JSON.stringify(error, null, 2));
+
+    // Add to monitoring logs (development only)
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const { addEmailLog } = await import('@/app/api/email-monitor/route');
+        addEmailLog({
+          type: 'verification',
+          email: actualEmail,
+          status: 'error',
+          message: `Failed to send verification email`,
+          details: { originalEmail: verificationData.email, error: error instanceof Error ? error.message : 'Unknown error' }
+        });
+      } catch (logError) {
+        console.log('Failed to add error log:', logError);
+      }
+    }
+    
     throw error;
   }
 }

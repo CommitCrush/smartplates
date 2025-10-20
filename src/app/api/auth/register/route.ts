@@ -116,14 +116,20 @@ export async function POST(request: NextRequest) {
 
       // Send verification email
       try {
+        console.log(`🔄 [REGISTER] Attempting to send verification email to: ${newUser.email}`);
+        console.log(`🔗 [REGISTER] Verification token: ${verificationToken}`);
+        
         await sendEmailVerification({
           email: newUser.email,
           name: newUser.name,
           verificationToken: verificationToken,
         });
+        
         verificationMessage = 'Please check your email for verification.';
+        console.log(`✅ [REGISTER] Verification email sent successfully to: ${newUser.email}`);
       } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
+        console.error('❌ [REGISTER] Failed to send verification email:', emailError);
+        console.error('🔍 [REGISTER] Error details:', JSON.stringify(emailError, null, 2));
         verificationMessage = 'Registration successful, but verification email could not be sent.';
       }
     } else {

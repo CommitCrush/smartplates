@@ -11,7 +11,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">User Details</h1>
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6 space-y-4">
+      <div className=" bg-primary-50 shadow-lg rounded-lg shadow p-6 space-y-4">
         <div className="flex items-center gap-4">
           <img
             src={user.avatar || '/placeholder-avatar.svg'}

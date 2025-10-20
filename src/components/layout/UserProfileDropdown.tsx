@@ -202,7 +202,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
       {/* Profile Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ml-auto"
+        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-gray-800 transition-colors ml-auto"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >

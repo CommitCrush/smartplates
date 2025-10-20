@@ -1,7 +1,6 @@
-
-import Link from 'next/link';
-import { LoginForm } from '@/components/forms/LoginForm';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import { LoginForm } from "@/components/forms/LoginForm";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   return (
@@ -16,10 +15,11 @@ export default function LoginPage() {
           </p>
         </div>
         <LoginForm />
-        <div className="pt-4">
+        <div className="">
           <Link href="/register" passHref legacyBehavior>
-            <Button className="w-full mt-2" variant="default">
-              Noch kein Account? Jetzt registrieren
+            <Button className="w-full mt-2 text-neutral-700" variant="default">
+              Don't have an account yet?
+              <span className="text-coral-500">Register Now</span>
             </Button>
           </Link>
         </div>

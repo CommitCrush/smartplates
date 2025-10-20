@@ -3,16 +3,17 @@
  * Features responsive design, authentication states, and user profile dropdown
  */
 
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { useAuth } from '@/context/authContext';
-import { slugify } from '@/lib/utils';
-import { Menu, X, ChefHat } from 'lucide-react';
-import UserProfileDropdown from './UserProfileDropdown';
-import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+import Link from "next/link";
+import { useState } from "react";
+import { useAuth } from "@/context/authContext";
+import { slugify } from "@/lib/utils";
+import { Menu, X, ChefHat } from "lucide-react";
+import UserProfileDropdown from "./UserProfileDropdown";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { SmartPlatesLogo } from "@/components/ui/smartplates-logo";
 
 export default function Navbar() {
   const { isAuthenticated, isAdmin, user } = useAuth();
@@ -26,18 +27,25 @@ export default function Navbar() {
       role="navigation"
       aria-label="Main navigation"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 pt-2 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link
-              href={isAuthenticated ? (isAdmin ? "/admin" : "/user/welcome") : "/"}
-              className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+              href={
+                isAuthenticated ? (isAdmin ? "/admin" : "/user/welcome") : "/"
+              }
+              className="flex items-center hover:opacity-80"
               aria-label="SmartPlates Home"
             >
-              <ChefHat className="h-8 w-8 text-primary-500" />
-              <span className="text-xl font-bold text-foreground">
-                SmartPlates
+              <SmartPlatesLogo size="xxl" />
+              <span className="text-xl font-bold text-foreground text-primary-400">
+                <span className="text-primary-700 dark:text-primary-400">
+                  Smart
+                </span>
+                <span className="text-primary-500 dark:text-primary-600">
+                  Plates
+                </span>
               </span>
             </Link>
           </div>
@@ -47,14 +55,16 @@ export default function Navbar() {
             <>
               {/* Desktop Admin Navigation */}
               <div className="hidden md:block">
-                <div className="ml-10 flex items-baseline space-x-4" role="menubar">
+                <div
+                  className="ml-10 flex items-baseline space-x-4"
+                  role="menubar"
+                >
                   <Link
                     href="/admin"
                     className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                     role="menuitem"
                     tabIndex={0}
-                  >
-                  </Link>
+                  ></Link>
                   <Link
                     href="/admin/dashboard/manage-users"
                     className="text-foreground hover:text-coral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:text-neutral-500 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
@@ -105,7 +115,10 @@ export default function Navbar() {
             <>
               {/* Desktop Navigation for Non-Admins */}
               <div className="hidden md:block">
-                <div className="ml-10 flex items-baseline space-x-4" role="menubar">
+                <div
+                  className="ml-10 flex items-baseline space-x-4"
+                  role="menubar"
+                >
                   {/* Navigation in order: Recipes, Meal Plan, My Recipes, Smart Fridge AI, Cookware, About, Contact */}
                   <Link
                     href="/recipe"
@@ -118,7 +131,13 @@ export default function Navbar() {
                   {/* User Navigation - Meal Plan */}
                   {isAuthenticated && (
                     <Link
-                      href={user && user.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current'}
+                      href={
+                        user && user.name
+                          ? `/user/${encodeURIComponent(
+                              slugify(user.name)
+                            )}/meal-plan/current`
+                          : "/user/meal-plan/current"
+                      }
                       className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                       role="menuitem"
                       tabIndex={0}
@@ -218,7 +237,7 @@ export default function Navbar() {
                 className="inline-flex items-center justify-center p-2 rounded-md text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
                 aria-controls="mobile-menu"
                 aria-expanded={isMenuOpen}
-                aria-label={isMenuOpen ? 'Close main menu' : 'Open main menu'}
+                aria-label={isMenuOpen ? "Close main menu" : "Open main menu"}
               >
                 {isMenuOpen ? (
                   <X className="h-6 w-6" />
@@ -241,7 +260,7 @@ export default function Navbar() {
                 className="inline-flex items-center justify-center p-2 rounded-md text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
                 aria-controls="mobile-menu"
                 aria-expanded={isMenuOpen}
-                aria-label={isMenuOpen ? 'Close admin menu' : 'Open admin menu'}
+                aria-label={isMenuOpen ? "Close admin menu" : "Open admin menu"}
               >
                 {isMenuOpen ? (
                   <X className="h-6 w-6" />
@@ -277,7 +296,13 @@ export default function Navbar() {
             {/* User Mobile Navigation - Meal Plan */}
             {isAuthenticated && (
               <Link
-                href={user && user.name ? `/user/${encodeURIComponent(slugify(user.name))}/meal-plan/current` : '/user/meal-plan/current'}
+                href={
+                  user && user.name
+                    ? `/user/${encodeURIComponent(
+                        slugify(user.name)
+                      )}/meal-plan/current`
+                    : "/user/meal-plan/current"
+                }
                 className="text-foreground hover:text-primary-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 block px-3 py-2 rounded-md text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 onClick={() => setIsMenuOpen(false)}
                 role="menuitem"

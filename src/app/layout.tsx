@@ -18,10 +18,31 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SmartPlates - Smart Meal Planning & Recipe Management",
-  description:
-    "Discover recipes, plan meals, and manage your kitchen with AI-powered suggestions. SmartPlates makes cooking easier and more organized.",
-  keywords: "recipes, meal planning, cooking, AI, ingredients, smart kitchen",
+  title: "SmartPlates",
+  icons: {
+    icon: [
+      {
+        url: '/SmartPlates_Logo.svg',
+        sizes: '128x128',  // Maximale empfohlene Größe
+        type: 'image/jpeg',
+      },
+      {
+        url: '/SmartPlates_Logo.svg',
+        sizes: '64x64',
+        type: 'image/jpeg',
+      },
+      {
+        url: '/SmartPlates_Logo.svg',
+        sizes: '32x32', 
+        type: 'image/jpeg',
+      }
+    ],
+    apple: {
+      url: '/SmartPlates_Logo.svg',
+      sizes: '180x180',  // Für iOS Home Screen
+      type: 'image/jpeg',
+    }
+  },
 };
 
 export default function RootLayout({

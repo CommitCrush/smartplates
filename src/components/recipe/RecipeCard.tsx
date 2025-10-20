@@ -103,7 +103,7 @@ export function RecipeCard({
           size="sm"
           onClick={handleFavoriteClick}
           className={cn(
-            "absolute top-2 right-2 z-10 w-8 h-8 p-0 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all duration-200",
+            "absolute top-2 right-2 z-10 w-8 h-8 p-0 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all duration-200 dark:bg-gray-800/90 dark:hover:bg-gray-700",
             isFavorited(recipeId) && "text-red-500 hover:text-red-600"
           )}
         >

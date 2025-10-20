@@ -12,6 +12,20 @@ if (process.env.NODE_ENV === 'development') {
   import('@/utils/spoonacularDebug');
 }
 
+// Initialize storage on app startup (server-side only)
+if (typeof window === 'undefined') {
+  import('@/config/storage').then(({ initializeStorage, cleanupTempFiles }) => {
+    initializeStorage().catch(console.error);
+    
+    // Setup periodic cleanup (every 6 hours)
+    if (process.env.NODE_ENV === 'production') {
+      setInterval(() => {
+        cleanupTempFiles().catch(console.error);
+      }, 6 * 60 * 60 * 1000);
+    }
+  });
+}
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -22,6 +36,16 @@ export const metadata: Metadata = {
   description:
     "Discover recipes, plan meals, and manage your kitchen with AI-powered suggestions. SmartPlates makes cooking easier and more organized.",
   keywords: "recipes, meal planning, cooking, AI, ingredients, smart kitchen",
+  openGraph: {
+    title: "SmartPlates - Smart Meal Planning & Recipe Management",
+    description: "Discover recipes, plan meals, and manage your kitchen with AI-powered suggestions.",
+    type: "website",
+    url: process.env.NEXT_PUBLIC_SITE_URL || "https://smartplates.onrender.com",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

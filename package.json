@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
+    "build": "next build",
+    "start": "next start -p ${PORT:-3000}",
     "lint": "eslint",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -14,7 +14,13 @@
     "db:check": "bun run tests/check-atlas-connection.ts",
     "db:reset": "bun run tests/reset_database.ts",
     "demo:testutils2": "bun run tests/demo_testutils2.ts",
-    "backfill:spoonacular": "bun run scripts/backfill-spoonacular-details.ts"
+    "backfill:spoonacular": "bun run scripts/backfill-spoonacular-details.ts",
+    "postinstall": "echo 'Installation completed successfully'",
+    "health": "curl -f http://localhost:${PORT:-3000}/api/health || exit 1"
+  },
+  "engines": {
+    "node": ">=18.17.0",
+    "bun": ">=1.0.0"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",

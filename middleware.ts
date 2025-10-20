@@ -1,8 +1,9 @@
 /**
- * Next.js Middleware for Route Protection
+ * Next.js Middleware for Route Protection (Render.com Optimized)
  * 
  * Protects admin and user routes from unauthorized access
  * Only allows public access to: /, /recipe, /cookware, /about, /contact
+ * Optimized for Render.com deployment with enhanced error handling
  */
 
 import { NextResponse } from 'next/server';
@@ -17,6 +18,8 @@ const PUBLIC_ROUTES = [
   '/about',
   '/contact',
   '/api/auth',
+  '/api/health', // Health check for Render.com
+  '/api/status', // Status endpoint
   '/auth',
   '/_next',
   '/favicon.ico',
@@ -43,6 +46,8 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/health') ||
+    pathname.startsWith('/api/status') ||
     pathname.includes('.') ||
     pathname.startsWith('/images') ||
     pathname.startsWith('/icons')
@@ -63,56 +68,76 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get the user's session token
-  const token = await getToken({ 
-    req: request, 
-    secret: process.env.NEXTAUTH_SECRET 
-  });
+  try {
+    // Get the user's session token with enhanced error handling
+    const token = await getToken({ 
+      req: request, 
+      secret: process.env.NEXTAUTH_SECRET,
+      // Render.com specific timeout
+      secureCookie: process.env.NODE_ENV === 'production'
+    });
 
-  // Check if user is trying to access admin routes
-  const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route));
-  
-  if (isAdminRoute) {
-    // Redirect to home if not authenticated
-    if (!token) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.searchParams.set('error', 'unauthorized');
-      return NextResponse.redirect(url);
+    // Check if user is trying to access admin routes
+    const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route));
+    
+    if (isAdminRoute) {
+      // Redirect to home if not authenticated
+      if (!token) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/';
+        url.searchParams.set('error', 'unauthorized');
+        return NextResponse.redirect(url);
+      }
+      
+      // Redirect to home if not admin
+      if (token.role !== 'admin') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/';
+        url.searchParams.set('error', 'forbidden');
+        return NextResponse.redirect(url);
+      }
+      
+      // Allow admin access
+      return NextResponse.next();
+    }
+
+    // Check if user is trying to access user routes
+    const isUserRoute = USER_ROUTES.some(route => pathname.startsWith(route));
+    
+    if (isUserRoute) {
+      // Redirect to home if not authenticated
+      if (!token) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/';
+        url.searchParams.set('error', 'login_required');
+        return NextResponse.redirect(url);
+      }
+      
+      // Allow authenticated user access
+      return NextResponse.next();
+    }
+
+    // For any other route not explicitly defined, redirect to home
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    return NextResponse.redirect(url);
+
+  } catch (error) {
+    // Enhanced error handling for Render.com deployment
+    console.error('Middleware error:', error);
+    
+    // In production, log error but don't crash
+    if (process.env.NODE_ENV === 'production') {
+      // Allow access and let the application handle authentication
+      return NextResponse.next();
     }
     
-    // Redirect to home if not admin
-    if (token.role !== 'admin') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.searchParams.set('error', 'forbidden');
-      return NextResponse.redirect(url);
-    }
-    
-    // Allow admin access
-    return NextResponse.next();
+    // In development, show error
+    const url = request.nextUrl.clone();
+    url.pathname = '/';
+    url.searchParams.set('error', 'middleware_error');
+    return NextResponse.redirect(url);
   }
-
-  // Check if user is trying to access user routes
-  const isUserRoute = USER_ROUTES.some(route => pathname.startsWith(route));
-  
-  if (isUserRoute) {
-    // Redirect to home if not authenticated
-    if (!token) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.searchParams.set('error', 'login_required');
-      return NextResponse.redirect(url);
-    }
-    
-    // Allow authenticated user access
-    return NextResponse.next();
-  }
-
-  // For any other route not explicitly defined, redirect to home
-  const url = request.nextUrl.clone();
-  url.pathname = '/';
-  return NextResponse.redirect(url);
 }
 
 export const config = {

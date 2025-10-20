@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: smartplates
+    runtime: node
+    plan: free
+    region: frankfurt  # EU region for better performance
+    buildCommand: bun install && bun run build
+    startCommand: bun start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    # Persistent storage für File uploads, logs, PDFs etc.
+    disk:
+      name: smartplates-storage
+      mountPath: /opt/render/project/src/storage
+      sizeGB: 1
+    # Health check für die App
+    healthCheckPath: /api/health
+    # Auto-deploy from main branch
+    autoDeploy: true

@@ -169,6 +169,12 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
     throw new Error('Resend API key not configured');
   }
 
+  // Development mode: redirect all emails to owner email for testing
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const actualEmail = isDevelopment ? 'smartplates.group@gmail.com' : verificationData.email;
+  
+  console.log(`📧 ${isDevelopment ? '[DEV MODE]' : ''} Sending verification email to: ${actualEmail} (original: ${verificationData.email})`);
+
   const verificationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/verify-email?token=${verificationData.verificationToken}`;
 
   const htmlTemplate = `
@@ -228,6 +234,15 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
             font-size: 13px;
             color: #92400e;
           }
+          .dev-notice {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 13px;
+            color: #1e40af;
+          }
         </style>
       </head>
       <body>
@@ -237,6 +252,12 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
             <p>Please verify your email address to get started</p>
           </div>
           <div class="content">
+            ${isDevelopment ? `
+            <div class="dev-notice">
+              🧪 <strong>Development Mode:</strong> Diese E-Mail wurde an smartplates.group@gmail.com umgeleitet, da Resend im Test-Modus nur an die Owner-E-Mail senden kann. Original-E-Mail: ${verificationData.email}
+            </div>
+            ` : ''}
+            
             <p class="welcome-text">Hi <strong>${verificationData.name}</strong>,</p>
             
             <p>Thank you for joining <span class="brand">SmartPlates</span>! To complete your registration and start planning your meals, please verify your email address.</p>
@@ -281,12 +302,12 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
   try {
     await resend.emails.send({
       from: RESEND_FROM_EMAIL,
-      to: verificationData.email,
+      to: actualEmail,
       subject: 'Welcome to SmartPlates! Please verify your email 🍽️',
       html: htmlTemplate,
     });
 
-    console.log('✅ Email verification sent successfully via Resend to:', verificationData.email);
+    console.log('✅ Email verification sent successfully via Resend to:', actualEmail);
   } catch (error) {
     console.error('❌ Failed to send email verification via Resend:', error);
     throw error;
@@ -396,6 +417,12 @@ export async function sendPasswordResetEmail(resetData: PasswordResetData): Prom
     throw new Error('Resend API key not configured');
   }
 
+  // Development mode: redirect all emails to owner email for testing
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const actualEmail = isDevelopment ? 'smartplates.group@gmail.com' : resetData.email;
+  
+  console.log(`📧 ${isDevelopment ? '[DEV MODE]' : ''} Sending password reset email to: ${actualEmail} (original: ${resetData.email})`);
+
   const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetData.resetToken}`;
 
   const htmlTemplate = `
@@ -451,6 +478,15 @@ export async function sendPasswordResetEmail(resetData: PasswordResetData): Prom
             font-size: 13px;
             color: #7f1d1d;
           }
+          .dev-notice {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 13px;
+            color: #1e40af;
+          }
         </style>
       </head>
       <body>
@@ -460,6 +496,12 @@ export async function sendPasswordResetEmail(resetData: PasswordResetData): Prom
             <p>SmartPlates Passwort-Reset</p>
           </div>
           <div class="content">
+            ${isDevelopment ? `
+            <div class="dev-notice">
+              🧪 <strong>Development Mode:</strong> Diese E-Mail wurde an smartplates.group@gmail.com umgeleitet, da Resend im Test-Modus nur an die Owner-E-Mail senden kann. Original-E-Mail: ${resetData.email}
+            </div>
+            ` : ''}
+            
             <p>Hallo <strong>${resetData.name}</strong>,</p>
             
             <p>Sie haben eine Anfrage zum Zurücksetzen Ihres Passworts für Ihr <span class="brand">SmartPlates</span>-Konto gestellt.</p>
@@ -505,12 +547,12 @@ export async function sendPasswordResetEmail(resetData: PasswordResetData): Prom
   try {
     await resend.emails.send({
       from: RESEND_FROM_EMAIL,
-      to: resetData.email,
+      to: actualEmail,
       subject: 'Passwort zurücksetzen - SmartPlates 🔐',
       html: htmlTemplate,
     });
 
-    console.log('✅ Password reset email sent successfully via Resend to:', resetData.email);
+    console.log('✅ Password reset email sent successfully via Resend to:', actualEmail);
   } catch (error) {
     console.error('❌ Failed to send password reset email via Resend:', error);
     throw error;

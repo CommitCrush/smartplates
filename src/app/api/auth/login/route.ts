@@ -54,8 +54,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if email is verified
-    if (!user.isEmailVerified) {
+    // Check if email is verified (skip check for team members)
+    const isTeamMember = shouldBeAdmin(email);
+    if (!user.isEmailVerified && !isTeamMember) {
       return NextResponse.json(
         { 
           success: false, 
@@ -66,6 +67,14 @@ export async function POST(request: NextRequest) {
         },
         { status: 403 }
       );
+    }
+
+    // Auto-verify team members if not already verified
+    if (isTeamMember && !user.isEmailVerified) {
+      const { updateUser } = await import('@/models/User');
+      await updateUser(user._id!, { isEmailVerified: true });
+      user.isEmailVerified = true;
+      console.log(`[Team Login] Auto-verified team member: ${email}`);
     }
 
     // Verify password

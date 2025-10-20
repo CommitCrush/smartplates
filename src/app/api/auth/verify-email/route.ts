@@ -105,15 +105,46 @@ export async function GET(request: NextRequest) {
       emailVerificationExpires: undefined,
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Email verified successfully! You can now log in.',
-      user: {
+    // Create a session for automatic login
+    const jwt = require('jsonwebtoken');
+    const token_secret = process.env.JWT_SECRET || 'your-secret-key';
+    
+    const loginToken = jwt.sign(
+      { 
+        userId: user._id,
         email: user.email,
         name: user.name,
+        role: user.role || 'user',
+        isEmailVerified: true
+      },
+      token_secret,
+      { expiresIn: '7d' }
+    );
+
+    // Set cookie for automatic login
+    const response = NextResponse.json({
+      success: true,
+      message: 'Email verified successfully! You are now logged in.',
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role || 'user',
         isEmailVerified: true,
-      }
+      },
+      redirectTo: '/dashboard'  // Redirect to user dashboard
     });
+
+    // Set authentication cookie
+    response.cookies.set('auth-token', loginToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/'
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Email verification error:', error);

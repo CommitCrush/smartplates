@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
 
     // Determine user role based on team.ts configuration
     const userRole = shouldBeAdmin(email) ? 'admin' : 'user';
+    const isTeamMember = shouldBeAdmin(email);
 
     // Create user in MongoDB
     const newUser = await createUser({
@@ -90,26 +91,44 @@ export async function POST(request: NextRequest) {
       role: userRole,
     });
 
-    // Generate email verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-    // Update user with verification token
-    await updateUser(newUser._id!, {
-      emailVerificationToken: verificationToken,
-      emailVerificationExpires: verificationExpires,
-    });
-
-    // Send verification email
-    try {
-      await sendEmailVerification({
-        email: newUser.email,
-        name: newUser.name,
-        verificationToken: verificationToken,
+    // Set email verification status for team members
+    if (isTeamMember) {
+      await updateUser(newUser._id!, {
+        isEmailVerified: true,
       });
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Don't fail registration if email sending fails
+      // Update the newUser object to reflect the change
+      newUser.isEmailVerified = true;
+    }
+
+    let verificationMessage = '';
+
+    // Only send verification email for non-team members
+    if (!isTeamMember) {
+      // Generate email verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Update user with verification token
+      await updateUser(newUser._id!, {
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
+      });
+
+      // Send verification email
+      try {
+        await sendEmailVerification({
+          email: newUser.email,
+          name: newUser.name,
+          verificationToken: verificationToken,
+        });
+        verificationMessage = 'Please check your email for verification.';
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        verificationMessage = 'Registration successful, but verification email could not be sent.';
+      }
+    } else {
+      verificationMessage = 'Team member account created - email automatically verified!';
+      console.log(`[Team Registration] Admin user ${email} registered with auto-verification`);
     }
 
     // Generate session token
@@ -129,9 +148,10 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         success: true,
-        message: 'Registration successful! Please check your email for verification.',
+        message: `Registration successful! ${verificationMessage}`,
         user: userData,
-        token: token
+        token: token,
+        autoVerified: isTeamMember
       },
       { status: 201 }
     );

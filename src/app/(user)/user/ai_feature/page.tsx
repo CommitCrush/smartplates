@@ -441,11 +441,11 @@ export default function AiRecipePage() {
         <div className="flex flex-row items-stretch justify-center w-full max-w-6xl gap-0 h-[400px] shadow-2xl rounded-3xl overflow-hidden">
           {/* Left: Headline & Button */}
           <div className="flex-1 flex flex-col justify-center items-start pl-20 pr-12 bg-gradient-to-br from-white/95 to-[#EFF4E6]/95 backdrop-blur-sm z-10">
-                        <h1 className="text-5xl font-extrabold mb-6 leading-tight text-[#2d4a2d]">
+                        <h1 className="text-5xl font-extrabold mb-6 leading-tight text-primary-900">
               Smart Fridge AI<br />
-              <span className="text-[#b83d2a]">Your Fridge's Potential. Unlocked by AI!</span>
+              <span className="text-coral-500">Your Fridge's Potential. Unlocked by AI!</span>
             </h1>
-            <p className="text-xl mb-8 max-w-lg text-[#2d4a2d] font-medium">
+            <p className="text-xl mb-8 max-w-lg text-primary-800 font-medium">
               Discover meal ideas based on your fridge contents. Scan or upload a fridge photo and let AI inspire your next recipe.
             </p>
 
@@ -480,8 +480,8 @@ export default function AiRecipePage() {
         <div className="flex gap-6 mb-8">
           <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-xl border border-[#AABC91] flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
             <div className="mb-2 text-3xl text-[#7D966D]"><i className="lucide lucide-image" /></div>
-            <div className="font-semibold mb-1 text-[#2d4a2d]">Scan your fridge or upload a photo 📷</div>
-            <div className="text-[#2d4a2d] text-sm mb-4 text-center">Let AI analyze what's inside your fridge.</div>
+            <div className="font-bold text-xl mb-1 text-primary-900">Scan your fridge or upload a photo 📷</div>
+            <div className=" text-[#7D966D] mb-4 text-center">Let AI analyze what's inside your fridge.</div>
             <ImageUpload image={image} onUpload={handleImageUpload} onNewImage={handleNewImage} analyzing={analyzing} />
 
             {/* Inline notification for analyzing */}
@@ -500,7 +500,7 @@ export default function AiRecipePage() {
           </div>
           <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-xl border border-[#AABC91] flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
             <div className="mb-2 text-3xl text-[#7D966D]"><i className="lucide lucide-pencil" /></div>
-            <div className="font-semibold mb-1 text-[#7D966D]">Enter what you have ✍️</div>
+            <div className=" font-bold text-lg mb-1 text-[#7D966D]">Enter what you have ✍️</div>
 
             <IngredientInput ingredients={ingredients} onChange={handleIngredientsChange} />
           </div>
@@ -574,7 +574,7 @@ export default function AiRecipePage() {
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap  gap-2 mb-6">
           <RecipeFilterDropdown filters={filters} onChange={handleFilterChange} />
         </div>
         

@@ -36,11 +36,11 @@ export default function IngredientInput({ ingredients = [], onChange, label }: {
             setShowDropdown(e.target.value.length > 0);
           }}
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
-          className="border rounded px-3 py-2 flex-1"
+          className=" items-center justify-center gap-2 w-full py-3 px-4 rounded-lg border-2 flex-1"
           placeholder="e.g. Tomato"
           autoComplete="off"
         />
-        <button type="button" className="btn btn-secondary" onClick={handleAdd}>+</button>
+        <button type="button" className="btn btn-secondary" onClick={handleAdd}></button>
       </div>
       {showDropdown && filteredSuggestions.length > 0 && (
         <ul className="absolute z-10 border rounded w-full mt-1 shadow-lg max-h-40 overflow-auto">

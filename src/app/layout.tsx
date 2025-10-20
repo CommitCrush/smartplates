@@ -22,26 +22,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/SmartPlates_Logo.svg',
+        url: '/Icon.png',
         sizes: '128x128',  // Maximale empfohlene Größe
-        type: 'image/jpeg',
+        type: 'image/png',
       },
-      {
-        url: '/SmartPlates_Logo.svg',
-        sizes: '64x64',
-        type: 'image/jpeg',
-      },
-      {
-        url: '/SmartPlates_Logo.svg',
-        sizes: '32x32', 
-        type: 'image/jpeg',
-      }
     ],
-    apple: {
-      url: '/SmartPlates_Logo.svg',
-      sizes: '180x180',  // Für iOS Home Screen
-      type: 'image/jpeg',
-    }
   },
 };
 

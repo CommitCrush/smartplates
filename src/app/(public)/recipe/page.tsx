@@ -173,13 +173,13 @@ export default function RecipePage() {
 
   return (
     <div className="min-h-screen bg-background py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto pt-10 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-4">
+          {/* <div className="flex justify-center mb-4">
             <ChefHat className="h-12 w-12 text-primary-600" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+          </div> */}
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-primary-700">
             Recipe Collection
           </h1>
           <p className="text-lg text-foreground-muted max-w-2xl mx-auto">

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { findUserByEmail } from '@/models/User';
-import { getCollection } from '@/lib/db';
+import { getCollection, getCachedQuery, invalidateCache } from '@/lib/db';
 import { ObjectId } from 'mongodb';
 
 interface FavoriteRecipe {
@@ -51,6 +51,10 @@ export async function POST(req: NextRequest) {
     if (existingFavorite) {
       // Remove from favorites (toggle off)
       await favoritesCollection.deleteOne({ _id: existingFavorite._id });
+      
+      // Invalidate user's favorites cache
+      invalidateCache(`favorites:${userId}`);
+      
       return NextResponse.json({ favorited: false, message: 'Recipe removed from favorites' });
     } else {
       // Add to favorites (toggle on)
@@ -61,6 +65,10 @@ export async function POST(req: NextRequest) {
         recipeImage: recipeImage || '/placeholder-recipe.svg',
         createdAt: new Date()
       });
+      
+      // Invalidate user's favorites cache
+      invalidateCache(`favorites:${userId}`);
+      
       return NextResponse.json({ favorited: true, message: 'Recipe added to favorites' });
     }
 
@@ -73,7 +81,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -85,15 +93,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const favoritesCollection = await getCollection<FavoriteRecipe>('favorites');
-    
     const userId =
       typeof user._id === 'string' ? new ObjectId(user._id) : user._id;
 
-    const favorites = await favoritesCollection
-      .find({ userId })
-      .sort({ createdAt: -1 })
-      .toArray();
+    // Use cached query with user ID as cache key
+    const favorites = await getCachedQuery(
+      `favorites:${userId}`,
+      async () => {
+        const favoritesCollection = await getCollection<FavoriteRecipe>('favorites');
+        return favoritesCollection
+          .find({ userId })
+          .sort({ createdAt: -1 })
+          .toArray();
+      },
+      60000 // 1 minute cache
+    );
 
     return NextResponse.json({ favorites });
 

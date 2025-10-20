@@ -22,9 +22,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/Icon.png',
+        url: '/Icon.jpg',
         sizes: '128x128',  // Maximale empfohlene Größe
-        type: 'image/png',
+        type: 'image/jpeg',
       },
     ],
   },

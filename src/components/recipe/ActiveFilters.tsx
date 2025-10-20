@@ -152,7 +152,7 @@ export function ActiveFilters({
             key={filter.id}
             variant="secondary"
             size="sm"
-            className="h-8 px-3 py-1 text-sm bg-background border border-border hover:bg-muted text-foreground"
+            className="h-8 px-3 py-1 text-sm bg-gradient-navigation  border border-border hover:bg-muted text-white"
             onClick={filter.onRemove}
           >
             {filter.label}
@@ -167,7 +167,7 @@ export function ActiveFilters({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-3 py-1 text-sm border-destructive/50 text-destructive hover:bg-destructive/10"
+            className="h-8 px-3 py-1 text-sm bg-gradient-navigation border-destructive/50 text-white hover:bg-destructive/10"
             onClick={onClearAll}
           >
             Clear All

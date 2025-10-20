@@ -900,3 +900,22 @@ html.light {
 html.dark {
   color-scheme: dark;
 }
+
+body {
+  padding-top: 4rem; /* 64px for h-16 navbar */
+}
+
+/* Enhanced backdrop blur support */
+@supports (backdrop-filter: blur(12px)) {
+  .backdrop-blur-md {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* Fallback for browsers that don't support backdrop-filter */
+@supports not (backdrop-filter: blur(12px)) {
+  .backdrop-blur-md {
+    background-color: rgba(var(--background), 0.95);
+  }
+}

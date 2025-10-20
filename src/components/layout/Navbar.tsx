@@ -6,10 +6,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/authContext";
-import { slugify } from "@/lib/utils";
-import { Menu, X, ChefHat } from "lucide-react";
+import { slugify, cn } from "@/lib/utils";
+import { Menu, X, } from "lucide-react";
 import UserProfileDropdown from "./UserProfileDropdown";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -18,12 +18,26 @@ import { SmartPlatesLogo } from "@/components/ui/smartplates-logo";
 export default function Navbar() {
   const { isAuthenticated, isAdmin, user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+ const [isScrolled, setIsScrolled] = useState(false);
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setIsScrolled(scrollPosition > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   return (
     <nav
-      className="navbar-bg shadow-navbar border-b border-border sticky top-0 z-50"
+     className={cn(
+        "fixed top-0 left-0 right-0 z-50 px-4 lg:px-6 h-16 flex items-center transition-all duration-300",
+        isScrolled
+          ? "bg-background/80 backdrop-blur-md border-b border-border/50 shadow-lg"
+          : "bg-background border-b border-border"
+      )}
       role="navigation"
       aria-label="Main navigation"
     >

@@ -1,42 +1,24 @@
 /**
  * Email Service for SmartPlates
- * Handles all email functionality including contact forms, notifications, and verification emails
+ * SendGrid: Contact forms
+ * Resend: Email verification and password reset
  */
 
-import nodemailer from 'nodemailer';
-import sgMail from '@sendgrid/mail';
 import { Resend } from 'resend';
+import sgMail from '@sendgrid/mail';
 
-// Initialize Resend client for verification emails
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+// Initialize services
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Email configuration
-const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // Use TLS
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-};
-
-const ADMIN_EMAIL = 'smartplates.group@gmail.com';
-
-// SendGrid configuration
+// SendGrid configuration for contact forms
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-// Create transporter
-const createTransporter = () => {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn('SMTP credentials not configured. Email functionality will be limited.');
-    return null;
-  }
-  
-  return nodemailer.createTransport(SMTP_CONFIG);
-};
+// Email configuration
+const ADMIN_EMAIL = 'smartplates.group@gmail.com';
+const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'smartplates.group@gmail.com';
+const RESEND_FROM_EMAIL = 'SmartPlates <onboarding@resend.dev>';
 
 export interface ContactFormData {
   name: string;
@@ -61,7 +43,7 @@ export interface PasswordResetData {
 /**
  * Send contact form email to admin using SendGrid
  */
-export async function sendContactEmailSendGrid(formData: ContactFormData): Promise<void> {
+export async function sendContactEmail(formData: ContactFormData): Promise<void> {
   if (!process.env.SENDGRID_API_KEY) {
     throw new Error('SendGrid API key not configured');
   }
@@ -157,41 +139,164 @@ export async function sendContactEmailSendGrid(formData: ContactFormData): Promi
     </html>
   `;
 
-  const msg = {
-    to: ADMIN_EMAIL,
-    from: {
-      email: process.env.SENDGRID_FROM_EMAIL || 'noreply@smartplates.app',
-      name: 'SmartPlates Contact Form'
-    },
-    replyTo: {
-      email: formData.email,
-      name: formData.name
-    },
-    subject: `[SmartPlates] ${reasonLabels[formData.contactReason]}: ${formData.subject}`,
-    html: htmlTemplate,
-    text: `
-Contact Form Submission - SmartPlates
+  try {
+    await sgMail.send({
+      to: ADMIN_EMAIL,
+      from: {
+        email: SENDGRID_FROM_EMAIL,
+        name: 'SmartPlates Contact Form'
+      },
+      replyTo: {
+        email: formData.email,
+        name: formData.name
+      },
+      subject: `[SmartPlates] ${reasonLabels[formData.contactReason]}: ${formData.subject}`,
+      html: htmlTemplate,
+    });
 
-Contact Reason: ${reasonLabels[formData.contactReason]}
-Name: ${formData.name}
-Email: ${formData.email}
-Subject: ${formData.subject}
+    console.log('✅ Contact email sent successfully via SendGrid');
+  } catch (error) {
+    console.error('❌ Failed to send contact email via SendGrid:', error);
+    throw error;
+  }
+}
 
-Message:
-${formData.message}
+/**
+ * Send email verification using Resend
+ */
+export async function sendEmailVerification(verificationData: EmailVerificationData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('Resend API key not configured');
+  }
 
----
-Received on: ${new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })}
-    `.trim(),
-  };
+  const verificationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/verify-email?token=${verificationData.verificationToken}`;
 
-  await sgMail.send(msg);
+  const htmlTemplate = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+          .header { 
+            background: linear-gradient(135deg, #22c55e, #16a34a); 
+            color: white; 
+            padding: 40px 20px; 
+            text-align: center;
+          }
+          .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+          .header p { margin: 10px 0 0 0; opacity: 0.9; font-size: 16px; }
+          .content { padding: 40px 30px; background: #f9fafb; }
+          .welcome-text { font-size: 18px; margin-bottom: 25px; color: #374151; }
+          .cta-container { text-align: center; margin: 35px 0; }
+          .cta-button {
+            background: #22c55e;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 6px rgba(34, 197, 94, 0.3);
+            transition: all 0.3s ease;
+          }
+          .cta-button:hover { background: #16a34a; transform: translateY(-2px); }
+          .link-fallback { 
+            color: #6b7280; 
+            font-size: 14px; 
+            margin-top: 20px;
+            padding: 20px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            border-left: 4px solid #22c55e;
+          }
+          .footer {
+            background: #1f2937;
+            color: #9ca3af;
+            padding: 25px;
+            text-align: center;
+            font-size: 12px;
+          }
+          .brand { color: #22c55e; font-weight: 600; }
+          .security-note {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 13px;
+            color: #92400e;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎉 Welcome to SmartPlates!</h1>
+            <p>Please verify your email address to get started</p>
+          </div>
+          <div class="content">
+            <p class="welcome-text">Hi <strong>${verificationData.name}</strong>,</p>
+            
+            <p>Thank you for joining <span class="brand">SmartPlates</span>! To complete your registration and start planning your meals, please verify your email address.</p>
+            
+            <div class="cta-container">
+              <a href="${verificationUrl}" class="cta-button">
+                ✅ Verify Email Address
+              </a>
+            </div>
+            
+            <div class="link-fallback">
+              <strong>Button not working?</strong><br>
+              Copy and paste this link into your browser:<br>
+              <a href="${verificationUrl}" style="color: #22c55e; word-break: break-all;">${verificationUrl}</a>
+            </div>
+            
+            <div class="security-note">
+              🔒 <strong>Security Note:</strong> This verification link will expire in 24 hours for your security.
+            </div>
+            
+            <p>Once verified, you'll be able to:</p>
+            <ul style="color: #374151;">
+              <li>🍽️ Save and organize your favorite recipes</li>
+              <li>📅 Plan your weekly meals with our smart calendar</li>
+              <li>🛒 Generate automatic shopping lists</li>
+              <li>🤖 Get AI-powered recipe recommendations</li>
+            </ul>
+            
+            <p>We're excited to help you on your meal planning journey!</p>
+            
+            <p>Best regards,<br><span class="brand">The SmartPlates Team</span></p>
+          </div>
+          <div class="footer">
+            <p>This email was sent by <span class="brand">SmartPlates</span></p>
+            <p>If you didn't sign up for SmartPlates, please ignore this email.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  try {
+    await resend.emails.send({
+      from: RESEND_FROM_EMAIL,
+      to: verificationData.email,
+      subject: 'Welcome to SmartPlates! Please verify your email 🍽️',
+      html: htmlTemplate,
+    });
+
+    console.log('✅ Email verification sent successfully via Resend to:', verificationData.email);
+  } catch (error) {
+    console.error('❌ Failed to send email verification via Resend:', error);
+    throw error;
+  }
 }
 
 /**
  * Send confirmation email to user using SendGrid
  */
-export async function sendContactConfirmationSendGrid(userEmail: string, userName: string): Promise<void> {
+export async function sendContactConfirmation(userEmail: string, userName: string): Promise<void> {
   if (!process.env.SENDGRID_API_KEY) {
     console.log(`Would send confirmation email to ${userEmail}`);
     return;
@@ -248,8 +353,8 @@ export async function sendContactConfirmationSendGrid(userEmail: string, userNam
             <p>In the meantime, feel free to explore our platform:</p>
             
             <div style="text-align: center;">
-              <a href="https://smartplates.app/recipe" class="cta">🍽️ Browse Recipes</a>
-              <a href="https://smartplates.app/meal-planning" class="cta">📅 Plan Your Meals</a>
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL}/recipe" class="cta">🍽️ Browse Recipes</a>
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL}/meal-planning" class="cta">📅 Plan Your Meals</a>
             </div>
             
             <p>We appreciate your interest in SmartPlates and look forward to helping you with your meal planning journey!</p>
@@ -265,203 +370,21 @@ export async function sendContactConfirmationSendGrid(userEmail: string, userNam
     </html>
   `;
 
-  const msg = {
-    to: userEmail,
-    from: {
-      email: process.env.SENDGRID_FROM_EMAIL || 'noreply@smartplates.app',
-      name: 'SmartPlates'
-    },
-    subject: 'Thank you for contacting SmartPlates! 🍽️',
-    html: htmlTemplate,
-    text: `
-Hi ${userName},
-
-Thank you for reaching out to SmartPlates! We've successfully received your message and our team will get back to you within 24 hours.
-
-In the meantime, feel free to explore our platform:
-- Browse Recipes: https://smartplates.app/recipe
-- Plan Your Meals: https://smartplates.app/meal-planning
-
-We appreciate your interest in SmartPlates and look forward to helping you with your meal planning journey!
-
-Best regards,
-The SmartPlates Team
-
----
-This is an automated confirmation from SmartPlates.
-If you didn't send this message, please ignore this email.
-    `.trim(),
-  };
-
-  await sgMail.send(msg);
-}
-
-/**
- * Send contact form email to admin (Primary function - tries SendGrid first, falls back to SMTP)
- */
-export async function sendContactEmail(formData: ContactFormData): Promise<void> {
   try {
-    // Try SendGrid first (preferred method)
-    if (process.env.SENDGRID_API_KEY) {
-      await sendContactEmailSendGrid(formData);
-      console.log('✅ Contact email sent successfully via SendGrid');
-      return;
-    }
-  } catch (error) {
-    console.error('❌ SendGrid failed, trying SMTP fallback:', error);
-  }
-
-  // Fallback to SMTP if SendGrid fails or is not configured
-  try {
-    const transporter = createTransporter();
-    
-    if (!transporter) {
-      console.log(`📧 Contact form submission logged: ${formData.email} - ${formData.subject}`);
-      console.log(`💬 Message: ${formData.message}`);
-      return;
-    }
-
-    const reasonLabels = {
-      support: 'Technical Support',
-      feedback: 'Feedback & Suggestions',
-      partnership: 'Business Partnership',
-      other: 'Other Inquiries'
-    };
-
-    const mailOptions = {
-      from: `"SmartPlates Contact Form" <${process.env.SMTP_USER}>`,
-      to: ADMIN_EMAIL,
-      replyTo: formData.email,
-      subject: `[SmartPlates Contact] ${reasonLabels[formData.contactReason]}: ${formData.subject}`,
-      html: `
-        <h2>New Contact Form Submission - SmartPlates</h2>
-        <p><strong>Contact Reason:</strong> ${reasonLabels[formData.contactReason]}</p>
-        <p><strong>Name:</strong> ${formData.name}</p>
-        <p><strong>Email:</strong> ${formData.email}</p>
-        <p><strong>Subject:</strong> ${formData.subject}</p>
-        <p><strong>Message:</strong></p>
-        <p>${formData.message.replace(/\n/g, '<br>')}</p>
-      `,
-      text: `
-Contact Form Submission - SmartPlates
-
-Contact Reason: ${reasonLabels[formData.contactReason]}
-Name: ${formData.name}
-Email: ${formData.email}
-Subject: ${formData.subject}
-
-Message:
-${formData.message}
-      `.trim(),
-    };
-
-    await transporter.sendMail(mailOptions);
-    console.log('✅ Contact email sent successfully via SMTP');
-  } catch (error) {
-    console.error('❌ Both SendGrid and SMTP failed:', error);
-    // Log the submission for manual processing
-    console.log(`📝 MANUAL PROCESSING NEEDED: Contact from ${formData.email}`);
-    throw error;
-  }
-}
-
-/**
- * Send confirmation email to user (Primary function - tries SendGrid first, falls back to SMTP)
- */
-export async function sendContactConfirmation(userEmail: string, userName: string): Promise<void> {
-  try {
-    // Try SendGrid first
-    if (process.env.SENDGRID_API_KEY) {
-      await sendContactConfirmationSendGrid(userEmail, userName);
-      console.log('✅ Confirmation email sent successfully via SendGrid');
-      return;
-    }
-  } catch (error) {
-    console.error('❌ SendGrid confirmation failed, trying SMTP fallback:', error);
-  }
-
-  // Fallback to SMTP
-  try {
-    const transporter = createTransporter();
-    
-    if (!transporter) {
-      console.log(`📧 Would send confirmation email to ${userEmail}`);
-      return;
-    }
-
-    const mailOptions = {
-      from: `"SmartPlates" <${process.env.SMTP_USER}>`,
+    await sgMail.send({
       to: userEmail,
-      subject: 'Thank you for contacting SmartPlates!',
-      html: `
-        <h2>Thank You for Contacting SmartPlates!</h2>
-        <p>Hi ${userName},</p>
-        <p>We've received your message and our team will get back to you within 24 hours.</p>
-        <p>In the meantime, feel free to explore our recipes and meal planning features!</p>
-        <p>Best regards,<br>The SmartPlates Team</p>
-      `,
-      text: `
-Hi ${userName},
-
-We've received your message and our team will get back to you within 24 hours.
-
-In the meantime, feel free to explore our recipes and meal planning features!
-
-Best regards,
-The SmartPlates Team
-      `.trim(),
-    };
-
-    await transporter.sendMail(mailOptions);
-    console.log('✅ Confirmation email sent successfully via SMTP');
-  } catch (error) {
-    console.error('❌ Confirmation email failed (not critical):', error);
-    // Don't throw error for confirmation emails - they're optional
-  }
-}
-
-/**
- * Send email verification using Resend
- */
-export async function sendEmailVerification(verificationData: EmailVerificationData): Promise<void> {
-  if (!resend) {
-    console.warn('⚠️ Resend not configured, skipping email verification');
-    return;
-  }
-
-  try {
-    const verificationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/verify-email?token=${verificationData.verificationToken}`;
-
-    await resend.emails.send({
-      from: 'SmartPlates <noreply@smartplates.app>',
-      to: verificationData.email,
-      subject: 'Verify your SmartPlates account',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #22c55e;">Welcome to SmartPlates!</h2>
-          <p>Hi ${verificationData.name},</p>
-          <p>Thanks for signing up! Please verify your email address to complete your registration.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" 
-               style="background-color: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Verify Email Address
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${verificationUrl}">${verificationUrl}</a>
-          </p>
-          <p style="color: #666; font-size: 12px;">
-            This verification link will expire in 24 hours.
-          </p>
-        </div>
-      `,
+      from: {
+        email: SENDGRID_FROM_EMAIL,
+        name: 'SmartPlates'
+      },
+      subject: 'Thank you for contacting SmartPlates! 🍽️',
+      html: htmlTemplate,
     });
 
-    console.log('✅ Email verification sent successfully via Resend');
+    console.log('✅ Confirmation email sent successfully via SendGrid');
   } catch (error) {
-    console.error('❌ Email verification failed:', error);
-    throw error;
+    console.error('❌ Failed to send confirmation email via SendGrid:', error);
+    // Don't throw error for confirmation emails - they're optional
   }
 }
 
@@ -469,47 +392,127 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
  * Send password reset email using Resend
  */
 export async function sendPasswordResetEmail(resetData: PasswordResetData): Promise<void> {
-  if (!resend) {
-    console.warn('⚠️ Resend not configured, skipping password reset email');
-    return;
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('Resend API key not configured');
   }
 
-  try {
-    const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetData.resetToken}`;
+  const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetData.resetToken}`;
 
-    await resend.emails.send({
-      from: 'SmartPlates <noreply@smartplates.app>',
-      to: resetData.email,
-      subject: 'Passwort zurücksetzen - SmartPlates',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #22c55e;">Passwort zurücksetzen</h2>
-          <p>Hallo ${resetData.name},</p>
-          <p>Sie haben eine Anfrage zum Zurücksetzen Ihres Passworts für Ihr SmartPlates-Konto gestellt.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
-               style="background-color: #ff6b6b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Neues Passwort setzen
-            </a>
+  const htmlTemplate = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+          .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+          .header { 
+            background: linear-gradient(135deg, #f59e0b, #d97706); 
+            color: white; 
+            padding: 40px 20px; 
+            text-align: center;
+          }
+          .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+          .content { padding: 40px 30px; background: #f9fafb; }
+          .cta-container { text-align: center; margin: 35px 0; }
+          .cta-button {
+            background: #dc2626;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3);
+          }
+          .link-fallback { 
+            color: #6b7280; 
+            font-size: 14px; 
+            margin-top: 20px;
+            padding: 20px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            border-left: 4px solid #dc2626;
+          }
+          .footer {
+            background: #1f2937;
+            color: #9ca3af;
+            padding: 25px;
+            text-align: center;
+            font-size: 12px;
+          }
+          .brand { color: #22c55e; font-weight: 600; }
+          .security-note {
+            background: #fee2e2;
+            border: 1px solid #dc2626;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 13px;
+            color: #7f1d1d;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🔐 Passwort zurücksetzen</h1>
+            <p>SmartPlates Passwort-Reset</p>
           </div>
-          <p style="color: #666; font-size: 14px;">
-            Falls der Button nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:<br>
-            <a href="${resetUrl}">${resetUrl}</a>
-          </p>
-          <p style="color: #666; font-size: 12px;">
-            Dieser Reset-Link ist 1 Stunde gültig. Falls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail.
-          </p>
-          <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-          <p style="color: #999; font-size: 12px;">
-            SmartPlates - Ihre Meal-Planning-Plattform
-          </p>
+          <div class="content">
+            <p>Hallo <strong>${resetData.name}</strong>,</p>
+            
+            <p>Sie haben eine Anfrage zum Zurücksetzen Ihres Passworts für Ihr <span class="brand">SmartPlates</span>-Konto gestellt.</p>
+            
+            <div class="cta-container">
+              <a href="${resetUrl}" class="cta-button">
+                🔑 Neues Passwort setzen
+              </a>
+            </div>
+            
+            <div class="link-fallback">
+              <strong>Button funktioniert nicht?</strong><br>
+              Kopieren Sie diesen Link in Ihren Browser:<br>
+              <a href="${resetUrl}" style="color: #dc2626; word-break: break-all;">${resetUrl}</a>
+            </div>
+            
+            <div class="security-note">
+              ⏰ <strong>Wichtig:</strong> Dieser Reset-Link ist nur 1 Stunde gültig und kann nur einmal verwendet werden.
+            </div>
+            
+            <p><strong>Falls Sie diese Anfrage nicht gestellt haben:</strong></p>
+            <ul>
+              <li>Ignorieren Sie diese E-Mail einfach</li>
+              <li>Ihr Passwort bleibt unverändert</li>
+              <li>Der Link wird automatisch ungültig</li>
+            </ul>
+            
+            <p>Für Ihre Sicherheit loggen wir alle Passwort-Reset-Anfragen und setzen Ihre aktiven Sessions zurück, sobald ein neues Passwort gesetzt wird.</p>
+            
+            <p>Bei Fragen wenden Sie sich gerne an unser Support-Team.</p>
+            
+            <p>Beste Grüße,<br><span class="brand">Das SmartPlates Team</span></p>
+          </div>
+          <div class="footer">
+            <p>Diese E-Mail wurde von <span class="brand">SmartPlates</span> gesendet</p>
+            <p>SmartPlates - Ihre Meal-Planning-Plattform</p>
+          </div>
         </div>
-      `,
+      </body>
+    </html>
+  `;
+
+  try {
+    await resend.emails.send({
+      from: RESEND_FROM_EMAIL,
+      to: resetData.email,
+      subject: 'Passwort zurücksetzen - SmartPlates 🔐',
+      html: htmlTemplate,
     });
 
-    console.log('✅ Password reset email sent successfully via Resend');
+    console.log('✅ Password reset email sent successfully via Resend to:', resetData.email);
   } catch (error) {
-    console.error('❌ Password reset email failed:', error);
+    console.error('❌ Failed to send password reset email via Resend:', error);
     throw error;
   }
 }

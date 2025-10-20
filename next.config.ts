@@ -94,6 +94,21 @@ const nextConfig: NextConfig = {
     return config;
   },
 
+  // Server external packages (moved from experimental)
+  serverExternalPackages: [
+    '@google-cloud/vision',
+    'mongodb',
+    'nodemailer',
+    '@sendgrid/mail',
+    'multer',
+    'html2canvas',
+    'jspdf',
+    'resend',
+    '@react-email/render',
+    '@react-email/components',
+    '@react-email/html'
+  ],
+
   // Performance optimizations
   experimental: {
     optimizeCss: true,
@@ -102,16 +117,6 @@ const nextConfig: NextConfig = {
       'react-icons', 
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu'
-    ],
-    // Server components external packages
-    serverComponentsExternalPackages: [
-      '@google-cloud/vision',
-      'mongodb',
-      'nodemailer',
-      '@sendgrid/mail',
-      'multer',
-      'html2canvas',
-      'jspdf'
     ],
   },
 

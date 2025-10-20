@@ -4,7 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { sendContactEmailSendGrid } from '@/services/emailService';
+import { sendContactEmail } from '@/services/emailService';
 
 export async function GET() {
   try {
@@ -36,7 +36,7 @@ export async function GET() {
       contactReason: 'support' as const
     };
 
-    await sendContactEmailSendGrid(testData);
+    await sendContactEmail(testData);
 
     return NextResponse.json({
       success: true,

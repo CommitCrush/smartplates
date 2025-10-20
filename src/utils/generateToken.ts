@@ -33,6 +33,14 @@ export function generateSessionId(): string {
 }
 
 /**
+ * Generate a verification token for email verification
+ * @returns A secure verification token
+ */
+export function generateVerificationToken(): string {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+/**
  * Verify if a token is valid (basic validation)
  * @param token - The token to verify
  * @returns Object with validity and decoded data

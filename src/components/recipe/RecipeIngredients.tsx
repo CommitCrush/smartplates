@@ -117,8 +117,8 @@ export function RecipeIngredients({ recipe, currentServings, setCurrentServings 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between mb-4">
-          <CardTitle>Ingredients</CardTitle>
+        <CardTitle>Ingredients</CardTitle>
+        <div className="flex flex-col gap-4 mt-4">
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">Servings:</span>
             <div className="flex items-center gap-2">
@@ -131,12 +131,12 @@ export function RecipeIngredients({ recipe, currentServings, setCurrentServings 
               </Button>
             </div>
           </div>
-        </div>
-        <div className="flex items-center justify-center">
-          <Button variant="outline" size="sm" onClick={toggleUnitSystem} className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            <span className="text-sm">{unitSystem === 'us' ? 'Switch to Metric (g, ml, l)' : 'Switch to US (cups, oz, lb)'}</span>
-          </Button>
+          <div className="flex items-center justify-start">
+            <Button variant="outline" size="sm" onClick={toggleUnitSystem} className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              <span className="text-sm">{unitSystem === 'us' ? 'Switch to Metric (g, ml, l)' : 'Switch to US (cups, oz, lb)'}</span>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

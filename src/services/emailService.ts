@@ -1,10 +1,14 @@
 /**
  * Email Service for SmartPlates
- * Handles all email functionality including contact forms and notifications
+ * Handles all email functionality including contact forms, notifications, and verification emails
  */
 
 import nodemailer from 'nodemailer';
 import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
+
+// Initialize Resend client for verification emails
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // Email configuration
 const SMTP_CONFIG = {
@@ -40,6 +44,12 @@ export interface ContactFormData {
   subject: string;
   message: string;
   contactReason: 'support' | 'feedback' | 'partnership' | 'other';
+}
+
+export interface EmailVerificationData {
+  email: string;
+  name: string;
+  verificationToken: string;
 }
 
 /**
@@ -401,6 +411,51 @@ The SmartPlates Team
   } catch (error) {
     console.error('❌ Confirmation email failed (not critical):', error);
     // Don't throw error for confirmation emails - they're optional
+  }
+}
+
+/**
+ * Send email verification using Resend
+ */
+export async function sendEmailVerification(verificationData: EmailVerificationData): Promise<void> {
+  if (!resend) {
+    console.warn('⚠️ Resend not configured, skipping email verification');
+    return;
+  }
+
+  try {
+    const verificationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/verify-email?token=${verificationData.verificationToken}`;
+
+    await resend.emails.send({
+      from: 'SmartPlates <noreply@smartplates.app>',
+      to: verificationData.email,
+      subject: 'Verify your SmartPlates account',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #22c55e;">Welcome to SmartPlates!</h2>
+          <p>Hi ${verificationData.name},</p>
+          <p>Thanks for signing up! Please verify your email address to complete your registration.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" 
+               style="background-color: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Verify Email Address
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verificationUrl}">${verificationUrl}</a>
+          </p>
+          <p style="color: #666; font-size: 12px;">
+            This verification link will expire in 24 hours.
+          </p>
+        </div>
+      `,
+    });
+
+    console.log('✅ Email verification sent successfully via Resend');
+  } catch (error) {
+    console.error('❌ Email verification failed:', error);
+    throw error;
   }
 }
 

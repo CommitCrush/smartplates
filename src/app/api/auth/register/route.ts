@@ -4,9 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser, findUserByEmail } from '@/models/User';
+import { createUser, findUserByEmail, updateUser } from '@/models/User';
 import { generateToken } from '@/utils/generateToken';
+import { sendEmailVerification } from '@/services/emailService';
 import { shouldBeAdmin } from '@/config/team';
+import crypto from 'crypto';
 
 interface RegisterRequest {
   name: string;
@@ -88,6 +90,28 @@ export async function POST(request: NextRequest) {
       role: userRole,
     });
 
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Update user with verification token
+    await updateUser(newUser._id!, {
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpires,
+    });
+
+    // Send verification email
+    try {
+      await sendEmailVerification({
+        email: newUser.email,
+        name: newUser.name,
+        verificationToken: verificationToken,
+      });
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail registration if email sending fails
+    }
+
     // Generate session token
     const token = generateToken(newUser._id!.toString());
 
@@ -105,7 +129,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json(
       {
         success: true,
-        message: 'Registration successful',
+        message: 'Registration successful! Please check your email for verification.',
         user: userData,
         token: token
       },

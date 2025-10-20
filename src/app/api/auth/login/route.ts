@@ -54,6 +54,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if email is verified (optional - you can disable this check if needed)
+    if (!user.isEmailVerified) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Please verify your email address before logging in',
+          emailNotVerified: true
+        },
+        { status: 403 }
+      );
+    }
+
     // Verify password
     if (!user.password) {
       return NextResponse.json(

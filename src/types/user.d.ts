@@ -25,6 +25,8 @@ export interface User {
   password?: string;                 // Hashed password (optional for OAuth users)
   googleId?: string;                 // Google OAuth ID (optional)
   isEmailVerified: boolean;          // Email verification status
+  emailVerificationToken?: string;   // Token for email verification
+  emailVerificationExpires?: Date;   // Expiration date for verification token
   
   // User preferences
   dietaryRestrictions?: string[];    // Array of dietary restrictions
@@ -59,6 +61,8 @@ export interface UpdateUserInput {
   dietaryRestrictions?: string[];
   favoriteCategories?: string[];
   isEmailVerified?: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
   lastLoginAt?: Date;
 }
 

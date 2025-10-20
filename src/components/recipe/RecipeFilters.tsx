@@ -132,16 +132,17 @@ export function RecipeFilters({
             setCommunityOnly(!communityOnly);
             onFilterChange();
           }}
-          className="px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-between whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          className="px-3 py-2 border border-border rounded-md flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary-500     }}
+"
         >
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-green-600" />
             <span className="text-sm">
-              {communityOnly ? 'Community (Chef + User)' : 'Community Recipes'}
+              {communityOnly ? 'All Recipes' : 'Community Recipes'}
             </span>
           </div>
           {communityOnly && (
-            <div className="w-2 h-2 bg-green-600 rounded-full"></div>
+            <div className="w-2 h-2 rounded-full"></div>
           )}
         </button>
       </div>

@@ -133,7 +133,7 @@ export function ActiveFilters({
   if (communityOnly) {
     activeFilters.push({
       id: 'community',
-      label: 'Community Recipes (Chef + User)',
+      label: 'Community Recipes',
       onRemove: onRemoveCommunity,
     });
   }
@@ -152,7 +152,7 @@ export function ActiveFilters({
             key={filter.id}
             variant="secondary"
             size="sm"
-            className="h-8 px-3 py-1 text-sm bg-gradient-navigation  border border-border hover:bg-muted text-white"
+            className="px-3 py-2  text-neutral-700 bg-gradient-navigation shadow-md"
             onClick={filter.onRemove}
           >
             {filter.label}
@@ -167,7 +167,7 @@ export function ActiveFilters({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-3 py-1 text-sm bg-gradient-navigation border-destructive/50 text-white hover:bg-destructive/10"
+            className="px-3 py-2  text-neutral-700 bg-gradient-navigation shadow-md"
             onClick={onClearAll}
           >
             Clear All

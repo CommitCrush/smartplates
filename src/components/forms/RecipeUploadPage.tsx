@@ -32,7 +32,7 @@ export default function RecipeUploadPage({
 
   if (loading || !user || (!isUser && user.role !== 'admin')) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-gray-600">
@@ -96,7 +96,7 @@ export default function RecipeUploadPage({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-green-50 py-8">
+    <div className="min-h-screen  py-8">
       <div className="max-w-3xl mx-auto px-4">
         <div className="mb-6">
           <h3 className="text-2xl font-semibold">{title}</h3>

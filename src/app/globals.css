@@ -388,6 +388,7 @@
   .bg-coral-600 { background-color: var(--color-coral-600); }
   .hover\:bg-coral-600:hover { background-color: var(--color-coral-600); }
   .hover\:bg-coral-700:hover { background-color: var(--color-coral-700); }
+
   
   /* Neutral colors - Enhanced for Navbar/Footer */
   .text-neutral-500 { color: var(--color-neutral-500); }

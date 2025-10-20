@@ -219,13 +219,13 @@ export default function Navbar() {
                     <div className="flex items-center space-x-3">
                       <Link
                         href="/login"
-                        className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-accent hover:text-white dark:border-primary-400 dark:text-primary-400 dark:hover:bg-primary-900 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm hover:shadow-md transform hover:scale-105"
+                        className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-coral-600 hover:text-white hover:transition-transform focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm  hover:scale-110"
                       >
                         Sign In
                       </Link>
                       <Link
                         href="/register"
-                        className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-accent hover:border-accent hover:text-white dark:border-primary-400 dark:text-primary-400 dark:hover:bg-coral-500 dark:hover:border-coral-500 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm hover:shadow-md transform hover:scale-105"
+                        className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-coral-600 hover:text-white hover:transition-transform focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm  hover:scale-110"
                       >
                         Sign Up
                       </Link>

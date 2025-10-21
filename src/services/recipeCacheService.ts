@@ -166,9 +166,9 @@ export async function fetchAndCacheRecipes(): Promise<CachedRecipeData> {
       }
     }
 
-    // Remove duplicates based on ID
+    // Remove duplicates based on ID (handle both id and _id)
     const uniqueRecipes = allRecipes.filter((recipe, index, self) => 
-      index === self.findIndex(r => r.id === recipe.id)
+      index === self.findIndex(r => (r.id || r._id) === (recipe.id || recipe._id))
     );
 
     if (uniqueRecipes.length === 0) {

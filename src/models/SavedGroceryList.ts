@@ -35,7 +35,7 @@ export async function saveGroceryList(userId: string | ObjectId, name: string, i
       createdAt: new Date(),
     };
 
-    const result = await savedListsCollection.insertOne(newList);
+    const result = await savedListsCollection.insertOne(newList as SavedGroceryList);
 
     return { _id: result.insertedId, ...newList };
 

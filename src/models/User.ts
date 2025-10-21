@@ -6,6 +6,7 @@
  */
 
 import { ObjectId } from "mongodb";
+import jwt from 'jsonwebtoken';
 import { getCollection, COLLECTIONS, toObjectId } from "@/lib/db";
 import { hashPassword } from "@/utils/password";
 import {
@@ -368,7 +369,6 @@ export async function generateEmailVerificationToken(userId: ObjectId): Promise<
  * Generate JWT token for authentication
  */
 export async function generateToken(payload: any): Promise<string> {
-  const jwt = require('jsonwebtoken');
   const secret = process.env.JWT_SECRET || 'fallback-secret';
   
   return jwt.sign(payload, secret, { 

@@ -861,7 +861,7 @@ function EmptyState({ searchQuery, filterBy, totalPlans }: EmptyStateProps) {
           <CardDescription className="mb-4">
             {searchQuery 
               ? `No meal plans match "${searchQuery}". Try adjusting your search terms.`
-              : `You don't have any ${filterBy === 'all' ? 'plans' : filterBy} yet.`
+              : `You don&apos;t have any ${filterBy === 'all' ? 'plans' : filterBy} yet.`
             }
           </CardDescription>
           <Button asChild>

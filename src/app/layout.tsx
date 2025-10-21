@@ -62,6 +62,7 @@ export default function RootLayout({
         <script
           src="https://upload-widget.cloudinary.com/latest/global/all.js"
           type="text/javascript"
+          async
         ></script>
       </head>
       <body className="font-sans antialiased" suppressHydrationWarning>

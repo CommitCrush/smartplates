@@ -118,3 +118,6 @@ class ClientSpoonacularCacheService {
 export const spoonacularCacheService = isServer 
   ? new ServerSpoonacularCacheService() 
   : new ClientSpoonacularCacheService();
+
+// Export alias for backward compatibility
+export const cacheService = spoonacularCacheService;

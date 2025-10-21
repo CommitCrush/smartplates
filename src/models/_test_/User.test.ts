@@ -502,13 +502,13 @@ describe('User Model Tests', () => {
   describe('generateToken', () => {
     beforeEach(() => {
       // Mock JWT
-      const jwt = require('jsonwebtoken');
+      const jwt = jest.requireActual('jsonwebtoken');
       jwt.sign = jest.fn().mockReturnValue('mock-jwt-token');
     });
 
     it('should generate JWT token', async () => {
       const payload = { userId: mockUserId, email: 'test@example.com' };
-      const jwt = require('jsonwebtoken');
+      const jwt = jest.requireActual('jsonwebtoken');
 
       const result = await generateToken(payload);
 

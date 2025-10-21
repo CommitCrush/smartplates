@@ -277,4 +277,14 @@ function transformFoundRecipeToRecipe(item: SpoonacularFoundRecipe): Recipe {
   } as Recipe;
 }
 
+// Stub function for missing import
+export async function importCachedRecipesToDB(): Promise<{ success: boolean; message: string; count?: number }> {
+  console.log('⚠️ importCachedRecipesToDB: Stub implementation - service not yet implemented');
+  return {
+    success: false,
+    message: 'Import functionality not yet implemented - placeholder stub',
+    count: 0
+  };
+}
+
 // Other utility functions (getCacheStats, etc.) remain unchanged and are omitted for brevity.

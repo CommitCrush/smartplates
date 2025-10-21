@@ -169,9 +169,33 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
     throw new Error('Resend API key not configured');
   }
 
-  // Development mode: redirect all emails to owner email for testing
+  // Email address validation (robust regex)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isDevelopment = process.env.NODE_ENV !== 'production';
   const actualEmail = isDevelopment ? 'smartplates.group@gmail.com' : verificationData.email;
+  if (!emailRegex.test(actualEmail)) {
+    // Log invalid email attempt
+    console.error('🔥 EMAIL SERVICE: ❌ Invalid email address:', actualEmail);
+    // Optionally: Add to monitoring logs
+    try {
+      const { addEmailLog } = await import('@/app/api/email-monitor/route');
+      addEmailLog({
+        type: 'verification',
+        email: actualEmail,
+        status: 'error',
+        message: `Invalid email address provided for verification`,
+        details: {
+          originalEmail: verificationData.email,
+          error: 'Invalid email address',
+          isDevelopment: process.env.NODE_ENV === 'development',
+        }
+      });
+    } catch (logError) {
+      console.log('🔥 EMAIL SERVICE: Failed to add error log:', logError);
+    }
+    throw new Error('Invalid email address');
+  }
+
   
   console.log(`🔥 EMAIL SERVICE: Preparing verification email`);
   console.log(`   Environment: ${process.env.NODE_ENV}`);
@@ -187,7 +211,6 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
 
   try {
     console.log('🔥 EMAIL SERVICE: 🚀 Calling Resend API...');
-    
     const emailData = {
       from: RESEND_FROM_EMAIL,
       to: actualEmail,

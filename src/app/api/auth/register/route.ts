@@ -24,11 +24,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Enhanced email validation (format + domain verification)
+    try {
+      // Step 1: Basic format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid email format' },
+          { status: 400 }
+        );
+      }
+
+      // Step 2: Enhanced email format validation
+      const { validate: validateEmailFormat } = await import('email-validator');
+      if (!validateEmailFormat(email)) {
+        return NextResponse.json(
+          { success: false, error: 'Please provide a valid email address format' },
+          { status: 400 }
+        );
+      }
+
+      // Step 3: Domain validation (check if domain has valid MX records)
+      const domain = email.split('@')[1];
+      const dns = await import('dns').then(m => m.promises);
+      await dns.resolveMx(domain);
+      console.log('🔥 REGISTER API: ✅ Email domain verified:', domain);
+      
+    } catch (emailValidationError) {
+      console.error('🔥 REGISTER API: ❌ Email validation failed:', emailValidationError);
+      
+      // Check if it's a DNS resolution error (invalid domain)
+      if (emailValidationError instanceof Error) {
+        const error = emailValidationError as any; // Cast to access DNS error codes
+        if (error.code === 'ENOTFOUND' || error.code === 'ENODATA' || emailValidationError.message.includes('queryMx')) {
+          return NextResponse.json(
+            { success: false, error: 'This email domain does not exist or cannot receive emails' },
+            { status: 400 }
+          );
+        } else if (emailValidationError.message.includes('Invalid email')) {
+          return NextResponse.json(
+            { success: false, error: 'Please provide a valid email address format' },
+            { status: 400 }
+          );
+        }
+      }
+      
+      // For other validation errors, return generic message
       return NextResponse.json(
-        { success: false, error: 'Invalid email format' },
+        { success: false, error: 'Please provide a valid email address' },
         { status: 400 }
       );
     }
@@ -68,7 +111,50 @@ export async function POST(request: NextRequest) {
       isTeamMemberEmail 
     });
 
-    // Create user with appropriate verification status
+    // ✅ CRITICAL: For non-team members, validate email delivery BEFORE creating user
+    if (!isTeamMemberEmail) {
+      console.log('🔥 REGISTER API: Testing email delivery before creating user...');
+      try {
+        // Test email delivery by attempting to send a test verification
+        const testToken = 'test-token-for-validation';
+        await sendEmailVerification({
+          email: email.toLowerCase(),
+          name: name.trim(),
+          verificationToken: testToken
+        });
+        console.log('🔥 REGISTER API: ✅ Email delivery validated successfully');
+      } catch (emailTestError) {
+        console.error('🔥 REGISTER API: ❌ Email delivery test failed:', emailTestError);
+        
+        // Return specific error message based on email validation failure
+        if (emailTestError instanceof Error) {
+          if (emailTestError.message === 'Invalid email address format') {
+            return NextResponse.json(
+              { success: false, error: 'Please provide a valid email address format' },
+              { status: 400 }
+            );
+          } else if (emailTestError.message === 'Email domain does not exist or cannot receive emails') {
+            return NextResponse.json(
+              { success: false, error: 'This email domain does not exist or cannot receive emails' },
+              { status: 400 }
+            );
+          } else if (emailTestError.message.includes('Invalid email')) {
+            return NextResponse.json(
+              { success: false, error: 'Please provide a valid email address' },
+              { status: 400 }
+            );
+          }
+        }
+        
+        // For other email service errors (like API issues), return generic error
+        return NextResponse.json(
+          { success: false, error: 'Unable to verify email address. Please try again later.' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Create user with appropriate verification status (only after email validation passes)
     const newUser = await createUser({
       name: name.trim(),
       email: email.toLowerCase(),
@@ -92,7 +178,7 @@ export async function POST(request: NextRequest) {
       verificationMessage = 'Team member account created - email automatically verified!';
       console.log('🔥 REGISTER API: Team member - skipping email verification');
     } else {
-      // Regular user - send verification email
+      // Regular user - send actual verification email (we already validated it works)
       try {
         console.log('🔥 REGISTER API: Generating verification token...');
         const verificationToken = await generateEmailVerificationToken(toObjectId(newUser._id!));
@@ -110,21 +196,8 @@ export async function POST(request: NextRequest) {
       } catch (emailError) {
         console.error('🔥 REGISTER API: ❌ Failed to send verification email:', emailError);
         
-        // Check if it's an invalid email address error
-        if (emailError instanceof Error) {
-          if (emailError.message === 'Invalid email address format') {
-            verificationMessage = 'Registration failed: Please provide a valid email address format.';
-          } else if (emailError.message === 'Email domain does not exist or cannot receive emails') {
-            verificationMessage = 'Registration failed: This email domain does not exist or cannot receive emails.';
-          } else if (emailError.message.includes('Invalid email')) {
-            verificationMessage = 'Registration failed: Please provide a valid email address.';
-          } else {
-            // Don't fail registration if email fails for other reasons
-            verificationMessage = 'Account created, but verification email could not be sent. Please contact support.';
-          }
-        } else {
-          verificationMessage = 'Account created, but verification email could not be sent. Please contact support.';
-        }
+        // This should rarely happen since we pre-validated email delivery
+        verificationMessage = 'Account created, but verification email could not be sent. Please contact support.';
       }
     }
 

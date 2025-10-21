@@ -172,20 +172,23 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
   // Enhanced email address validation (format + domain verification)
   const { validate: validateEmailFormat } = await import('email-validator');
   const isDevelopment = process.env.NODE_ENV !== 'production';
-  const actualEmail = isDevelopment ? 'smartplates.group@gmail.com' : verificationData.email;
   
-  // Step 1: Basic format validation
-  if (!validateEmailFormat(actualEmail)) {
-    console.error('🔥 EMAIL SERVICE: ❌ Invalid email format:', actualEmail);
+  // CRITICAL FIX: Always validate the ORIGINAL email, not the development redirect email
+  const originalEmail = verificationData.email;
+  const actualEmailToSend = isDevelopment ? 'smartplates.group@gmail.com' : verificationData.email;
+  
+  // Step 1: Basic format validation of the ORIGINAL email
+  if (!validateEmailFormat(originalEmail)) {
+    console.error('🔥 EMAIL SERVICE: ❌ Invalid email format:', originalEmail);
     try {
       const { addEmailLog } = await import('@/app/api/email-monitor/route');
       addEmailLog({
         type: 'verification',
-        email: actualEmail,
+        email: actualEmailToSend,
         status: 'error',
         message: `Invalid email format provided for verification`,
         details: {
-          originalEmail: verificationData.email,
+          originalEmail: originalEmail,
           error: 'Invalid email format',
           isDevelopment: process.env.NODE_ENV === 'development',
         }
@@ -196,33 +199,64 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
     throw new Error('Invalid email address format');
   }
 
-  // Step 2: Domain validation for non-development emails
-  if (!isDevelopment) {
+  // Step 2: Domain validation (always check, even in development for the original email)
+  try {
+    const domain = originalEmail.split('@')[1]; // Check original email domain
+    // Check if domain has valid MX records (simplified check)
+    const dns = await import('dns').then(m => m.promises);
+    await dns.resolveMx(domain);
+    console.log('🔥 EMAIL SERVICE: ✅ Email domain verified:', domain);
+  } catch (dnsError) {
+    console.error('🔥 EMAIL SERVICE: ❌ Invalid email domain for original email:', originalEmail);
     try {
-      const domain = actualEmail.split('@')[1];
-      // Check if domain has valid MX records (simplified check)
-      const dns = await import('dns').then(m => m.promises);
-      await dns.resolveMx(domain);
-      console.log('🔥 EMAIL SERVICE: ✅ Email domain verified:', domain);
-    } catch (dnsError) {
-      console.error('🔥 EMAIL SERVICE: ❌ Invalid email domain:', actualEmail);
+      const { addEmailLog } = await import('@/app/api/email-monitor/route');
+      addEmailLog({
+        type: 'verification',
+        email: actualEmailToSend,
+        status: 'error',
+        message: `Email domain does not exist or cannot receive emails`,
+        details: {
+          originalEmail: originalEmail,
+          error: 'Invalid email domain',
+          isDevelopment: process.env.NODE_ENV === 'development',
+        }
+      });
+    } catch (logError) {
+      console.log('🔥 EMAIL SERVICE: Failed to add error log:', logError);
+    }
+    throw new Error('Email domain does not exist or cannot receive emails');
+  }
+
+  // Step 3: Additional validation for common fake email patterns (especially for development)
+  const emailLocal = originalEmail.split('@')[0]; // Get the part before @
+  const suspiciousPatterns = [
+    /^[a-z]{6,}$/i,  // Only letters, 6+ chars (like "sescgsgf", "estsdzddf")
+    /^test\d+$/i,    // test123, test999, etc.
+    /^fake/i,        // fake@gmail.com, fakeemail999@gmail.com
+    /^\d+$/,         // Only numbers
+    /^(.)\1{3,}$/i,  // Repeated characters (aaaa, bbbb)
+  ];
+
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(emailLocal)) {
+      console.error('🔥 EMAIL SERVICE: ❌ Suspicious email pattern detected:', originalEmail);
       try {
         const { addEmailLog } = await import('@/app/api/email-monitor/route');
         addEmailLog({
           type: 'verification',
-          email: actualEmail,
+          email: actualEmailToSend,
           status: 'error',
-          message: `Email domain does not exist or cannot receive emails`,
+          message: `Suspicious email pattern detected`,
           details: {
-            originalEmail: verificationData.email,
-            error: 'Invalid email domain',
+            originalEmail: originalEmail,
+            error: 'Email appears to be fake or temporary',
             isDevelopment: process.env.NODE_ENV === 'development',
           }
         });
       } catch (logError) {
         console.log('🔥 EMAIL SERVICE: Failed to add error log:', logError);
       }
-      throw new Error('Email domain does not exist or cannot receive emails');
+      throw new Error('Email appears to be fake or temporary. Please use a real email address.');
     }
   }
 
@@ -231,19 +265,19 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
   console.log(`   Environment: ${process.env.NODE_ENV}`);
   console.log(`   Development Mode: ${isDevelopment}`);
   console.log(`   Original Email: ${verificationData.email}`);
-  console.log(`   Target Email: ${actualEmail}`);
+  console.log(`   Target Email: ${actualEmailToSend}`);
   console.log(`   Resend API Key: ${process.env.RESEND_API_KEY ? '✅ Configured' : '❌ Missing'}`);
 
   const verificationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/verify-email?token=${verificationData.verificationToken}`;
   console.log(`   Verification URL: ${verificationUrl}`);
 
-  const htmlTemplate = getVerificationEmailTemplate(verificationData.name, verificationUrl, isDevelopment ? verificationData.email : null);
+  const htmlTemplate = getVerificationEmailTemplate(verificationData.name, verificationUrl, isDevelopment ? originalEmail : null);
 
   try {
     console.log('🔥 EMAIL SERVICE: 🚀 Calling Resend API...');
     const emailData = {
       from: RESEND_FROM_EMAIL,
-      to: actualEmail,
+      to: actualEmailToSend,
       subject: 'Welcome to SmartPlates! Please verify your email 🍽️',
       html: htmlTemplate,
     };
@@ -259,11 +293,11 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
 
     console.log('🔥 EMAIL SERVICE: ✅ Resend API Response:', result);
     console.log('🔥 EMAIL SERVICE: ✅ Email ID:', result.data?.id);
-    console.log('🔥 EMAIL SERVICE: ✅ Email delivered to:', actualEmail);
+    console.log('🔥 EMAIL SERVICE: ✅ Email delivered to:', actualEmailToSend);
     
     if (isDevelopment) {
       console.log('🔥 EMAIL SERVICE: 🧪 DEV MODE: Check smartplates.group@gmail.com for verification email');
-      console.log('🔥 EMAIL SERVICE: 🧪 Original email was for:', verificationData.email);
+      console.log('🔥 EMAIL SERVICE: 🧪 Original email was for:', originalEmail);
     }
 
     // Add to monitoring logs (if available)
@@ -271,11 +305,11 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
       const { addEmailLog } = await import('@/app/api/email-monitor/route');
       addEmailLog({
         type: 'verification',
-        email: actualEmail,
+        email: actualEmailToSend,
         status: 'success',
         message: `Verification email sent successfully`,
         details: { 
-          originalEmail: verificationData.email, 
+          originalEmail: originalEmail, 
           resendId: result.data?.id,
           isDevelopment,
           verificationToken: verificationData.verificationToken.substring(0, 8) + '...'
@@ -295,11 +329,11 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
       const { addEmailLog } = await import('@/app/api/email-monitor/route');
       addEmailLog({
         type: 'verification',
-        email: actualEmail,
+        email: actualEmailToSend,
         status: 'error',
         message: `Failed to send verification email`,
         details: { 
-          originalEmail: verificationData.email, 
+          originalEmail: originalEmail, 
           error: error instanceof Error ? error.message : 'Unknown error',
           isDevelopment
         }

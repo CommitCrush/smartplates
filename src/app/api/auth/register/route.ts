@@ -111,10 +111,18 @@ export async function POST(request: NextRequest) {
         console.error('🔥 REGISTER API: ❌ Failed to send verification email:', emailError);
         
         // Check if it's an invalid email address error
-        if (emailError instanceof Error && emailError.message === 'Invalid email address') {
-          verificationMessage = 'Registration failed: Please provide a valid email address.';
+        if (emailError instanceof Error) {
+          if (emailError.message === 'Invalid email address format') {
+            verificationMessage = 'Registration failed: Please provide a valid email address format.';
+          } else if (emailError.message === 'Email domain does not exist or cannot receive emails') {
+            verificationMessage = 'Registration failed: This email domain does not exist or cannot receive emails.';
+          } else if (emailError.message.includes('Invalid email')) {
+            verificationMessage = 'Registration failed: Please provide a valid email address.';
+          } else {
+            // Don't fail registration if email fails for other reasons
+            verificationMessage = 'Account created, but verification email could not be sent. Please contact support.';
+          }
         } else {
-          // Don't fail registration if email fails for other reasons
           verificationMessage = 'Account created, but verification email could not be sent. Please contact support.';
         }
       }

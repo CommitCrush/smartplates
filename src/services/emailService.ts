@@ -169,31 +169,61 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
     throw new Error('Resend API key not configured');
   }
 
-  // Email address validation (robust regex)
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Enhanced email address validation (format + domain verification)
+  const { validate: validateEmailFormat } = await import('email-validator');
   const isDevelopment = process.env.NODE_ENV !== 'production';
   const actualEmail = isDevelopment ? 'smartplates.group@gmail.com' : verificationData.email;
-  if (!emailRegex.test(actualEmail)) {
-    // Log invalid email attempt
-    console.error('🔥 EMAIL SERVICE: ❌ Invalid email address:', actualEmail);
-    // Optionally: Add to monitoring logs
+  
+  // Step 1: Basic format validation
+  if (!validateEmailFormat(actualEmail)) {
+    console.error('🔥 EMAIL SERVICE: ❌ Invalid email format:', actualEmail);
     try {
       const { addEmailLog } = await import('@/app/api/email-monitor/route');
       addEmailLog({
         type: 'verification',
         email: actualEmail,
         status: 'error',
-        message: `Invalid email address provided for verification`,
+        message: `Invalid email format provided for verification`,
         details: {
           originalEmail: verificationData.email,
-          error: 'Invalid email address',
+          error: 'Invalid email format',
           isDevelopment: process.env.NODE_ENV === 'development',
         }
       });
     } catch (logError) {
       console.log('🔥 EMAIL SERVICE: Failed to add error log:', logError);
     }
-    throw new Error('Invalid email address');
+    throw new Error('Invalid email address format');
+  }
+
+  // Step 2: Domain validation for non-development emails
+  if (!isDevelopment) {
+    try {
+      const domain = actualEmail.split('@')[1];
+      // Check if domain has valid MX records (simplified check)
+      const dns = await import('dns').then(m => m.promises);
+      await dns.resolveMx(domain);
+      console.log('🔥 EMAIL SERVICE: ✅ Email domain verified:', domain);
+    } catch (dnsError) {
+      console.error('🔥 EMAIL SERVICE: ❌ Invalid email domain:', actualEmail);
+      try {
+        const { addEmailLog } = await import('@/app/api/email-monitor/route');
+        addEmailLog({
+          type: 'verification',
+          email: actualEmail,
+          status: 'error',
+          message: `Email domain does not exist or cannot receive emails`,
+          details: {
+            originalEmail: verificationData.email,
+            error: 'Invalid email domain',
+            isDevelopment: process.env.NODE_ENV === 'development',
+          }
+        });
+      } catch (logError) {
+        console.log('🔥 EMAIL SERVICE: Failed to add error log:', logError);
+      }
+      throw new Error('Email domain does not exist or cannot receive emails');
+    }
   }
 
   

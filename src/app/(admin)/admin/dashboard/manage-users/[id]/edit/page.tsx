@@ -4,7 +4,7 @@ import { getUserById } from "@/services/userService";
 import UserEditForm from "@/components/manage_users/edit";
 
 interface EditUserPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 function serializeUser(user: any) {
@@ -19,7 +19,8 @@ function serializeUser(user: any) {
 }
 
 export default async function EditUserPage({ params }: EditUserPageProps) {
-  const user = await getUserById(params.id);
+  const { id } = await params;
+  const user = await getUserById(id);
   if (!user) return notFound();
   const plainUser = serializeUser(user);
   return (

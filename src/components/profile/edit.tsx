@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/authContext';
 import { cn } from '@/lib/utils';
 import { User, UpdateUserInput } from '@/types/user';
@@ -177,12 +178,12 @@ export function ProfileEdit({ className, onSave, formData: externalFormData, onF
               />
               <p className="text-xs text-muted-foreground mt-1">
                 To change your email address, go to{' '}
-                <a 
+                <Link 
                   href="/user/settings" 
                   className="text-primary hover:text-primary/80 underline"
                 >
                   Account Settings
-                </a>
+                </Link>
                 {' '}→ Security Settings
               </p>
             </div>

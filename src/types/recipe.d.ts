@@ -22,6 +22,7 @@ export type DietaryRestriction = 'vegetarian' | 'vegan' | 'gluten-free' | 'dairy
 
 export interface Recipe {
   _id?: ObjectId | string;           // MongoDB ObjectId or string
+  id?: string | number;              // Alternative ID field for compatibility
   spoonacularId?: number;            // Spoonacular's unique ID
   title: string;                     // Recipe name
   description: string;               // Short description of the recipe
@@ -104,11 +105,21 @@ export interface RecipeInstruction {
 }
 
 export interface RecipeNutrition {
-  nutrients: Array<{
+  // Spoonacular format
+  nutrients?: Array<{
     name: string;
     amount: number;
     unit: string;
   }>;
+  
+  // Direct properties for easier component access
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
 }
   
   

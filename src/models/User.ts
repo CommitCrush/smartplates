@@ -6,6 +6,7 @@
  */
 
 import { ObjectId } from "mongodb";
+import jwt from 'jsonwebtoken';
 import { getCollection, COLLECTIONS, toObjectId } from "@/lib/db";
 import { hashPassword } from "@/utils/password";
 import {
@@ -14,6 +15,7 @@ import {
   UpdateUserInput,
   PublicUserProfile,
 } from "@/types/user";
+import crypto from "crypto";
 
 /**
  * Creates a new user in the database
@@ -37,7 +39,7 @@ export async function createUser(userData: CreateUserInput): Promise<User> {
       name: userData.name,
       avatar: userData.avatar,
       role: userData.role || "user",          // Default "user"
-      isEmailVerified: false,                 // Default false
+      isEmailVerified: userData.isEmailVerified || false, // Use provided value or default false
       dietaryRestrictions: userData.dietaryRestrictions || [],
       favoriteCategories: userData.favoriteCategories || [],
       savedRecipes: [],
@@ -302,4 +304,75 @@ export async function removeSavedRecipeForUser(
     console.error("Error removing saved recipe for user:", error);
     throw new Error("Failed to remove saved recipe");
   }
+}
+
+/**
+ * Verify email token and mark user as verified
+ */
+export async function verifyEmailToken(token: string): Promise<User | null> {
+  try {
+    const collection = await getCollection<User>(COLLECTIONS.USERS);
+    
+    const user = await collection.findOneAndUpdate(
+      {
+        emailVerificationToken: token,
+        emailVerificationExpires: { $gt: new Date() }
+      },
+      {
+        $set: {
+          isEmailVerified: true,
+          updatedAt: new Date()
+        },
+        $unset: {
+          emailVerificationToken: "",
+          emailVerificationExpires: ""
+        }
+      },
+      { returnDocument: 'after' }
+    );
+
+    return user as User | null;
+  } catch (error) {
+    console.error('Error verifying email token:', error);
+    return null;
+  }
+}
+
+/**
+ * Generate email verification token
+ */
+export async function generateEmailVerificationToken(userId: ObjectId): Promise<string> {
+  try {
+    const collection = await getCollection<User>(COLLECTIONS.USERS);
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await collection.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          emailVerificationToken: token,
+          emailVerificationExpires: expires,
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    return token;
+  } catch (error) {
+    console.error('Error generating email verification token:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generate JWT token for authentication
+ */
+export async function generateToken(payload: any): Promise<string> {
+  const secret = process.env.JWT_SECRET || 'fallback-secret';
+  
+  return jwt.sign(payload, secret, { 
+    expiresIn: '7d',
+    issuer: 'smartplates-app'
+  });
 }

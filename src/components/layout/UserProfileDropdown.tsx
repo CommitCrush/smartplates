@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { signOut } from 'next-auth/react';
 import { useAuth } from '@/context/authContext';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -28,7 +27,7 @@ interface UserProfileDropdownProps {
 }
 
 export default function UserProfileDropdown({ className = '', isMobile = false }: UserProfileDropdownProps) {
-  const { status, user, isAuthenticated, isAdmin } = useAuth();
+  const { user, status, isAuthenticated, isAdmin, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +110,8 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
 
   const handleSignOut = async () => {
     try {
-      await signOut({ callbackUrl: '/' });
+      await signOut();
+      // NextAuth handles the redirect automatically
     } catch (error) {
       console.error('Sign out error:', error);
     }

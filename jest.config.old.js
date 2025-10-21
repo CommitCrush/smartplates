@@ -66,11 +66,7 @@ export default {
   
   // Transform configuration
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx'
-      }
-    }]
+    '^.+\\.(ts|tsx)$': 'ts-jest'
   },
   
   // Module file extensions
@@ -81,6 +77,15 @@ export default {
     'jsx',
     'json'
   ],
+  
+  // Global variables for tests
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        jsx: 'react-jsx'
+      }
+    }
+  },
   
   // Clear mocks between tests
   clearMocks: true,

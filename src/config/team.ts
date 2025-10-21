@@ -36,6 +36,7 @@ export const teamConfig: TeamConfig = {
     // Shared admin account
     'admin@smartplates.com',
     'smartplates.admin@gmail.com',
+    'smartplates.group@gmail.com',    // Team group email
   ],
   
   // Development mode: disabled for proper role-based access control

@@ -7,7 +7,7 @@
  * Clean, beginner-friendly code with proper error handling.
  */
 
-import { MongoClient, Db, Collection, ObjectId, Document } from 'mongodb';
+import { MongoClient, Db, Collection, ObjectId, Document, Filter } from 'mongodb';
 import { config } from '@/config/env';
 
 // MongoDB connection configuration from environment
@@ -376,7 +376,7 @@ export async function createIndexes(): Promise<void> {
  */
 export async function findWithPagination<T extends Document = Document>(
   collectionName: string,
-  query: Document = {},
+  query: Filter<T> = {} as Filter<T>,
   options: {
     page?: number;
     limit?: number;
@@ -419,7 +419,7 @@ export async function findWithPagination<T extends Document = Document>(
  */
 async function performPaginatedQuery<T extends Document = Document>(
   collectionName: string,
-  query: Document = {},
+  query: Filter<T> = {} as Filter<T>,
   options: {
     page?: number;
     limit?: number;
@@ -485,7 +485,7 @@ if (process.env.NODE_ENV === 'development') {
     // Call original listeners except our own
     for (const listener of originalListeners) {
       if (!listener.toString().includes('closeDatabaseConnection')) {
-        listener();
+        (listener as NodeJS.SignalsListener)('SIGTERM');
       }
     }
   });

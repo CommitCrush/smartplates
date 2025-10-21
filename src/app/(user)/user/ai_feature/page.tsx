@@ -443,7 +443,7 @@ export default function AiRecipePage() {
           <div className="flex-1 flex flex-col justify-center items-start pl-20 pr-12 bg-gradient-to-br from-white/95 to-[#EFF4E6]/95 backdrop-blur-sm z-10">
                         <h1 className="text-5xl font-extrabold mb-6 leading-tight text-[#2d4a2d]">
               Smart Fridge AI<br />
-              <span className="text-[#b83d2a]">Your Fridge's Potential. Unlocked by AI!</span>
+              <span className="text-[#b83d2a]">Your Fridge&apos;s Potential. Unlocked by AI!</span>
             </h1>
             <p className="text-xl mb-8 max-w-lg text-[#2d4a2d] font-medium">
               Discover meal ideas based on your fridge contents. Scan or upload a fridge photo and let AI inspire your next recipe.
@@ -481,7 +481,7 @@ export default function AiRecipePage() {
           <div className="flex-1 bg-white/90 backdrop-blur-sm rounded-xl border border-[#AABC91] flex flex-col items-center justify-center py-6 px-4 shadow hover:shadow-lg transition">
             <div className="mb-2 text-3xl text-[#7D966D]"><i className="lucide lucide-image" /></div>
             <div className="font-semibold mb-1 text-[#2d4a2d]">Scan your fridge or upload a photo 📷</div>
-            <div className="text-[#2d4a2d] text-sm mb-4 text-center">Let AI analyze what's inside your fridge.</div>
+            <div className="text-[#2d4a2d] text-sm mb-4 text-center">Let AI analyze what&apos;s inside your fridge.</div>
             <ImageUpload image={image} onUpload={handleImageUpload} onNewImage={handleNewImage} analyzing={analyzing} />
 
             {/* Inline notification for analyzing */}
@@ -569,7 +569,7 @@ export default function AiRecipePage() {
                 if (inputEl) inputEl.focus();
               }}
             >
-              + Add ingredients AI didn't recognize
+              + Add ingredients AI didn&apos;t recognize
             </button>
           </div>
         )}

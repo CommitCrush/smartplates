@@ -38,12 +38,12 @@ interface SpoonacularIngredient {
   };
 }
 
-interface UserRecipeIngredient {
-  name: string;
-  amount?: string;
-  unit?: string;
-  category?: string;
-}
+// interface UserRecipeIngredient {
+//   name: string;
+//   amount?: string;
+//   unit?: string;
+//   category?: string;
+// }
 
 /**
  * Fetches ingredients for a recipe from multiple collections

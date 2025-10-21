@@ -44,7 +44,7 @@ export default function VerifyEmailPage() {
           setStatus('error');
           setMessage(data.message);
         }
-      } catch (error) {
+      } catch {
         setStatus('error');
         setMessage('An error occurred during verification');
       }
@@ -164,7 +164,7 @@ export default function VerifyEmailPage() {
               <div className="text-sm text-gray-600">
                 <p className="font-medium">Need help?</p>
                 <p>
-                  If you're having trouble with email verification, please contact our support team.
+                  If you&apos;re having trouble with email verification, please contact our support team.
                 </p>
               </div>
             </div>

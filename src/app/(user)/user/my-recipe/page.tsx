@@ -316,7 +316,7 @@ export default function MyRecipesPage() {
       }
 
       // Use the favorites from the useFavorites hook directly
-      const savedRecipes: Recipe[] = favorites.map((fav: Favorite) => {
+      const savedRecipes: Recipe[] = favorites.map((fav) => {
         const totalTime = 30; // Default for favorites
         const calculatedDifficulty = getDifficultyFromTime(totalTime);
 
@@ -748,9 +748,9 @@ export default function MyRecipesPage() {
             {activeTab === "uploaded" &&
               "You haven't uploaded any recipes yet."}
             {activeTab === "saved" && "You haven't saved any recipes yet."}
-            {activeTab === "planned" && "You don't have any planned recipes."}
+            {activeTab === "planned" && "You don&apos;t have any planned recipes."}
             {activeTab === "shopping-list" &&
-              "You don't have any shopping lists yet."}
+              "You don&apos;t have any shopping lists yet."}
           </p>
           {activeTab === "uploaded" && (
             <Link

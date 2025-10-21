@@ -39,7 +39,7 @@ export async function DELETE(
     let collectionName = '';
 
     // Handle special Spoonacular ID format (e.g., "spoonacular-632778")
-    let actualId = id;
+    const actualId = id;
     let spoonacularId = null;
     
     if (id.startsWith('spoonacular-')) {

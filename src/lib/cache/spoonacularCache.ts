@@ -1,15 +1,15 @@
 // src/lib/cache/spoonacularCache.ts
-import type { SpoonacularRecipe } from '@/services/spoonacularService';
+import type { Recipe } from '@/types/recipe';
 
 interface CacheEntry {
-  value: SpoonacularRecipe[];
+  value: Recipe[];
   expires: number;
 }
 
 const CACHE_DURATION = 60 * 60 * 1000; // 1 Stunde in ms
 export const cache: Record<string, CacheEntry> = {};
 
-export function getCachedResults(key: string): SpoonacularRecipe[] | null {
+export function getCachedResults(key: string): Recipe[] | null {
   const entry = cache[key];
   if (entry && entry.expires > Date.now()) {
     return entry.value;
@@ -17,7 +17,7 @@ export function getCachedResults(key: string): SpoonacularRecipe[] | null {
   return null;
 }
 
-export function setCachedResults(key: string, value: SpoonacularRecipe[]): void {
+export function setCachedResults(key: string, value: Recipe[]): void {
   cache[key] = {
     value,
     expires: Date.now() + CACHE_DURATION,

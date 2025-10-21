@@ -3,7 +3,7 @@
  * Quick tool to check current API usage and quota status
  */
 
-import { checkSpoonacularQuota, logSpoonacularQuota } from '@/utils/spoonacularQuota';
+import { logSpoonacularQuota } from '@/utils/spoonacularQuota';
 
 /**
  * Manual quota check for debugging

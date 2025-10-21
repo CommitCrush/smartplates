@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { findUserByEmail, updateUser } from '@/models/User';
+import { verifyEmailToken, findUserByEmail, generateToken, updateUser } from '@/models/User';
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,74 +69,59 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
+    console.log('🔥 VERIFY EMAIL API: Starting verification process');
+    console.log('   Token provided:', token ? token.substring(0, 8) + '...' : 'None');
+
     if (!token) {
+      console.log('🔥 VERIFY EMAIL API: ❌ No token provided');
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Verification token is required' 
-        },
+        { success: false, message: 'Missing verification token' },
         { status: 400 }
       );
     }
 
-    // Find user with this verification token
-    const { getCollection, COLLECTIONS } = await import('@/lib/db');
-    const usersCollection = await getCollection(COLLECTIONS.USERS);
-    
-    const user = await usersCollection.findOne({
-      emailVerificationToken: token,
-      emailVerificationExpires: { $gt: new Date() } // Token not expired
-    });
+    // Verify the token
+    console.log('🔥 VERIFY EMAIL API: Verifying token in database...');
+    const user = await verifyEmailToken(token);
 
     if (!user) {
+      console.log('🔥 VERIFY EMAIL API: ❌ Invalid or expired token');
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Invalid or expired verification token' 
-        },
+        { success: false, message: 'Invalid or expired verification token' },
         { status: 400 }
       );
     }
 
-    // Update user to mark email as verified and remove token
-    await updateUser(user._id, {
-      isEmailVerified: true,
-      emailVerificationToken: undefined,
-      emailVerificationExpires: undefined,
+    console.log('🔥 VERIFY EMAIL API: ✅ Email verified successfully for:', user.email);
+
+    // Generate JWT token for automatic login
+    const jwtToken = await generateToken({
+      id: user._id!.toString(),
+      email: user.email,
+      name: user.name,
+      role: user.role
     });
 
-    // Create a session for automatic login
-    const jwt = require('jsonwebtoken');
-    const token_secret = process.env.JWT_SECRET || 'your-secret-key';
-    
-    const loginToken = jwt.sign(
-      { 
-        userId: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role || 'user',
-        isEmailVerified: true
+    console.log('🔥 VERIFY EMAIL API: JWT token generated for auto-login');
+
+    const response = NextResponse.json(
+      {
+        success: true,
+        message: 'Email verified successfully! You are now logged in.',
+        user: {
+          id: user._id!.toString(),
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          isEmailVerified: true
+        },
+        redirectTo: user.role === 'admin' ? '/admin' : '/user'
       },
-      token_secret,
-      { expiresIn: '7d' }
+      { status: 200 }
     );
 
-    // Set cookie for automatic login
-    const response = NextResponse.json({
-      success: true,
-      message: 'Email verified successfully! You are now logged in.',
-      user: {
-        id: user._id,
-        email: user.email,
-        name: user.name,
-        role: user.role || 'user',
-        isEmailVerified: true,
-      },
-      redirectTo: '/dashboard'  // Redirect to user dashboard
-    });
-
-    // Set authentication cookie
-    response.cookies.set('auth-token', loginToken, {
+    // Set HTTP-only cookie for authentication
+    response.cookies.set('auth-token', jwtToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -144,16 +129,14 @@ export async function GET(request: NextRequest) {
       path: '/'
     });
 
+    console.log('🔥 VERIFY EMAIL API: Auth cookie set, user will be redirected to dashboard');
+
     return response;
 
   } catch (error) {
-    console.error('Email verification error:', error);
-    
+    console.error('🔥 VERIFY EMAIL API: ❌ Verification error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Verification failed. Please try again.' 
-      },
+      { success: false, message: 'Internal server error during verification' },
       { status: 500 }
     );
   }

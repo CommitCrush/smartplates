@@ -36,6 +36,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Check email verification (unless team member)
+        if (!user.isEmailVerified && !shouldBeAdmin(user.email)) {
+          throw new Error('EMAIL_NOT_VERIFIED');
+        }
+
         // Verify password
         const isValid = await verifyPassword(credentials.password, user.password);
         if (!isValid) {

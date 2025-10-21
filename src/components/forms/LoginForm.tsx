@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Eye, EyeOff, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,48 +31,41 @@ export function LoginForm({ className, redirectTo = '/user/welcome' }: LoginForm
     setResendSuccess(false);
 
     try {
-      // Use custom API instead of NextAuth for better control
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      // Use NextAuth signIn with credentials
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false, // Don't redirect automatically
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Login successful - determine redirect based on role
-        const userRole = data.user?.role;
-        let redirectPath: string;
-        
-        switch (userRole) {
-          case 'admin':
-            redirectPath = '/admin';
-            break;
-          case 'user':
-            redirectPath = '/user';
-            break;
-          default:
-            redirectPath = redirectTo;
-        }
-        
-        console.log(`🔄 Redirecting ${userRole} to: ${redirectPath}`);
-        router.push(redirectPath);
-      } else {
+      if (result?.error) {
         // Handle specific error cases
-        if (data.code === 'EMAIL_NOT_VERIFIED') {
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
           setError('Please verify your email address before logging in.');
           setShowEmailVerification(true);
-          setUserInfo({ email: data.userEmail, name: data.userName });
+          // Get user info for email verification
+          const userResponse = await fetch('/api/auth/user-info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+          const userData = await userResponse.json();
+          if (userData.success) {
+            setUserInfo({ email: userData.user.email, name: userData.user.name });
+          }
         } else {
-          setError(data.error || 'Login failed. Please try again.');
+          setError('Invalid email or password. Please try again.');
           setShowEmailVerification(false);
         }
+      } else if (result?.ok) {
+        // Login successful - NextAuth will handle the session
+        // Redirect based on the redirect parameter or default
+        console.log('🔄 Login successful, redirecting to:', redirectTo);
+        router.push(redirectTo);
+        router.refresh(); // Refresh to update session state
+      } else {
+        setError('Login failed. Please try again.');
+        setShowEmailVerification(false);
       }
     } catch (error) {
       console.error('Login error:', error);

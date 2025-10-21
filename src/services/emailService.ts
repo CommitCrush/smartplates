@@ -173,12 +173,106 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
   const isDevelopment = process.env.NODE_ENV !== 'production';
   const actualEmail = isDevelopment ? 'smartplates.group@gmail.com' : verificationData.email;
   
-  console.log(`📧 ${isDevelopment ? '[DEV MODE]' : ''} Sending verification email to: ${actualEmail} (original: ${verificationData.email})`);
-  console.log(`🔗 Verification URL: ${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/verify-email?token=${verificationData.verificationToken}`);
+  console.log(`🔥 EMAIL SERVICE: Preparing verification email`);
+  console.log(`   Environment: ${process.env.NODE_ENV}`);
+  console.log(`   Development Mode: ${isDevelopment}`);
+  console.log(`   Original Email: ${verificationData.email}`);
+  console.log(`   Target Email: ${actualEmail}`);
+  console.log(`   Resend API Key: ${process.env.RESEND_API_KEY ? '✅ Configured' : '❌ Missing'}`);
 
   const verificationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/verify-email?token=${verificationData.verificationToken}`;
+  console.log(`   Verification URL: ${verificationUrl}`);
 
-  const htmlTemplate = `
+  const htmlTemplate = getVerificationEmailTemplate(verificationData.name, verificationUrl, isDevelopment ? verificationData.email : null);
+
+  try {
+    console.log('🔥 EMAIL SERVICE: 🚀 Calling Resend API...');
+    
+    const emailData = {
+      from: RESEND_FROM_EMAIL,
+      to: actualEmail,
+      subject: 'Welcome to SmartPlates! Please verify your email 🍽️',
+      html: htmlTemplate,
+    };
+
+    console.log('🔥 EMAIL SERVICE: Email payload:', {
+      from: emailData.from,
+      to: emailData.to,
+      subject: emailData.subject,
+      htmlLength: htmlTemplate.length
+    });
+
+    const result = await resend.emails.send(emailData);
+
+    console.log('🔥 EMAIL SERVICE: ✅ Resend API Response:', result);
+    console.log('🔥 EMAIL SERVICE: ✅ Email ID:', result.data?.id);
+    console.log('🔥 EMAIL SERVICE: ✅ Email delivered to:', actualEmail);
+    
+    if (isDevelopment) {
+      console.log('🔥 EMAIL SERVICE: 🧪 DEV MODE: Check smartplates.group@gmail.com for verification email');
+      console.log('🔥 EMAIL SERVICE: 🧪 Original email was for:', verificationData.email);
+    }
+
+    // Add to monitoring logs (if available)
+    try {
+      const { addEmailLog } = await import('@/app/api/email-monitor/route');
+      addEmailLog({
+        type: 'verification',
+        email: actualEmail,
+        status: 'success',
+        message: `Verification email sent successfully`,
+        details: { 
+          originalEmail: verificationData.email, 
+          resendId: result.data?.id,
+          isDevelopment,
+          verificationToken: verificationData.verificationToken.substring(0, 8) + '...'
+        }
+      });
+    } catch (logError) {
+      console.log('🔥 EMAIL SERVICE: Failed to add log (not critical):', logError);
+    }
+
+  } catch (error) {
+    console.error('🔥 EMAIL SERVICE: ❌ Failed to send verification email:', error);
+    console.error('🔥 EMAIL SERVICE: ❌ Error type:', (error as Error).constructor.name);
+    console.error('🔥 EMAIL SERVICE: ❌ Error details:', JSON.stringify(error, null, 2));
+
+    // Add error to monitoring logs
+    try {
+      const { addEmailLog } = await import('@/app/api/email-monitor/route');
+      addEmailLog({
+        type: 'verification',
+        email: actualEmail,
+        status: 'error',
+        message: `Failed to send verification email`,
+        details: { 
+          originalEmail: verificationData.email, 
+          error: error instanceof Error ? error.message : 'Unknown error',
+          isDevelopment
+        }
+      });
+    } catch (logError) {
+      console.log('🔥 EMAIL SERVICE: Failed to add error log:', logError);
+    }
+    
+    throw error;
+  }
+}
+
+/**
+ * Enhanced email template with development notice
+ */
+function getVerificationEmailTemplate(name: string, verifyUrl: string, originalEmail?: string | null): string {
+  const developmentNotice = originalEmail ? `
+    <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 16px; margin: 16px 0; border-radius: 8px;">
+      <p style="margin: 0; color: #92400e; font-size: 14px;">
+        <strong>🧪 Development Mode:</strong> This email was originally intended for <strong>${originalEmail}</strong> 
+        but has been redirected to smartplates.group@gmail.com for testing purposes.
+      </p>
+    </div>
+  ` : '';
+
+  return `
     <!DOCTYPE html>
     <html>
       <head>
@@ -192,9 +286,7 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
             text-align: center;
           }
           .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
-          .header p { margin: 10px 0 0 0; opacity: 0.9; font-size: 16px; }
           .content { padding: 40px 30px; background: #f9fafb; }
-          .welcome-text { font-size: 18px; margin-bottom: 25px; color: #374151; }
           .cta-container { text-align: center; margin: 35px 0; }
           .cta-button {
             background: #22c55e;
@@ -206,9 +298,7 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
             font-weight: 600;
             font-size: 16px;
             box-shadow: 0 4px 6px rgba(34, 197, 94, 0.3);
-            transition: all 0.3s ease;
           }
-          .cta-button:hover { background: #16a34a; transform: translateY(-2px); }
           .link-fallback { 
             color: #6b7280; 
             font-size: 14px; 
@@ -225,25 +315,6 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
             text-align: center;
             font-size: 12px;
           }
-          .brand { color: #22c55e; font-weight: 600; }
-          .security-note {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
-            border-radius: 6px;
-            padding: 15px;
-            margin: 20px 0;
-            font-size: 13px;
-            color: #92400e;
-          }
-          .dev-notice {
-            background: #dbeafe;
-            border: 1px solid #3b82f6;
-            border-radius: 6px;
-            padding: 15px;
-            margin: 20px 0;
-            font-size: 13px;
-            color: #1e40af;
-          }
         </style>
       </head>
       <body>
@@ -253,18 +324,14 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
             <p>Please verify your email address to get started</p>
           </div>
           <div class="content">
-            ${isDevelopment ? `
-            <div class="dev-notice">
-              🧪 <strong>Development Mode:</strong> Diese E-Mail wurde an smartplates.group@gmail.com umgeleitet, da Resend im Test-Modus nur an die Owner-E-Mail senden kann. Original-E-Mail: ${verificationData.email}
-            </div>
-            ` : ''}
+            ${developmentNotice}
             
-            <p class="welcome-text">Hi <strong>${verificationData.name}</strong>,</p>
+            <p>Hi <strong>${name}</strong>,</p>
             
-            <p>Thank you for joining <span class="brand">SmartPlates</span>! To complete your registration and start planning your meals, please verify your email address.</p>
+            <p>Thank you for joining SmartPlates! Please verify your email address to complete your registration.</p>
             
             <div class="cta-container">
-              <a href="${verificationUrl}" class="cta-button">
+              <a href="${verifyUrl}" class="cta-button">
                 ✅ Verify Email Address
               </a>
             </div>
@@ -272,92 +339,18 @@ export async function sendEmailVerification(verificationData: EmailVerificationD
             <div class="link-fallback">
               <strong>Button not working?</strong><br>
               Copy and paste this link into your browser:<br>
-              <a href="${verificationUrl}" style="color: #22c55e; word-break: break-all;">${verificationUrl}</a>
+              <a href="${verifyUrl}" style="color: #22c55e; word-break: break-all;">${verifyUrl}</a>
             </div>
             
-            <div class="security-note">
-              🔒 <strong>Security Note:</strong> This verification link will expire in 24 hours for your security.
-            </div>
-            
-            <p>Once verified, you'll be able to:</p>
-            <ul style="color: #374151;">
-              <li>🍽️ Save and organize your favorite recipes</li>
-              <li>📅 Plan your weekly meals with our smart calendar</li>
-              <li>🛒 Generate automatic shopping lists</li>
-              <li>🤖 Get AI-powered recipe recommendations</li>
-            </ul>
-            
-            <p>We're excited to help you on your meal planning journey!</p>
-            
-            <p>Best regards,<br><span class="brand">The SmartPlates Team</span></p>
+            <p>This verification link will expire in 24 hours.</p>
           </div>
           <div class="footer">
-            <p>This email was sent by <span class="brand">SmartPlates</span></p>
-            <p>If you didn't sign up for SmartPlates, please ignore this email.</p>
+            <p>This email was sent by SmartPlates</p>
           </div>
         </div>
       </body>
     </html>
   `;
-
-  try {
-    console.log('🚀 Sending email via Resend...');
-    console.log(`   From: ${RESEND_FROM_EMAIL}`);
-    console.log(`   To: ${actualEmail}`);
-    console.log(`   Subject: Welcome to SmartPlates! Please verify your email 🍽️`);
-    
-    const result = await resend.emails.send({
-      from: RESEND_FROM_EMAIL,
-      to: actualEmail,
-      subject: 'Welcome to SmartPlates! Please verify your email 🍽️',
-      html: htmlTemplate,
-    });
-
-    console.log('✅ Email verification sent successfully via Resend!');
-    console.log('📧 Resend Response:', result);
-    console.log(`📬 Email delivered to: ${actualEmail}`);
-    
-    if (isDevelopment) {
-      console.log('🧪 DEV MODE: Check smartplates.group@gmail.com for the verification email');
-    }
-
-    // Add to monitoring logs (development only)
-    if (isDevelopment) {
-      try {
-        const { addEmailLog } = await import('@/app/api/email-monitor/route');
-        addEmailLog({
-          type: 'verification',
-          email: actualEmail,
-          status: 'success',
-          message: `Verification email sent successfully`,
-          details: { originalEmail: verificationData.email, resendId: result.data?.id }
-        });
-      } catch (logError) {
-        console.log('Failed to add email log:', logError);
-      }
-    }
-  } catch (error) {
-    console.error('❌ Failed to send email verification via Resend:', error);
-    console.error('🔍 Error details:', JSON.stringify(error, null, 2));
-
-    // Add to monitoring logs (development only)
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        const { addEmailLog } = await import('@/app/api/email-monitor/route');
-        addEmailLog({
-          type: 'verification',
-          email: actualEmail,
-          status: 'error',
-          message: `Failed to send verification email`,
-          details: { originalEmail: verificationData.email, error: error instanceof Error ? error.message : 'Unknown error' }
-        });
-      } catch (logError) {
-        console.log('Failed to add error log:', logError);
-      }
-    }
-    
-    throw error;
-  }
 }
 
 /**

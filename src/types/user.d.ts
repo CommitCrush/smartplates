@@ -54,6 +54,7 @@ export interface CreateUserInput {
   googleId?: string;
   dietaryRestrictions?: string[];
   favoriteCategories?: string[];
+  isEmailVerified?: boolean;         // Email verification status (optional)
 }
 
 // User update input (what can be updated)

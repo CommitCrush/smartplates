@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface RegisterFormProps {
@@ -21,6 +21,8 @@ export function RegisterForm({ className, redirectTo = '/user' }: RegisterFormPr
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false); // ✅ NEU
+  const [message, setMessage] = useState(''); // ✅ NEU
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,6 +36,8 @@ export function RegisterForm({ className, redirectTo = '/user' }: RegisterFormPr
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccess(false);
+    setMessage('');
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
@@ -49,7 +53,11 @@ export function RegisterForm({ className, redirectTo = '/user' }: RegisterFormPr
     }
 
     try {
-      // Register user with our new API
+      console.log('🚀 Submitting registration:', { 
+        name: formData.name, 
+        email: formData.email 
+      });
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -64,26 +72,27 @@ export function RegisterForm({ className, redirectTo = '/user' }: RegisterFormPr
       });
 
       const data = await response.json();
+      console.log('📧 Registration response:', data);
 
       if (response.ok && data.success) {
-        // Registration successful and user is automatically logged in
-        // Determine redirect based on user role
-        const userRole = data.user?.role;
-        let redirectPath: string;
+        setSuccess(true);
         
-        switch (userRole) {
-          case 'admin':
-            redirectPath = '/admin';
-            break;
-          case 'user':
-            redirectPath = '/user';
-            break;
-          default:
-            redirectPath = redirectTo; // Fallback to provided redirectTo
+        // ✅ NEU: Unterschiedliche Behandlung je nach Auto-Verifikation
+        if (data.autoVerified) {
+          // Team-Mitglied - automatisch eingeloggt
+          setMessage(`Welcome ${data.user.name}! Your account is ready.`);
+          
+          // Redirect basierend auf Rolle
+          const userRole = data.user?.role;
+          const redirectPath = userRole === 'admin' ? '/admin' : '/user';
+          
+          setTimeout(() => {
+            router.push(redirectPath);
+          }, 2000);
+        } else {
+          // Regulärer Benutzer - E-Mail-Verifikation erforderlich
+          setMessage(`Registration successful! Please check your email (smartplates.group@gmail.com in development) to verify your account.`);
         }
-        
-        console.log(`🔄 Redirecting new ${userRole} to: ${redirectPath}`);
-        router.push(redirectPath);
       } else {
         // Handle registration errors
         setError(data.error || 'Registration failed. Please try again.');
@@ -95,6 +104,42 @@ export function RegisterForm({ className, redirectTo = '/user' }: RegisterFormPr
       setIsLoading(false);
     }
   };
+
+  // ✅ Success State UI
+  if (success) {
+    return (
+      <div className={cn('w-full max-w-md mx-auto bg-background-card p-8 rounded-lg shadow-lg border border-border', className)}>
+        <div className="text-center space-y-4">
+          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-100">
+            <Mail className="h-6 w-6 text-green-500" />
+          </div>
+          
+          <h3 className="text-xl font-semibold text-foreground">
+            Registration Successful!
+          </h3>
+          
+          <p className="text-sm text-foreground-muted">
+            {message}
+          </p>
+          
+          {!message.includes('Welcome') && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-blue-800 text-xs">
+                <strong>Development Mode:</strong> All verification emails are redirected to smartplates.group@gmail.com for testing.
+              </p>
+            </div>
+          )}
+          
+          <button
+            onClick={() => router.push('/login')}
+            className="w-full bg-coral-500 text-white py-2 px-4 rounded-lg hover:bg-coral-600 transition-colors"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('w-full max-w-md mx-auto bg-background-card p-8 rounded-lg shadow-lg border border-border hover:shadow-xl transition-all duration-200', className)}>

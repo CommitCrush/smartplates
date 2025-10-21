@@ -58,6 +58,16 @@
       #b1be9f,
       #cde7c0
     );
+
+    /* New gradient backgrounds - Light Mode */
+    --gradient-background: radial-gradient(
+        ellipse at bottom left,
+        #d39376 0%,
+        transparent 50%
+      ),
+      radial-gradient(ellipse at bottom right, #aabc91 20%, transparent 50%),
+      linear-gradient(to bottom, #fefef3 0%, #dcf5d1f7 25%, #eff4e6 100%);
+
     --gradient-navigation-from: #afbfa4;
     --gradient-navigation-via: #b1be9f;
     --gradient-navigation-to: #cde7c0;
@@ -181,6 +191,16 @@
       #5d7055,
       #7d906b
     );
+
+    /* Dark Mode Gradient Background - Exakt nach Farbpalette */
+    --gradient-background: radial-gradient(
+        ellipse at bottom left,
+        #d39376 0%,
+        transparent 50%
+      ),
+      radial-gradient(ellipse at bottom right, #a6dbad 0%, transparent 50%),
+      linear-gradient(to bottom, #202123 0%, #2d3a35 25%, #6c8f71 100%);
+
     --gradient-navigation-from: #4a5d4a;
     --gradient-navigation-via: #5d7055;
     --gradient-navigation-to: #708060;
@@ -346,7 +366,10 @@
   .bg-gradient-navigation {
     background: var(--gradient-navigation);
   }
-
+  /* New gradient background utility */
+  .bg-gradient-background {
+    background: var(--gradient-background);
+  }
   /* Individual gradient color utilities for TailwindCSS compatibility */
   .from-navigation {
     --tw-gradient-from: var(--gradient-navigation-from);

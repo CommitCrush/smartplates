@@ -156,7 +156,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section - SmartPlates Style with Better Contrast */}
-      <section className="pt-16 sm:pt-24 md:pt-32 lg:pt-40 pb-8 sm:pb-10 md:pb-12 lg:pb-16 min-h-[60vh] bg-background flex items-center">
+      <section className=" p-2 min-h-[95vh] bg-gradient-background flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center w-full">
           <div className="mb-6 sm:mb-8">
             <Badge

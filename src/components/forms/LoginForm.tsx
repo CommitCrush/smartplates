@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,9 +11,12 @@ interface LoginFormProps {
   redirectTo?: string;
 }
 
-export function LoginForm({ className, redirectTo = '/user/welcome' }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export function LoginForm({
+  className,
+  redirectTo = "/user/welcome",
+}: LoginFormProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isResendingEmail, setIsResendingEmail] = useState(false);
@@ -111,10 +114,18 @@ export function LoginForm({ className, redirectTo = '/user/welcome' }: LoginForm
   };
 
   return (
-    <div className={cn('w-full max-w-md mx-auto bg-background-card p-8 rounded-lg shadow-lg border border-border hover:shadow-xl transition-all duration-200', className)}>
+    <div
+      className={cn(
+        "w-full max-w-md mx-auto bg-background-card p-8 rounded-lg shadow-lg border border-border hover:shadow-xl transition-all duration-200",
+        className
+      )}
+    >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Email Address
           </label>
           <input
@@ -129,19 +140,22 @@ export function LoginForm({ className, redirectTo = '/user/welcome' }: LoginForm
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-foreground mb-2"
+          >
             Password
           </label>
           <div className="relative">
             <input
               id="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => {
-                console.log('Password input changed:', e.target.value); // Debug
+                console.log("Password input changed:", e.target.value); // Debug
                 setPassword(e.target.value);
               }}
-              onFocus={() => console.log('Password field focused')} // Debug
+              onFocus={() => console.log("Password field focused")} // Debug
               required
               autoComplete="current-password"
               className="w-full px-3 py-2 pr-12 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-coral-500 focus:border-transparent bg-background text-foreground"
@@ -152,11 +166,11 @@ export function LoginForm({ className, redirectTo = '/user/welcome' }: LoginForm
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Toggle password visibility'); // Debug
+                console.log("Toggle password visibility"); // Debug
                 setShowPassword(!showPassword);
               }}
               className="absolute inset-y-0 right-0 flex items-center pr-3 text-foreground-muted hover:text-foreground focus:outline-none"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? "Hide password" : "Show password"}
               tabIndex={-1}
             >
               {showPassword ? (
@@ -209,7 +223,7 @@ export function LoginForm({ className, redirectTo = '/user/welcome' }: LoginForm
           disabled={isLoading}
           className="w-full bg-coral-500 text-white py-2 px-4 rounded-lg hover:bg-coral-600 focus:outline-none focus:ring-2 focus:ring-coral-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading ? 'Signing in...' : 'Sign In'}
+          {isLoading ? "Signing in..." : "Sign In"}
         </button>
 
         <div className="text-center">

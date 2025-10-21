@@ -32,19 +32,15 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SmartPlates - Smart Meal Planning & Recipe Management",
-  description:
-    "Discover recipes, plan meals, and manage your kitchen with AI-powered suggestions. SmartPlates makes cooking easier and more organized.",
-  keywords: "recipes, meal planning, cooking, AI, ingredients, smart kitchen",
-  openGraph: {
-    title: "SmartPlates - Smart Meal Planning & Recipe Management",
-    description: "Discover recipes, plan meals, and manage your kitchen with AI-powered suggestions.",
-    type: "website",
-    url: process.env.NEXT_PUBLIC_SITE_URL || "https://smartplates.onrender.com",
-  },
-  robots: {
-    index: true,
-    follow: true,
+  title: "SmartPlates",
+  icons: {
+    icon: [
+      {
+        url: '/Icon.jpg',
+        sizes: '128x128',  // Maximale empfohlene Größe
+        type: 'image/jpeg',
+      },
+    ],
   },
 };
 

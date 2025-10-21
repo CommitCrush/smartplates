@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Recipe not found' }, { status: 404 });
     }
     // Save to local DB, attribute to user
-    const savedRecipe = await saveRecipeToDb(recipeDetails, session.user.id);
+    const savedRecipe = await saveRecipeToDb(recipeDetails);
     return NextResponse.json({ recipe: savedRecipe });
   } catch (error: any) {
     return NextResponse.json({ error: 'Import failed', details: error?.message }, { status: 500 });

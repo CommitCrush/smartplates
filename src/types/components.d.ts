@@ -25,6 +25,8 @@ export interface NormalizedIngredient {
 // Recipe Detail Component Types
 export interface RecipeDetailProps {
   recipe: Recipe;
+  isEditable?: boolean;
+  showUserActions?: boolean;
 }
 
 // Community Recipe Detail Component Types

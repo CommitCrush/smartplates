@@ -14,6 +14,10 @@ export type {
   UpdateRecipeInput,
   RecipeFilter,
   RecipeCard,
+  RecipeCategory,
+  RecipeDifficulty,
+  DietaryRestriction,
+  MealType,
 } from './recipe.d';
 
 // Bring Recipe into local scope for interfaces below

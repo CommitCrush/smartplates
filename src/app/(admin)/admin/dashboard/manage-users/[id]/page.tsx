@@ -1,8 +1,8 @@
 import { getCollection, COLLECTIONS, toObjectId } from '@/lib/db';
 import { notFound } from 'next/navigation';
 
-export default async function UserDetailPage({ params }: { params: { id: string } }) {
-  const userId = params.id;
+export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: userId } = await params;
   const usersCollection = await getCollection(COLLECTIONS.USERS);
   const user = await usersCollection.findOne({ _id: toObjectId(userId) });
 

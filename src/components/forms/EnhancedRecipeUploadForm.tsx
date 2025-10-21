@@ -136,7 +136,7 @@ export function EnhancedRecipeUploadForm({
   onSubmit,
   onSuccess,
   isLoading = false,
-  _user,
+  user,
   submitButtonText = 'Rezept hochladen',
   validationRules = {}
 }: EnhancedRecipeUploadFormProps) {

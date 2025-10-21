@@ -78,6 +78,25 @@ class RecipeInteractionsService {
     };
   }
 
+  async submitRecipeReview(
+    recipeId: string,
+    userId: string,
+    userName: string,
+    rating: number,
+    comment: string,
+    userAvatar?: string
+  ): Promise<{
+    success: boolean;
+    review?: RecipeReview;
+    message: string;
+  }> {
+    console.warn('RecipeInteractionsService: submitRecipeReview is stubbed', { recipeId, userId, rating });
+    return {
+      success: true,
+      message: 'Recipe review submitted successfully (stubbed)'
+    };
+  }
+
   async getRecipeInteractionSummary(recipeId: string, userId?: string): Promise<RecipeInteractionSummary> {
     console.warn('RecipeInteractionsService: getRecipeInteractionSummary is stubbed - returning defaults');
     return {

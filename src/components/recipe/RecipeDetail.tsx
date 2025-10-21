@@ -17,7 +17,7 @@ import { RecipeInstructions } from './RecipeInstructions';
 import { RecipeNutrition } from './RecipeNutrition';
 import { RecipeActions } from './RecipeActions';
 
-export function RecipeDetail({ recipe }: RecipeDetailProps) {
+export function RecipeDetail({ recipe, isEditable = false, showUserActions = false }: RecipeDetailProps) {
   const recipeContentRef = useRef<HTMLDivElement>(null);
   const [currentServings, setCurrentServings] = useState<number>(recipe.servings || 1);
 

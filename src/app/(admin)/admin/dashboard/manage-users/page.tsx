@@ -12,6 +12,7 @@ interface MockUser {
   email: string;
   role: 'user' | 'admin';
   isEmailVerified: boolean;
+  isActive: boolean;
   createdAt: string;
   lastLoginAt: string;
   savedRecipes: number;

@@ -24,13 +24,13 @@ export async function GET(request: NextRequest) {
     // Unified filter extraction matching client params
     const filters = {
       query: searchParams.get('search') || '',
-      type: searchParams.get('type') || undefined,
-      diet: searchParams.get('diet') || undefined,
-      intolerances: searchParams.get('intolerances') || undefined,
+      type: searchParams.get('type') || '',
+      diet: searchParams.get('diet') || '',
+      intolerances: searchParams.get('intolerances') || '',
       maxReadyTime: searchParams.get('maxReadyTime') ? parseInt(searchParams.get('maxReadyTime') as string, 10) : undefined,
     } as const;
   const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = parseInt(searchParams.get('limit') || searchParams.get('number') || '200', 10); // Erhöht auf 200 um alle Spoonacular-Rezepte zu zeigen
+  const limit = parseInt(searchParams.get('limit') || searchParams.get('number') || '500', 10); // Erhöht auf 500 um alle Rezepte zu zeigen
   const authorId = searchParams.get('authorId') || undefined;
   const createdBy = searchParams.get('createdBy') || undefined;
   const randomize = searchParams.get('randomize') === 'true';

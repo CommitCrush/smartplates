@@ -17,7 +17,9 @@ export function useAllRecipes(query = '', options: Record<string, string> = {}) 
         const params = new URLSearchParams();
         if (query) params.append('search', query);
         Object.entries(options).forEach(([key, value]) => {
-          if (value && value !== 'all') params.append(key, value);
+          if (value !== undefined && value !== null && value !== 'all') {
+            params.append(key, value);
+          }
         });
 
         const res = await fetch(`/api/recipes?${params.toString()}`);

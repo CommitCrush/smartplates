@@ -1,44 +1,56 @@
 /**
  * Recipe Count API Endpoint
  * 
- * Returns the total count of recipes in the system
+ * Returns the total count of recipes in the system using MongoDB service
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase, getCollection, COLLECTIONS } from '@/lib/db';
+import { getRecipeCount } from '@/services/recipeService';
+import { getCollection, COLLECTIONS } from '@/lib/db';
+import logger from '@/utils/logger';
 
 export async function GET(request: NextRequest) {
   try {
-    await connectToDatabase();
-
-    // Get total recipe count from both user-uploaded recipes and cached Spoonacular recipes
-    const recipesCollection = await getCollection(COLLECTIONS.RECIPES);
-    const userRecipeCount = await recipesCollection.countDocuments();
+    // Use our MongoDB recipe service to get total count
+    const totalCount = await getRecipeCount();
     
-    // Try to get Spoonacular cache count if available
-    let spoonacularCacheCount = 0;
+    // Get breakdown by collection for admin insights
+    let breakdown = {};
     try {
-      const SpoonacularCacheModule = await import('@/models/SpoonacularCache');
-      const SpoonacularCache = SpoonacularCacheModule.default.SpoonacularRecipeCache;
-      spoonacularCacheCount = await SpoonacularCache.countDocuments();
-    } catch (error) {
-      console.log('Spoonacular cache collection not available or empty');
+      const spoonacularCollection = await getCollection('spoonacular_recipes');
+      const recipesCollection = await getCollection(COLLECTIONS.RECIPES);
+      const userRecipesCollection = await getCollection(COLLECTIONS.USER_RECIPES);
+      
+      const [spoonacularCount, adminRecipeCount, userRecipeCount] = await Promise.all([
+        spoonacularCollection.countDocuments(),
+        recipesCollection.countDocuments(),
+        userRecipesCollection.countDocuments()
+      ]);
+      
+      breakdown = {
+        spoonacularRecipes: spoonacularCount,
+        adminRecipes: adminRecipeCount,
+        userRecipes: userRecipeCount,
+        total: totalCount
+      };
+    } catch (breakdownError) {
+      logger.warn('Could not get detailed breakdown:', breakdownError);
+      breakdown = {
+        total: totalCount,
+        error: 'Detailed breakdown not available'
+      };
     }
 
-    const totalCount = userRecipeCount + spoonacularCacheCount;
-
+    logger.info(`Recipe count requested: ${totalCount} total recipes`);
+    
     return NextResponse.json({
       success: true,
       count: totalCount,
-      breakdown: {
-        userRecipes: userRecipeCount,
-        cachedSpoonacularRecipes: spoonacularCacheCount,
-        total: totalCount
-      }
+      breakdown
     });
 
   } catch (error) {
-    console.error('Recipe count API error:', error);
+    logger.error('Recipe count API error:', error);
     
     return NextResponse.json(
       { 

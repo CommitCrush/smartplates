@@ -33,13 +33,6 @@ export function CommentSection({ recipeId, initialComments = [] }: CommentSectio
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch comments if not provided initially
-  useEffect(() => {
-    if (initialComments.length === 0) {
-      fetchComments();
-    }
-  }, [recipeId, initialComments.length, fetchComments]);
-
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -54,6 +47,13 @@ export function CommentSection({ recipeId, initialComments = [] }: CommentSectio
       setIsLoading(false);
     }
   }, [recipeId]);
+
+  // Fetch comments if not provided initially
+  useEffect(() => {
+    if (initialComments.length === 0) {
+      fetchComments();
+    }
+  }, [recipeId, initialComments.length, fetchComments]);
 
   const handleCommentAdded = (newComment: Comment) => {
     setComments(prev => [newComment, ...prev]);

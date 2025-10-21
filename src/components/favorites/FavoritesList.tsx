@@ -151,7 +151,9 @@ export function FavoritesList({ userId, className }: FavoritesListProps) {
                           {recipe.description}
                         </p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{recipe.difficulty}</span>
+                          {('difficulty' in recipe) && (
+                            <span>{recipe.difficulty}</span>
+                          )}
                           <span>{recipe.servings} servings</span>
                           {('totalTime' in recipe) && (
                             <span>{recipe.totalTime} min</span>

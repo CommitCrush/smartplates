@@ -10,6 +10,7 @@ import { Recipe } from '@/types/recipe';
 import { RecipeFilters } from './spoonacularService';
 import {
   getPopularRecipesWithCache as getPopularRecipesWithCacheServer,
+  getPopularRecipes as getPopularRecipesServer,
   getRecipeWithCache as getRecipeWithCacheServer,
   searchRecipesWithCache as searchRecipesWithCacheServer,
 } from './spoonacularCacheService.server';
@@ -56,6 +57,32 @@ class ServerSpoonacularCacheService {
     return getPopularRecipesWithCacheServer(options);
   }
 
+  async getPopularRecipes(
+    options: RecipeFilters = {}
+  ): Promise<{ recipes: Recipe[]; fromCache: boolean }> {
+    const result = await getPopularRecipesServer(options);
+    return { recipes: result || [], fromCache: false };
+  }
+
+  async searchRecipes(
+    query: string, 
+    options: RecipeFilters = {}
+  ): Promise<{ recipes: Recipe[]; totalResults: number; fromCache: boolean }> {
+    return searchRecipesWithCacheServer(query, options);
+  }
+
+  async getRecipe(recipeId: string): Promise<{ recipe: Recipe | null; fromCache: boolean }> {
+    return getRecipeWithCacheServer(recipeId);
+  }
+
+  async searchByIngredients(
+    ingredients: string[]
+  ): Promise<{ recipes: Recipe[]; fromCache: boolean }> {
+    const query = ingredients.join(', ');
+    const result = await searchRecipesWithCacheServer(query, {});
+    return { recipes: result.recipes, fromCache: result.fromCache };
+  }
+
   async getCacheStats(): Promise<object> {
     // Implementierung der Fallback-Funktion, da getCacheStatsServer nicht existiert
     console.log("Getting cache stats from server");
@@ -91,6 +118,13 @@ class ClientSpoonacularCacheService {
     ingredients: string[]
   ): Promise<{ recipes: Recipe[]; fromCache: boolean }> {
     console.log("Using client-side service for ingredient search (no-op)", { ingredients });
+    return { recipes: [], fromCache: false };
+  }
+
+  async searchByIngredients(
+    ingredients: string[]
+  ): Promise<{ recipes: Recipe[]; fromCache: boolean }> {
+    console.log("Using client-side service for search by ingredients (no-op)", { ingredients });
     return { recipes: [], fromCache: false };
   }
 

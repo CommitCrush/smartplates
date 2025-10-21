@@ -86,8 +86,7 @@ export async function POST(request: NextRequest) {
 
       case 'search-by-ingredients':
         const ingredientResults = await cacheService.searchByIngredients(
-          params.ingredients || [],
-          params.options || {}
+          params.ingredients || []
         );
         return NextResponse.json({
           success: true,

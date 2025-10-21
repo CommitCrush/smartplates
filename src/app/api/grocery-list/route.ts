@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
     const user = await findUserByEmail(session.user.email);
-    if (!user) {
+    if (!user || !user._id) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 
     await connectToDatabase();
     const user = await findUserByEmail(session.user.email);
-    if (!user) {
+    if (!user || !user._id) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 

@@ -6,7 +6,7 @@ import { findUserByEmail } from '@/models/User';
 import { deleteSavedListById } from '@/models/SavedGroceryList';
 import { connectToDatabase } from '@/lib/db';
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user || !session.user.email) {
@@ -15,11 +15,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     await connectToDatabase();
     const user = await findUserByEmail(session.user.email);
-    if (!user) {
+    if (!user || !user._id) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
-    const listId = params.id;
+    const { id: listId } = await params;
     if (!listId) {
       return NextResponse.json({ message: 'List ID is required' }, { status: 400 });
     }
@@ -34,7 +34,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
   } catch (error) {
-    console.error(`[API /saved-grocery-lists/${params.id} DELETE]`, error);
+    console.error(`[API /saved-grocery-lists DELETE]`, error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ message: 'Internal Server Error', error: errorMessage }, { status: 500 });
   }

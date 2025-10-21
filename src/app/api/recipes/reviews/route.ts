@@ -62,11 +62,43 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Map API sortBy values to service expected values
+    const mapSortBy = (apiSortBy: string): 'date' | 'rating' | 'helpful' => {
+      switch (apiSortBy) {
+        case 'newest':
+        case 'oldest':
+          return 'date';
+        case 'rating_high':
+        case 'rating_low':
+          return 'rating';
+        case 'helpful':
+          return 'helpful';
+        default:
+          return 'date';
+      }
+    };
+
+    const mapSortOrder = (apiSortBy: string): 'asc' | 'desc' => {
+      switch (apiSortBy) {
+        case 'oldest':
+        case 'rating_low':
+          return 'asc';
+        case 'newest':
+        case 'rating_high':
+        case 'helpful':
+        default:
+          return 'desc';
+      }
+    };
+
     const result = await recipeInteractionsService.getRecipeReviews(
       recipeId,
-      page,
-      limit,
-      sortBy
+      {
+        page,
+        limit,
+        sortBy: mapSortBy(sortBy),
+        sortOrder: mapSortOrder(sortBy)
+      }
     );
 
     return NextResponse.json(result);

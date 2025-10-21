@@ -9,8 +9,31 @@
  */
 
 import { Recipe, RecipeInstructionBlock } from '@/types/recipe';
-import { SpoonacularApiRecipe, SpoonacularIngredient, SpoonacularFoundRecipe } from './spoonacularEnhancements.server';
 import { RecipeFilters } from './spoonacularService';
+
+// Stub type definitions for missing exports
+interface SpoonacularApiRecipe {
+  id: number;
+  title: string;
+  image: string;
+  [key: string]: any;
+}
+
+interface SpoonacularIngredient {
+  id: number;
+  name: string;
+  amount: number;
+  unit: string;
+  [key: string]: any;
+}
+
+interface SpoonacularFoundRecipe {
+  id: number;
+  title: string;
+  image: string;
+  imageType: string;
+  [key: string]: any;
+}
 
 // Support both server-side and client-side API access
 const SPOONACULAR_API_KEY = process.env.SPOONACULAR_API_KEY || process.env.NEXT_PUBLIC_SPOONACULAR_API_KEY;

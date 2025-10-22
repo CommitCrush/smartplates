@@ -117,6 +117,27 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
+    // Redirect already logged in users from login page to their dashboard
+    if (pathname === '/login' && token) {
+      const url = request.nextUrl.clone();
+      const redirectTo = request.nextUrl.searchParams.get('redirect');
+      
+      if (redirectTo) {
+        // If there's a specific redirect, use that
+        url.pathname = redirectTo;
+        url.search = '';
+      } else {
+        // Role-based redirect for already logged in users
+        if (token.role === 'admin') {
+          url.pathname = '/admin';
+        } else {
+          url.pathname = '/user/dashboard';
+        }
+      }
+      
+      return NextResponse.redirect(url);
+    }
+
     // For any other route not explicitly defined, redirect to home
     const url = request.nextUrl.clone();
     url.pathname = '/';

@@ -16,12 +16,10 @@ export default function LoginPage() {
         </div>
         <LoginForm />
         <div className="">
-          <Link href="/register" passHref legacyBehavior>
-            <Button className="w-full mt-2 text-neutral-700" variant="default">
-              Don't have an account yet?
-              <span className="text-coral-500">Register Now</span>
-            </Button>
-          </Link>
+          <Button className="w-full mt-2 text-neutral-700" variant="default">
+            Don&apos;t have an account yet?
+            <span className="text-coral-500">Register Now</span>
+          </Button>
         </div>
       </div>
     </div>

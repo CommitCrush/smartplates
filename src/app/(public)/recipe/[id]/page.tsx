@@ -12,10 +12,11 @@ import { CommunityRecipeDetail } from '@/components/recipe/CommunityRecipeDetail
 import { Recipe } from '@/types/recipe';
 
 interface RecipePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
+
 
 // Fetch recipe data
 async function getRecipe(id: string): Promise<Recipe | null> {

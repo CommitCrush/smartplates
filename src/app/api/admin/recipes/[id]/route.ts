@@ -7,13 +7,10 @@ import { ObjectId } from 'mongodb';
 /**
  * DELETE /api/admin/recipes/[id] - Delete a recipe by ID
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user || session.user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized - Admin access required' },
@@ -21,10 +18,12 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
-    const { searchParams } = new URL(request.url);
+    // ⬇️ Extract ID from URL instead of params
+    const pathname = request.nextUrl.pathname;
+    const id = pathname.split('/').pop(); // get [id] from "/api/admin/recipes/[id]"
+    const { searchParams } = request.nextUrl;
     const source = searchParams.get('source');
-    
+
     if (!id) {
       return NextResponse.json(
         { error: 'Recipe ID is required' },

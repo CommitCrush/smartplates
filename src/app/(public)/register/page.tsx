@@ -16,7 +16,7 @@ export default function RegisterPage() {
         </div>
         <RegisterForm />
         <div className="">
-          <Link href="/login" passHref legacyBehavior>
+          <Link href="/login">
             <Button className="w-full mt-2 text-neutral-700" variant="default">
               Already have an account?
               <span className="text-coral-500">Sign In</span>

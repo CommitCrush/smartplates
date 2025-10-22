@@ -1,8 +1,10 @@
 import { getCollection, COLLECTIONS, toObjectId } from '@/lib/db';
 import { notFound } from 'next/navigation';
 
-export default async function UserDetailPage({ params }: { params: { id: string } }) {
-  const userId = params.id;
+export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const userId = id;
+
   const usersCollection = await getCollection(COLLECTIONS.USERS);
   const user = await usersCollection.findOne({ _id: toObjectId(userId) });
 
@@ -11,7 +13,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">User Details</h1>
-      <div className=" bg-primary-50 shadow-lg rounded-lg shadow p-6 space-y-4">
+      <div className="bg-primary-50 shadow-lg rounded-lg p-6 space-y-4">
         <div className="flex items-center gap-4">
           <img
             src={user.avatar || '/placeholder-avatar.svg'}
@@ -26,12 +28,15 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             </span>
           </div>
         </div>
+
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="font-medium">Created At:</span> {user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}
+            <span className="font-medium">Created At:</span>{' '}
+            {user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}
           </div>
           <div>
-            <span className="font-medium">Updated At:</span> {user.updatedAt ? new Date(user.updatedAt).toLocaleString() : '-'}
+            <span className="font-medium">Updated At:</span>{' '}
+            {user.updatedAt ? new Date(user.updatedAt).toLocaleString() : '-'}
           </div>
           <div>
             <span className="font-medium">Email Verified:</span> {user.isEmailVerified ? 'Yes' : 'No'}
@@ -40,6 +45,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             <span className="font-medium">Google ID:</span> {user.googleId || '-'}
           </div>
         </div>
+
         <div>
           <span className="font-medium">Dietary Restrictions:</span>
           <div className="flex flex-wrap gap-2 mt-1">
@@ -52,6 +58,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
               : <span className="text-muted-foreground">None</span>}
           </div>
         </div>
+
         <div>
           <span className="font-medium">Favorite Categories:</span>
           <div className="flex flex-wrap gap-2 mt-1">
@@ -64,6 +71,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
               : <span className="text-muted-foreground">None</span>}
           </div>
         </div>
+
         <div className="flex gap-4 mt-4">
           <div>
             <span className="font-medium">Saved Recipes:</span> {user.savedRecipes?.length || 0}

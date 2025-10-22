@@ -96,7 +96,7 @@ export default function ManageUsersPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 mx-auto w-full max-w-7xl">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">User Management</h1>
         <div className="text-sm text-muted-foreground">

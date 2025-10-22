@@ -41,10 +41,10 @@ export default function Navbar() {
       role="navigation"
       aria-label="Main navigation"
     >
-      <div className="max-w-7xl mx-auto px-4 pt-2 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto w-full px-4 pt-2 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <Link
               href={
                 isAuthenticated ? (isAdmin ? "/admin" : "/user/welcome") : "/"
@@ -239,9 +239,9 @@ export default function Navbar() {
             </>
           )}
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button - Fixed spacing */}
           {!isAdmin && (
-            <div className="md:hidden flex items-center space-x-2">
+            <div className="md:hidden flex items-center space-x-3 flex-shrink-0 ml-auto">
               {/* Theme Toggle - Mobile */}
               <ThemeToggle size="sm" />
 
@@ -262,9 +262,9 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Admin Mobile Menu Button */}
+          {/* Admin Mobile Menu Button - Fixed spacing */}
           {isAdmin && (
-            <div className="md:hidden flex items-center space-x-2">
+            <div className="md:hidden flex items-center space-x-3 flex-shrink-0 ml-auto">
               {/* Theme Toggle - Mobile */}
               <ThemeToggle size="sm" />
 

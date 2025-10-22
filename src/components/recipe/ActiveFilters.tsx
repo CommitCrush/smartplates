@@ -152,7 +152,7 @@ export function ActiveFilters({
             key={filter.id}
             variant="secondary"
             size="sm"
-            className="px-3 py-2  text-neutral-700 bg-gradient-navigation shadow-md"
+            className="px-3 py-2  text-neutral-700 bg-gradient-background shadow-md"
             onClick={filter.onRemove}
           >
             {filter.label}
@@ -167,7 +167,7 @@ export function ActiveFilters({
           <Button
             variant="outline"
             size="sm"
-            className="px-3 py-2  text-neutral-700 bg-gradient-navigation shadow-md"
+            className="px-3 py-2  text-neutral-700 bg-gradient-background shadow-md"
             onClick={onClearAll}
           >
             Clear All

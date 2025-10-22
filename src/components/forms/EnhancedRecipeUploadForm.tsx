@@ -429,7 +429,7 @@ export function EnhancedRecipeUploadForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Basic Information */}
-      <Card className="p-6">
+      <Card className="p-6 bg-background">
         <h3 className="text-lg font-semibold mb-6">Basic Information</h3>
         
         <div className="space-y-6">
@@ -497,7 +497,7 @@ export function EnhancedRecipeUploadForm({
       </Card>
 
       {/* Image Upload */}
-      <Card className="p-6">
+      <Card className="p-6 bg-background">
         <h3 className="text-lg font-semibold mb-6">Recipe Images</h3>
         
         <ImageUpload
@@ -569,7 +569,7 @@ export function EnhancedRecipeUploadForm({
       </Card>
 
       {/* Recipe Classification */}
-      <Card className="p-6">
+      <Card className="p-6 bg-background">
         <h3 className="text-lg font-semibold mb-6">Categories & Properties</h3>
         
         <div className="space-y-6">
@@ -854,7 +854,7 @@ export function EnhancedRecipeUploadForm({
       </Card>
 
       {/* Ingredients */}
-      <Card className="p-6">
+      <Card className="p-6 bg-background">
         <h3 className="text-lg font-semibold mb-6">Ingredients *</h3>
         
         <div className="space-y-4">
@@ -941,7 +941,7 @@ export function EnhancedRecipeUploadForm({
       </Card>
 
       {/* Instructions */}
-      <Card className="p-6">
+      <Card className="p-6 bg-background">
         <h3 className="text-lg font-semibold mb-6">Instructions *</h3>
         
         <div className="space-y-4">
@@ -1005,7 +1005,7 @@ export function EnhancedRecipeUploadForm({
       </Card>
 
       {/* Privacy Settings */}
-      <Card className="p-6">
+      <Card className="p-6 bg-background">
         <h3 className="text-lg font-semibold mb-6">Privacy & Visibility</h3>
         
         <div className="space-y-4">
@@ -1042,7 +1042,7 @@ export function EnhancedRecipeUploadForm({
       </Card>
 
       {/* Submit Button */}
-      <Card className="p-6">
+      <Card className="p-6 bg-background">
         <div className="flex flex-col items-center space-y-4">
           <Button
             type="submit"

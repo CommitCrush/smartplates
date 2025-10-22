@@ -102,12 +102,13 @@ export default function RecipeUploadPage({
   };
 
   return (
-    <div className="min-h-screen  py-8">
-      <div className="max-w-3xl mx-auto px-4">
+    <div className="min-h-screen  py-8 bg-gradient-background">
+      <div className="max-w-3xl mx-auto px-4 ">
         <div className="mb-6">
           <h3 className="text-2xl font-semibold">{title}</h3>
           <p className="text-muted-foreground">{description}</p>
         </div>
+      
         <EnhancedRecipeUploadForm
           onSubmit={handleRecipeUpload}
           onSuccess={() => {

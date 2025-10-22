@@ -12,11 +12,14 @@ export async function POST(_request: NextRequest) {
     const result = await importCachedRecipesToDB();
     
     console.log('✅ Import completed successfully', result);
-    
+
+    // Remove potential duplicate 'success' from result
+    const { success, message, ...rest } = result;
+
     return NextResponse.json({
-      success: true,
+      success: true, // always true if this request succeeds
       message: 'Cached recipes imported successfully',
-      ...result
+      ...rest       // include the rest of the result
     });
     
   } catch (error) {

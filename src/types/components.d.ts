@@ -11,6 +11,8 @@ import { Recipe } from './recipe';
 // Recipe Actions Component Types
 export interface RecipeActionsProps {
   recipe: Recipe;
+  isEditable?: boolean;       // Add optional prop
+  showUserActions?: boolean;
   contentRef: React.RefObject<HTMLDivElement | null>;
   currentServings: number;
 }
@@ -25,6 +27,8 @@ export interface NormalizedIngredient {
 // Recipe Detail Component Types
 export interface RecipeDetailProps {
   recipe: Recipe;
+  isEditable?: boolean;       // optional
+  showUserActions?: boolean;
 }
 
 // Community Recipe Detail Component Types

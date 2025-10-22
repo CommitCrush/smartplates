@@ -23,48 +23,40 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    // Only allow admin access
     if (!session?.user || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
     switch (action) {
-      case 'analytics':
+      case 'analytics': {
         const analytics = await getCacheAnalytics();
         return NextResponse.json({
           success: true,
           data: analytics
         });
+      }
 
-      case 'performance':
+      case 'performance': {
         const stats = performanceMonitor.getStats();
         return NextResponse.json({
           success: true,
-          data: {
-            overall: stats,
-            byOperation: {
-              search: performanceMonitor.getStats('search_recipes'),
-              cache: performanceMonitor.getStats('cache_lookup'),
-              retry: performanceMonitor.getStats('retry')
-            }
-          }
+          data: stats // direktes Objekt, keine `overall` oder `byOperation`
         });
+      }
 
-      case 'health':
+      case 'health': {
         const health = await performHealthCheck();
         return NextResponse.json({
           success: true,
           data: health
         });
+      }
 
-      default:
-        // Default: Return overview
+      default: {
+        // Übersicht: Analytics + Health + Performance
         const [analyticsData, healthData, performanceData] = await Promise.all([
           getCacheAnalytics(),
           performHealthCheck(),
@@ -86,9 +78,10 @@ export async function GET(request: NextRequest) {
             performance: performanceData
           }
         });
+      }
     }
   } catch (error) {
-    console.error('Enhanced Spoonacular API error:', error);
+    console.error('Enhanced Spoonacular API GET error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -106,18 +99,14 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    // Only allow admin access
     if (!session?.user || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { action, options = {} } = await request.json();
+    const { action } = await request.json();
 
     switch (action) {
-      case 'warmup':
+      case 'warmup': {
         console.log('🔥 Admin initiated cache warmup');
         const warmupResult = await warmupPopularRecipesCache();
         return NextResponse.json({
@@ -125,8 +114,9 @@ export async function POST(request: NextRequest) {
           message: `Cache warmed successfully: ${warmupResult.warmed} recipes cached, ${warmupResult.errors} errors`,
           data: warmupResult
         });
+      }
 
-      case 'optimize':
+      case 'optimize': {
         console.log('🧹 Admin initiated cache optimization');
         const optimizeResult = await optimizeCache();
         return NextResponse.json({
@@ -134,14 +124,16 @@ export async function POST(request: NextRequest) {
           message: `Cache optimized: ${optimizeResult.cleaned} entries cleaned, ${optimizeResult.spaceSaved} space saved`,
           data: optimizeResult
         });
+      }
 
-      case 'clear-metrics':
+      case 'clear-metrics': {
         console.log('📊 Admin cleared performance metrics');
         performanceMonitor.clearOldMetrics();
         return NextResponse.json({
           success: true,
           message: 'Performance metrics cleared successfully'
         });
+      }
 
       default:
         return NextResponse.json(
@@ -168,18 +160,12 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    // Only allow admin access
     if (!session?.user || session.user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const { settings } = await request.json();
 
-    // This could be used to update cache settings, quotas, etc.
-    // For now, just return success
     return NextResponse.json({
       success: true,
       message: 'Settings updated successfully (placeholder)',

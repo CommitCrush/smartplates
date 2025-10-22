@@ -17,37 +17,46 @@ export async function GET(request: NextRequest) {
     const action = searchParams.get('action');
 
     switch (action) {
-      case 'stats':
+      case 'stats': {
         const stats = await cacheService.getCacheStats();
         return NextResponse.json({
           success: true,
           data: stats,
           message: 'Cache statistics retrieved successfully'
         });
+      }
 
-      case 'clear-expired':
+      case 'clear-expired': {
         // Clear expired cache is server-only operation
         return NextResponse.json({
           success: true,
           message: 'Expired cache entries cleared successfully'
         });
+      }
 
-      case 'warmup':
-        // Warmup cache by getting popular recipes
-        await cacheService.getPopularRecipes();
-        return NextResponse.json({
-          success: true,
-          message: 'Cache warmed up successfully'
-        });
+      case 'warmup': {
+        if ('getPopularRecipes' in cacheService) {
+          await (cacheService as any).getPopularRecipes();
+          return NextResponse.json({
+            success: true,
+            message: 'Cache warmed up successfully'
+          });
+        } else {
+          return NextResponse.json({
+            success: false,
+            message: 'Warmup not available on this cache service'
+          }, { status: 501 });
+        }
+      }
 
-      default:
-        // Default: return cache stats
+      default: {
         const defaultStats = await cacheService.getCacheStats();
         return NextResponse.json({
           success: true,
           data: defaultStats,
           message: 'Cache status retrieved successfully'
         });
+      }
     }
   } catch (error) {
     console.error('Cache management error:', error);
@@ -65,51 +74,84 @@ export async function POST(request: NextRequest) {
     const { action, ...params } = body;
 
     switch (action) {
-      case 'search':
-        const searchResults = await cacheService.searchRecipes(
-          params.query || '',
-          params.options || {}
-        );
-        return NextResponse.json({
-          success: true,
-          data: searchResults,
-          message: 'Recipe search completed successfully'
-        });
+      case 'search': {
+        if ('searchRecipes' in cacheService) {
+          const searchResults = await (cacheService as any).searchRecipes(
+            params.query || '',
+            params.options || {}
+          );
+          return NextResponse.json({
+            success: true,
+            data: searchResults,
+            message: 'Recipe search completed successfully'
+          });
+        } else {
+          return NextResponse.json({
+            success: false,
+            message: 'searchRecipes not available on this cache service'
+          }, { status: 501 });
+        }
+      }
 
-      case 'get-recipe':
-        const recipe = await cacheService.getRecipe(params.recipeId);
-        return NextResponse.json({
-          success: true,
-          data: recipe,
-          message: recipe ? 'Recipe retrieved successfully' : 'Recipe not found'
-        });
+      case 'get-recipe': {
+        if ('getRecipe' in cacheService) {
+          const recipe = await (cacheService as any).getRecipe(params.recipeId);
+          return NextResponse.json({
+            success: true,
+            data: recipe,
+            message: recipe ? 'Recipe retrieved successfully' : 'Recipe not found'
+          });
+        } else {
+          return NextResponse.json({
+            success: false,
+            message: 'getRecipe not available on this cache service'
+          }, { status: 501 });
+        }
+      }
 
-      case 'search-by-ingredients':
-        const ingredientResults = await cacheService.searchByIngredients(
-          params.ingredients || [],
-          params.options || {}
-        );
-        return NextResponse.json({
-          success: true,
-          data: ingredientResults,
-          message: 'Ingredient search completed successfully'
-        });
+      case 'search-by-ingredients': {
+        if ('searchByIngredients' in cacheService) {
+          const ingredientResults = await (cacheService as any).searchByIngredients(
+            params.ingredients || [],
+            params.options || {}
+          );
+          return NextResponse.json({
+            success: true,
+            data: ingredientResults,
+            message: 'Ingredient search completed successfully'
+          });
+        } else {
+          return NextResponse.json({
+            success: false,
+            message: 'searchByIngredients not available on this cache service'
+          }, { status: 501 });
+        }
+      }
 
-      case 'get-random':
-        const randomRecipes = await cacheService.getPopularRecipes(
-          params.options || {}
-        );
-        return NextResponse.json({
-          success: true,
-          data: randomRecipes,
-          message: 'Random recipes retrieved successfully'
-        });
+      case 'get-random': {
+        if ('getPopularRecipes' in cacheService) {
+          const randomRecipes = await (cacheService as any).getPopularRecipes(
+            params.options || {}
+          );
+          return NextResponse.json({
+            success: true,
+            data: randomRecipes,
+            message: 'Random recipes retrieved successfully'
+          });
+        } else {
+          return NextResponse.json({
+            success: false,
+            message: 'getPopularRecipes not available on this cache service'
+          }, { status: 501 });
+        }
+      }
 
-      default:
+      default: {
         return NextResponse.json({
           success: false,
           message: 'Invalid action specified'
         }, { status: 400 });
+      }
     }
   } catch (error) {
     console.error('Cache API error:', error);

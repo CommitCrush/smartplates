@@ -11,7 +11,7 @@
  */
 
 import Link from 'next/link';
-import { ChefHat, Mail, Phone, MapPin, Heart } from 'lucide-react';
+import { Mail, Phone, MapPin, Heart } from 'lucide-react';
 import { SmartPlatesLogo } from '../ui/smartplates-logo';
 
 export default function Footer() {

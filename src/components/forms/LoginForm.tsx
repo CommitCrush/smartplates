@@ -13,7 +13,7 @@ interface LoginFormProps {
 
 export function LoginForm({
   className,
-  redirectTo = "/user/welcome",
+  redirectTo,
 }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,9 +62,28 @@ export function LoginForm({
         }
       } else if (result?.ok) {
         // Login successful - NextAuth will handle the session
-        // Redirect based on the redirect parameter or default
-        console.log('🔄 Login successful, redirecting to:', redirectTo);
-        router.push(redirectTo);
+        console.log('🔄 Login successful, determining redirect path...');
+        
+        // Get user session to determine role-based redirect
+        const response = await fetch('/api/auth/session');
+        const sessionData = await response.json();
+        
+        let finalRedirectTo = redirectTo;
+        
+        // Role-based redirect if no specific redirect was provided
+        if (!redirectTo && sessionData?.user?.role) {
+          if (sessionData.user.role === 'admin') {
+            finalRedirectTo = '/admin';
+          } else {
+            finalRedirectTo = '/user/dashboard';
+          }
+        } else if (!redirectTo) {
+          // Default fallback
+          finalRedirectTo = '/user/dashboard';
+        }
+        
+        console.log('🔄 Redirecting to:', finalRedirectTo);
+        router.push(finalRedirectTo!);
         router.refresh(); // Refresh to update session state
       } else {
         setError('Login failed. Please try again.');

@@ -1,103 +1,207 @@
-# SmartPlates (Rezept-Planer) 🍽️
+<div align="center">
+  <img src="public/SmartPlatesLogo2.jpg" alt="SmartPlates Logo" width="300" height="300">
+</div>
 
-## Projektbeschreibung
+<div align="center">
 
-SmartPlates ist eine Full-Stack-Webanwendung, die entwickelt wurde, um die Essensplanung zu vereinfachen. Benutzer können Rezepte entdecken, ihre eigenen hochladen, detaillierte Essenspläne erstellen und eine KI-gestützte Funktion zur Analyse von Lebensmittelbildern nutzen. Die Anwendung zielt darauf ab, eine intuitive und effiziente Erfahrung für die Organisation von Mahlzeiten zu bieten.
+### *Effortless Meal Planning. Delicious Living.*
 
-Das Projekt umfasst ein umfassendes Backend für die Benutzer- und Rezeptverwaltung sowie ein modernes Frontend für eine nahtlose Benutzerinteraktion.
+🚀 **Live Demo Coming Soon!**
 
-## 📊 Current Project Status (11. September 2025)
-
-### Phase 1: Foundation & Core Setup 🎉 **100% COMPLETE**
-
-| Feature | Developer | Status | Details |
-|---------|-----------|--------|---------|
-| Project Setup & Authentication | Developer 1 (Ese) | ✅ **COMPLETED** | Next.js 15.5.2, Full Auth APIs, Middleware ready |
-| Database & API Foundation | Developer 5 (Monika) | ✅ **COMPLETED** | Complete APIs, Recipe data, CRUD ready |
-| User Management System | Developer 2 (Balta) | ✅ **COMPLETED** | Auth working, Profile system complete |
-| Admin Foundation | Developer 3 (Hana) | ✅ **COMPLETED** | Dashboard & APIs ready, fully integrated |
-| UI/UX Foundation | Developer 4 (Rozn) | ✅ **COMPLETED** | Complete component library, design finalized |
-
-**📋 Detailed Status**: See `PHASE_1_STATUS_REPORT.md`  
-**📝 Complete TODO**: See `TODO_COMPLETE.md`
-
-### 🔗 External API Integration Status
-- **Spoonacular API**: ✅ **DOCUMENTED** (`docs/spoonacular-api-integration.md`)
-- **Implementation**: ❌ **PENDING** (Service layer not implemented)
+</div>
 
 ---
 
-## Design & UI/UX Vision
+## What is SmartPlates?
 
-Basierend auf den visuellen Entwürfen soll das Projekt eine saubere, moderne und benutzerfreundliche Oberfläche erhalten.
+**SmartPlates** is a modern, AI-powered meal planning platform that transforms how people organize, plan, and prepare their meals. Whether you're a busy professional, a family looking to eat healthier, or someone who loves cooking but struggles with organization - SmartPlates makes meal planning **effortless and enjoyable**.
 
-* **Responsive Design**: Alle Komponenten und Layouts werden vollständig responsiv gestaltet, um eine optimale Darstellung und Funktionalität auf allen Geräten – vom Desktop-PC über Tablets bis hin zu Smartphones – sicherzustellen.
+### The Problem We Solve
 
-### Homepage (Ansicht für Besucher)
+- **Meal Planning Overwhelm** → Deciding what to cook every day is exhausting
+- **Food Waste** → Buying ingredients without a plan leads to waste  
+- **Repetitive Meals** → Cooking the same dishes over and over gets boring
+- **Grocery Shopping Chaos** → Forgetting ingredients or buying duplicates
+- **Time Management** → Spending too much time thinking about food instead of enjoying it
 
-Die Startseite dient als einladender Einstieg in die Welt von SmartPlates.
-* **Design & Farben**: Ein minimalistisches Layout mit viel Weißraum, sanften Grüntönen und einem warmen Korallton für Akzente und Call-to-Action-Buttons.
-* **Slogan**: Der zentrale Leitspruch ist **"Effortless Meal Planning. Delicious Living."**, um den Kernnutzen der App zu kommunizieren.
-* **Layout**: Ein prominenter Header-Bereich mit hochwertigen Food-Bildern, dem Slogan und einem direkten "START PLANNING NOW"-Button. Darunter werden die drei Hauptfunktionen ("Plan Your Week", "Smart Grocery List", "AI Meal Suggestions") visuell ansprechend präsentiert.
+### Our Solution
 
----
-
-## Features
-
-### Benutzer-Features
-
-* **Mein Essensplan (My Meal Plan)**: Dies ist die zentrale Planungszentrale. Hier können Benutzer in einer Kalenderansicht ihre Mahlzeiten für die Woche organisieren. Um den Plan zu füllen, steht eine leistungsstige Such- und Filterfunktion zur Verfügung. Mithilfe von **Dropdowns mit Kategorien und Allergien** können Rezepte zur besseren Filterung nach Kriterien wie "Beliebt" oder "Schnell & Einfach" durchsucht und direkt zum Plan hinzugefügt werden.
-* **Einkaufsliste (Groceries)**: Automatisch generierte Zutatenliste basierend auf dem ausgewählten Essensplan.
-* **Gespeicherte Pläne (Saved Meal Plan)**: Möglichkeit, bewährte Wochenpläne zu speichern und wiederzuverwenden.
-* **Rezept-Upload**: Benutzer können eigene Rezepte mit Titel, Zutaten, Anleitung, Bildern/Videos und Kategorien hochladen.
-* **KI-gestützte Rezeptvorschläge**: Eine innovative Funktion, die es Benutzern ermöglicht, ein Foto vom Inhalt ihres Kühlschranks hochzuladen. Die KI analysiert das Bild, erkennt die vorhandenen Zutaten (z.B. Eier, Tomaten) und schlägt passende Rezepte vor. Zusätzlich können Benutzer über Texteingaben (Prompts) gezielt nach Rezeptideen suchen.
-* **Kochgeschirr (Cookware)**: Eine kuratierte Liste von grundlegenden Küchenutensilien mit Affiliate-Links zu Amazon oder IKEA.
-
-### Admin-Features
-
-* **Dashboard & Statistiken**: Eine Übersicht über Nutzeraktivitäten, beliebte Rezepte und andere relevante Metriken.
-* **Benutzerverwaltung**: Admins können registrierte Benutzer einsehen, ihren Status verwalten und bei Bedarf löschen.
-* **Rezeptverwaltung**: Admins haben die volle Kontrolle über alle in der Datenbank befindlichen Rezepte.
-* **Cookware & Provisionen**: Verwalten Sie die Liste der Kochgeschirr-Artikel und die damit verbundenen Partner-Provisionen.
+SmartPlates combines **intelligent meal planning**, **AI-powered recipe suggestions**, and **automated grocery lists** to create a seamless cooking experience that saves time, reduces waste, and brings joy back to your kitchen.
 
 ---
 
-## Einstellungsoptionen (Settings)
+## ✨ Key Features
 
-Die Einstellungsseite ist an moderne Dashboards wie die GitHub-Profileinstellungen angelehnt und verfügt über eine Navigationsleiste (Sidebar) auf der linken Seite.
+### 📅 **Smart Meal Planning**
+- **Multi-View Calendar** → Weekly, daily & monthly views with drag-and-drop interface for organizing meals
+- **Meal Templates** → Save and reuse successful weekly plans
+- **Flexible Planning** → Plan breakfast, lunch, dinner, and snacks
+- **Calendar Integration** → Export meal plans to Google Calendar
 
-### Benutzer-Einstellungen
+### 🤖 **AI-Powered Recipe Discovery**
+- **Intelligent Recommendations** → Personalized suggestions based on your preferences
+- **Fridge Analysis** → Upload photos of your fridge for ingredient-based recipes
+- **Dietary Filters** → Vegetarian, vegan, gluten-free, keto, and more
 
-* **Profil**:
-    * Profilbild, Benutzername und E-Mail ändern.
-    * Passwort ändern.
-    * Sichtbarkeit des Profils einstellen (öffentlich/privat).
-* **Personalisierung**:
-    * App-Sprache und Design (Hell/Dunkel) anpassen.
-    * Benachrichtigungen für Kommentare und Likes verwalten.
-    * Ernährungsvorlieben (z.B. vegan, glutenfrei) speichern.
-* **Datenschutz & Sicherheit**:
-    * Cookie-Einwilligungen verwalten (erstellen, speichern, löschen).
-* **Konto**:
-    * Konto löschen und Logout.
+### 📝 **Automated Grocery Lists**
+- **Smart Aggregation** → Automatically combine ingredients from your meal plan *(in process)*
+- **Quantity Optimization** → Calculate exact amounts needed
+- **Store Organization** → Group items by grocery store sections *(in process)*
 
-### Admin-Einstellungen
+### 👨‍🍳 **Recipe Management**
+- **Personal Recipe Collection** → Upload, save, and organize your own recipes
+- **Recipe Categories** → Organize by uploaded, saved, planned, and shopping lists
+- **Private Recipe Storage** → Keep your personal recipes private or share them publicly
+- **Rich Media Support** → Add photos and detailed cooking instructions
 
-* **Profil-Settings**:
-    * Profilbild, Benutzername, E-Mail und Passwort des Admin-Kontos ändern.
-* **Konto**:
-    * Konto löschen und Logout.
+### **User Experience**
+- **Responsive Design** → Perfect experience on desktop, tablet, and mobile
+- **Dark/Light Mode** → Choose your preferred viewing experience
+- **Offline Access** → Core features work without internet connection
+- **Fast Performance** → Optimized for speed with modern web technologies
 
 ---
 
-## Technologie-Stack
+## Interactive Features
 
-* **Framework**: Next.js (Fullstack mit App Router)
-* **Datenbank**: MongoDB
-* **Authentifizierung**: Google Cloud for Authentication
-* **Styling**: Tailwind CSS
-* **Bild- & Videoverwaltung**: Google Cloud Storage
-* **Deployment**: Vercel
-* **Externe APIs & Services**:
-    * **Rezept-API** (z.B. Spoonacular, TheMealDB) zur Beschaffung von Gerichten und Zutaten.
-    * **KI Vision API**: Google Cloud Vision AI zur Analyse von Bildern für das Kühlschrank-Feature.
+### **For Home Cooks**
+- **My Meal Plans** → Create and manage weekly meal schedules
+- **Recipe Discovery** → Browse thousands of curated recipes
+- **Grocery Lists** → Generate smart shopping lists automatically
+- **Personal Collection** → Save favorite recipes and create custom collections
+- **Cooking Mode** → Step-by-step cooking instructions with timers
+
+### **For Food Enthusiasts**
+- **Recipe Sharing** → Share your culinary creations with the community *(in development)*
+- **Advanced Filters** → Find recipes by cuisine, diet, cook time, and ingredients
+- **Meal Plan Templates** → Create and share meal planning templates *(in development)*
+
+---
+
+## 🛡️ Admin & Management Features
+
+### **Content Management**
+- **Recipe Moderation** → Quality control for community-submitted recipes
+- **User Management** → Comprehensive user administration tools
+- **Analytics Dashboard** → Insights into user behavior and popular recipes
+
+### **System Administration**
+- **Performance Monitoring** → Real-time system health and performance metrics
+- **API Management** → Monitor external API usage and optimize costs
+- **Security Controls** → User safety and content moderation tools
+
+---
+
+## 🚀 Technology Stack
+
+### **Frontend Architecture**
+- **Next.js (App Router)** → Modern React framework with server-side rendering and API routes
+- **TypeScript** → Type-safe development for better code quality
+- **Tailwind CSS** → Utility-first CSS framework for rapid, responsive UI development
+- **shadcn/ui** → Beautiful, accessible component library
+
+### **Backend & Database**
+- **MongoDB** → Document-based NoSQL database for flexible data storage
+- **Next.js API Routes** → Serverless API endpoints integrated with the frontend
+- **Resend Auth** → Secure user authentication and authorization system
+
+### **Media & Storage**
+- **Cloudinary Storage** → Cloud-based image and video storage with optimization
+- **Image Processing** → Automatic image compression and format optimization
+
+### **AI & External Services**
+- **ChatGPT OpenAI API** → Intelligent image analysis for ingredient recognition and recipe suggestions
+- **Spoonacular API** → External recipe database for fetching thousands of recipes with nutritional data
+
+### **Development & Collaboration**
+- **Git & GitHub** → Version control and team collaboration
+- **Render Integration** → Seamless deployment and preview environments *(in development)*
+
+---
+
+## Design Philosophy
+
+SmartPlates follows a **modern, clean, and intuitive design** approach:
+
+- **Color Scheme** → Warm greens and coral accents that evoke freshness and appetite
+- **Mobile-First** → Responsive design that works beautifully on all devices  
+- **Accessibility** → WCAG 2.1 AA compliant for inclusive user experience
+- **Performance** → Optimized for fast loading and smooth interactions
+- **Dark Mode** → Complete dark theme support for comfortable nighttime use
+
+---
+
+## 🏁 Getting Started
+
+### **For Users**
+1. **Sign Up** → Create your free SmartPlates account
+2. **Set Preferences** → Tell us about your dietary preferences and cooking style
+3. **Explore Recipes** → Browse our curated collection of recipes
+4. **Plan Your Week** → Create your first meal plan using our drag-and-drop calendar
+5. **Generate Grocery List** → Let SmartPlates create your shopping list automatically
+6. **Start Cooking** → Follow step-by-step instructions and enjoy your meals!
+
+### **For Developers**
+```bash
+# Clone the repository
+git clone [repository-url]
+
+# Install dependencies
+bun install
+
+# Set up environment variables
+cp .env.example .env.local
+
+# Start development server
+bun run dev
+
+# Visit http://localhost:3000
+```
+
+#### **Environment Variables Setup:**
+The `.env.example` file contains placeholder values for:
+- Database connection strings (use local MongoDB for development)
+- API rate limiting configurations  
+- Image processing settings
+- Authentication service endpoints (use development keys)
+
+---
+
+## 📄 License
+
+This project is **proprietary software**. All rights reserved. 
+
+> **Important Notice**: This codebase and application are protected by copyright law. Unauthorized copying, distribution, or commercial use of this software is strictly prohibited without explicit written permission from the SmartPlates development team.
+
+---
+
+## 🌟 Why Choose SmartPlates?
+
+### **Save Time**
+> Stop spending hours deciding what to cook. Let SmartPlates plan your meals in minutes.
+
+### **Reduce Food Waste**  
+> Smart grocery lists and meal planning help you buy only what you need.
+
+### **Eat Better**
+> Discover new recipes and maintain a balanced diet with our intelligent recommendations.
+
+### **Family Friendly**
+> Accommodate everyone's preferences and dietary needs in one unified platform.
+
+### **Always Accessible**
+> Access your meal plans and recipes anywhere, anytime, on any device.
+
+---
+
+<div align="center">
+
+## **Ready to transform your cooking experience?**
+
+### 🚀 **Launch Coming Soon!**
+
+---
+
+*Made with ❤️ by the SmartPlates Team*
+
+</div>

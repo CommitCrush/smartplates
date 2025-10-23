@@ -64,11 +64,23 @@ export default function AdminPage() {
       const response = await fetch('/api/admin/recipes');
       if (response.ok) {
         const data = await response.json();
-        // Count recipes from admin_upload and user_upload sources
-        const communityCount = data.recipes ? 
-          data.recipes.filter((recipe: any) => 
-            recipe.source === 'admin_upload' || recipe.source === 'user_upload'
-          ).length : 0;
+        // Use API counts instead of filtering (more reliable)
+        const allRecipes = data.recipes || [];
+        const apiCounts = data.counts || {};
+        
+        // Community count = admin + user collections counts from API
+        const communityCount = (apiCounts.admin || 0) + (apiCounts.user || 0);
+        
+        console.log('📊 API Counts from server:', apiCounts);
+        
+        console.log('🔍 Community Count (using API counts):', {
+          totalRecipesInResponse: allRecipes.length,
+          apiCounts: apiCounts,
+          communityCount: communityCount,
+          calculation: `${apiCounts.admin || 0} (admin) + ${apiCounts.user || 0} (user) = ${communityCount}`,
+          uniqueSources: [...new Set(allRecipes.map((r: any) => r.source))]
+        });
+        
         setCommunityRecipes(communityCount);
       }
     } catch (error) {

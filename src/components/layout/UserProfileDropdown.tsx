@@ -110,8 +110,9 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
 
   const handleSignOut = async () => {
     try {
-      await signOut();
-      // NextAuth handles the redirect automatically
+      await signOut({
+        callbackUrl: '/' // Nach logout zur Hauptseite (Smart Meal Planning Made Simple)
+      });
     } catch (error) {
       console.error('Sign out error:', error);
     }

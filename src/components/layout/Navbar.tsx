@@ -215,13 +215,13 @@ export default function Navbar() {
                     /* User Profile Dropdown for authenticated users */
                     <UserProfileDropdown />
                   ) : (
-                    /* Sign In/Sign Up Buttons for guests */
+                    /* Login/Sign Up Buttons for guests */
                     <div className="flex items-center space-x-3">
                       <Link
                         href="/login"
                         className="px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-coral-600 hover:text-white hover:transition-transform focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm  hover:scale-110"
                       >
-                        Sign In
+                        Login
                       </Link>
                       <Link
                         href="/register"
@@ -405,7 +405,7 @@ export default function Navbar() {
                       className="w-full text-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 border-2 border-primary-700 text-primary-700 hover:bg-primary-100 hover:text-primary-800 dark:border-primary-400 dark:text-primary-400 dark:hover:bg-primary-900 dark:hover:text-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 shadow-sm hover:shadow-md transform hover:scale-105"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Sign In
+                      Login
                     </Link>
                     <Link
                       href="/register"

@@ -12,6 +12,7 @@ interface MockUser {
   email: string;
   role: 'user' | 'admin';
   isEmailVerified: boolean;
+  isActive: boolean;
   createdAt: string;
   lastLoginAt: string;
   savedRecipes: number;
@@ -96,7 +97,8 @@ export default function ManageUsersPage() {
   }
 
   return (
-    <div className="p-6 mx-auto w-full max-w-7xl">
+    <div className="bg-primary-100 min-h-screen">
+    <div className="p-6 mx-auto w-full max-w-7xl bg-primary-100">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">User Management</h1>
         <div className="text-sm text-muted-foreground">
@@ -107,7 +109,7 @@ export default function ManageUsersPage() {
       {/* Users Grid */}
       <div className="grid gap-4">
         {users.map((user) => (
-          <Card key={user.id} className="p-6">
+          <Card key={user.id} className="p-6 bg-white">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* User Info */}
               <div className="flex items-start gap-4">
@@ -191,5 +193,6 @@ export default function ManageUsersPage() {
         </Card>
       )}
     </div>
+</div>
   );
 }

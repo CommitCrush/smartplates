@@ -102,7 +102,7 @@ export default function RecipeUploadPage({
   };
 
   return (
-    <div className="min-h-screen  py-8 bg-gradient-background">
+    <div className="min-h-screen  py-8 bg-primary-100">
       <div className="max-w-3xl mx-auto px-4 ">
         <div className="mb-6">
           <h3 className="text-2xl font-semibold">{title}</h3>

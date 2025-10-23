@@ -24,9 +24,13 @@ export default async function EditUserPage({ params }: EditUserPageProps) {
   if (!user) return notFound();
   const plainUser = serializeUser(user);
   return (
-    <div className="max-w-2xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Edit user</h1>
-      <UserEditForm user={plainUser} />
+    <div className="bg-primary-100 min-h-screen flex flex-col">
+      <div className="max-w-2xl w-full mx-auto py-8 flex-1 ">
+        <h1 className="text-2xl font-bold mb-6">Edit user</h1>
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6 border border-gray-100 dark:border-gray-700">
+          <UserEditForm user={plainUser} />
+        </div>
+      </div>
     </div>
   );
 }

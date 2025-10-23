@@ -18,7 +18,7 @@ export default function RegisterPage() {
         <div className="">
           <Button className="w-full mt-2 text-neutral-700" variant="default">
             Already have an account?
-            <span className="text-coral-500">Sign In</span>
+            <span className="text-coral-500">Login</span>
           </Button>
         </div>
       </div>

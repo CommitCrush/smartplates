@@ -25,7 +25,7 @@ export default function EmailChangedPage() {
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-muted-foreground">
-              Your email address has been changed and verified. You will need to sign in again with your new email address.
+              Your email address has been changed and verified. You will need to login again with your new email address.
             </p>
             <div className="space-y-2">
               <Button asChild className="w-full">

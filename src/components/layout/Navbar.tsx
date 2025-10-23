@@ -215,7 +215,7 @@ export default function Navbar() {
                     /* User Profile Dropdown for authenticated users */
                     <UserProfileDropdown />
                   ) : (
-                    /* Sign In/Sign Up Buttons for guests */
+                    /* Login/Sign Up Buttons for guests */
                     <div className="flex items-center space-x-3">
                       <Link
                         href="/login"

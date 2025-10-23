@@ -13,7 +13,7 @@ export default function AdminLayout({
       <Navbar />
 
       {/* Main Content without Sidebar */}
-      <main className="flex-1 flex flex-col w-full max-w-7xl mx-auto p-8">
+      <main className="flex-1 flex flex-col w-full ">
         {children}
       </main>
     </div>

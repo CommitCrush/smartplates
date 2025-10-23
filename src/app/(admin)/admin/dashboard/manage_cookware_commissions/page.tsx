@@ -150,7 +150,7 @@ export default function ManageCookwareCommissionsPage() {
   });
   
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 mx-auto w-full max-w-7xl">
       <h1 className="text-2xl font-bold mb-2">Manage Cookware Commissions</h1>
       <p className="text-muted-foreground">
         Track and manage Amazon affiliate commissions for cookware products.

@@ -30,7 +30,7 @@ export default function EmailChangedPage() {
             <div className="space-y-2">
               <Button asChild className="w-full">
                 <Link href="/api/auth/signin">
-                  Sign In With New Email
+                  Login With New Email
                 </Link>
               </Button>
               <Button variant="outline" asChild className="w-full">

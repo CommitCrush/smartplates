@@ -421,7 +421,7 @@ export default function SettingsPage() {
       <div className="container mx-auto py-8">
         <Card>
           <CardContent className="text-center py-8">
-            <p>Please sign in to manage your settings.</p>
+            <p>Please Login to manage your settings.</p>
           </CardContent>
         </Card>
       </div>

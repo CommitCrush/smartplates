@@ -130,8 +130,11 @@ export async function middleware(request: NextRequest) {
         // Role-based redirect for already logged in users
         if (token.role === 'admin') {
           url.pathname = '/admin';
+        } else if (token.role === 'user') {
+          url.pathname = '/user/welcome';
         } else {
-          url.pathname = '/user/dashboard';
+          // Default (viewer) - nach logout zur Welcome Page
+          url.pathname = '/user/welcome';
         }
       }
       

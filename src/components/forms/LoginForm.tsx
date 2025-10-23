@@ -74,12 +74,15 @@ export function LoginForm({
         if (!redirectTo && sessionData?.user?.role) {
           if (sessionData.user.role === 'admin') {
             finalRedirectTo = '/admin';
+          } else if (sessionData.user.role === 'user') {
+            finalRedirectTo = '/user/welcome';
           } else {
-            finalRedirectTo = '/user/dashboard';
+            // Default (viewer) - nach logout zur Welcome Page
+            finalRedirectTo = '/user/welcome';
           }
         } else if (!redirectTo) {
-          // Default fallback
-          finalRedirectTo = '/user/dashboard';
+          // Default fallback - zur Welcome Page
+          finalRedirectTo = '/user/welcome';
         }
         
         console.log('🔄 Redirecting to:', finalRedirectTo);

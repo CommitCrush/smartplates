@@ -317,7 +317,7 @@ export default function SettingsPage() {
 
         // Log out user after 2 seconds
         setTimeout(() => {
-          window.location.href = '/api/auth/signout';
+          window.location.href = '/api/auth/signout?callbackUrl=/user/welcome';
         }, 2000);
       } else {
         const errorData = await response.json();

@@ -110,8 +110,9 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
 
   const handleSignOut = async () => {
     try {
-      await signOut();
-      // NextAuth handles the redirect automatically
+      await signOut({
+        callbackUrl: '/user/welcome' // Nach logout immer zur Welcome Page
+      });
     } catch (error) {
       console.error('Sign out error:', error);
     }

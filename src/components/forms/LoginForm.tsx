@@ -245,7 +245,7 @@ export function LoginForm({
           disabled={isLoading}
           className="w-full bg-coral-500 text-white py-2 px-4 rounded-lg hover:bg-coral-600 focus:outline-none focus:ring-2 focus:ring-coral-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading ? "Signing in..." : "Sign In"}
+          {isLoading ? "Signing in..." : "Login"}
         </button>
 
         <div className="text-center">

@@ -111,7 +111,7 @@ export default function UserProfileDropdown({ className = '', isMobile = false }
   const handleSignOut = async () => {
     try {
       await signOut({
-        callbackUrl: '/user/welcome' // Nach logout immer zur Welcome Page
+        callbackUrl: '/' // Nach logout zur Hauptseite (Smart Meal Planning Made Simple)
       });
     } catch (error) {
       console.error('Sign out error:', error);

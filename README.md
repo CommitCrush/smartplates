@@ -4,10 +4,9 @@
 
 <div align="center">
 
-
 ### *Effortless Meal Planning. Delicious Living.*
 
-**Live Demo Coming Soon!**
+🚀 **Live Demo Coming Soon!**
 
 </div>
 
@@ -31,25 +30,25 @@ SmartPlates combines **intelligent meal planning**, **AI-powered recipe suggesti
 
 ---
 
-## Key Features
+## ✨ Key Features
 
-### **Smart Meal Planning**
+### 📅 **Smart Meal Planning**
 - **Multi-View Calendar** → Weekly, daily & monthly views with drag-and-drop interface for organizing meals
 - **Meal Templates** → Save and reuse successful weekly plans
 - **Flexible Planning** → Plan breakfast, lunch, dinner, and snacks
 - **Calendar Integration** → Export meal plans to Google Calendar
 
-### **AI-Powered Recipe Discovery**
+### 🤖 **AI-Powered Recipe Discovery**
 - **Intelligent Recommendations** → Personalized suggestions based on your preferences
 - **Fridge Analysis** → Upload photos of your fridge for ingredient-based recipes
 - **Dietary Filters** → Vegetarian, vegan, gluten-free, keto, and more
 
-### **Automated Grocery Lists**
+### 📝 **Automated Grocery Lists**
 - **Smart Aggregation** → Automatically combine ingredients from your meal plan *(in process)*
 - **Quantity Optimization** → Calculate exact amounts needed
 - **Store Organization** → Group items by grocery store sections *(in process)*
 
-### **Recipe Management**
+### 👨‍🍳 **Recipe Management**
 - **Personal Recipe Collection** → Upload, save, and organize your own recipes
 - **Recipe Categories** → Organize by uploaded, saved, planned, and shopping lists
 - **Private Recipe Storage** → Keep your personal recipes private or share them publicly
@@ -79,7 +78,7 @@ SmartPlates combines **intelligent meal planning**, **AI-powered recipe suggesti
 
 ---
 
-## Admin & Management Features
+## 🛡️ Admin & Management Features
 
 ### **Content Management**
 - **Recipe Moderation** → Quality control for community-submitted recipes
@@ -93,7 +92,7 @@ SmartPlates combines **intelligent meal planning**, **AI-powered recipe suggesti
 
 ---
 
-## Technology Stack
+## 🚀 Technology Stack
 
 ### **Frontend Architecture**
 - **Next.js (App Router)** → Modern React framework with server-side rendering and API routes
@@ -132,7 +131,7 @@ SmartPlates follows a **modern, clean, and intuitive design** approach:
 
 ---
 
-## Getting Started
+## 🏁 Getting Started
 
 ### **For Users**
 1. **Sign Up** → Create your free SmartPlates account
@@ -168,7 +167,7 @@ The `.env.example` file contains placeholder values for:
 
 ---
 
-## License
+## 📄 License
 
 This project is **proprietary software**. All rights reserved. 
 
@@ -176,7 +175,7 @@ This project is **proprietary software**. All rights reserved.
 
 ---
 
-## Why Choose SmartPlates?
+## 🌟 Why Choose SmartPlates?
 
 ### **Save Time**
 > Stop spending hours deciding what to cook. Let SmartPlates plan your meals in minutes.
@@ -199,7 +198,7 @@ This project is **proprietary software**. All rights reserved.
 
 ## **Ready to transform your cooking experience?**
 
-### **Launch Coming Soon!**
+### 🚀 **Launch Coming Soon!**
 
 ---
 

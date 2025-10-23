@@ -74,11 +74,14 @@ export function LoginForm({
         if (!redirectTo && sessionData?.user?.role) {
           if (sessionData.user.role === 'admin') {
             finalRedirectTo = '/admin';
+          } else if (sessionData.user.role === 'user') {
+            finalRedirectTo = '/user/welcome';
           } else {
+            // Default (viewer) - keep original behavior
             finalRedirectTo = '/user/dashboard';
           }
         } else if (!redirectTo) {
-          // Default fallback
+          // Default fallback - keep original behavior
           finalRedirectTo = '/user/dashboard';
         }
         

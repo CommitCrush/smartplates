@@ -1,12 +1,6 @@
-<span className="text-primary-700 dark:text-primary-400">
-                  Smart
-                </span>
-                <span className="text-primary-500 dark:text-primary-600">
-                  Plates
-                </span>
 
-<div align="center">
-  <img src="public/SmartPlatesLogo2.jpg" alt="SmartPlates Logo" width="200" height="200">
+<div align="left">
+  <img src="public/SmartPlatesLogo2.jpg" alt="SmartPlates Logo" width="400" height="400">
 </div>
 
 <div align="center">

@@ -133,8 +133,8 @@ export async function middleware(request: NextRequest) {
         } else if (token.role === 'user') {
           url.pathname = '/user/welcome';
         } else {
-          // Default (viewer) - keep original behavior
-          url.pathname = '/user/dashboard';
+          // Default (viewer) - nach logout zur Welcome Page
+          url.pathname = '/user/welcome';
         }
       }
       

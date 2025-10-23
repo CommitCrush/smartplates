@@ -1,4 +1,9 @@
-# SmartPlates 🍽️
+<span className="text-primary-700 dark:text-primary-400">
+                  Smart
+                </span>
+                <span className="text-primary-500 dark:text-primary-600">
+                  Plates
+                </span>
 
 <div align="center">
   <img src="public/SmartPlatesLogo2.jpg" alt="SmartPlates Logo" width="200" height="200">
@@ -7,13 +12,14 @@
 <div align="center">
 
 **Effortless Meal Planning. Delicious Living.**
-
+<!-- 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.0-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-green?style=flat-square&logo=mongodb)](https://www.mongodb.com/) -->
 
-🚀 **Live Demo Coming Soon!** • [📖 Documentation](./docs) • [🎯 Features](#features)
+🚀 **Live Demo Coming Soon!** • 
+<!-- [📖 Documentation](./docs) • [🎯 Features](#features) -->
 
 </div>
 
@@ -118,11 +124,11 @@ SmartPlates combines **intelligent meal planning**, **AI-powered recipe suggesti
 
 ### AI & External Services
 - **ChatGPT OpenAI API**: Intelligent image analysis for ingredient recognition and recipe suggestions
-- **Vercel Deployment**: Scalable hosting with automatic CI/CD integration
+- **Spoonacular API**: External recipe database for fetching thousands of recipes with nutritional data
 
 ### Development & Collaboration
 - **Git & GitHub**: Version control and team collaboration
-- **Vercel Integration**: Seamless deployment and preview environments
+- **Render Integration**: Seamless deployment and preview environments *(in development)*
 
 ---
 
@@ -173,7 +179,7 @@ The `.env.example` file contains placeholder values for:
 - Authentication service endpoints (use development keys)
 
 ---
-
+<!-- 
 ## 🤝 Contributing
 
 We welcome contributions from the community! Whether you're interested in:
@@ -186,7 +192,7 @@ We welcome contributions from the community! Whether you're interested in:
 
 Please check our [Contributing Guidelines](./CONTRIBUTING.md) to get started.
 
----
+--- -->
 
 ## 📄 License
 
@@ -194,7 +200,7 @@ This project is proprietary software. All rights reserved.
 
 **Important Notice**: This codebase and application are protected by copyright law. Unauthorized copying, distribution, or commercial use of this software is strictly prohibited without explicit written permission from the SmartPlates development team.
 
-For licensing inquiries or collaboration opportunities, please contact us at [legal@smartplates.dev](mailto:legal@smartplates.dev).
+<!-- For licensing inquiries or collaboration opportunities, please contact us at [legal@smartplates.dev](mailto:legal@smartplates.dev). -->
 
 ---
 
@@ -221,7 +227,7 @@ Access your meal plans and recipes anywhere, anytime, on any device.
 
 **Ready to transform your cooking experience?**
 
-🚀 **Launch Coming Soon!** • [📖 **Learn More**](./docs) • [💬 **Get Support**](mailto:support@smartplates.dev)
+🚀 **Launch Coming Soon!** 
 
 ---
 

@@ -304,7 +304,7 @@ export default function SettingsPage() {
       if (response.ok) {
         toast({
           title: 'Success',
-          description: 'Password updated successfully! Please sign in again.',
+          description: 'Password updated successfully! Please login again.',
           variant: 'default'
         });
         
@@ -317,7 +317,7 @@ export default function SettingsPage() {
 
         // Log out user after 2 seconds
         setTimeout(() => {
-          window.location.href = '/api/auth/signout';
+          window.location.href = '/api/auth/signout?callbackUrl=/user/welcome';
         }, 2000);
       } else {
         const errorData = await response.json();
@@ -421,7 +421,7 @@ export default function SettingsPage() {
       <div className="container mx-auto py-8">
         <Card>
           <CardContent className="text-center py-8">
-            <p>Please sign in to manage your settings.</p>
+            <p>Please Login to manage your settings.</p>
           </CardContent>
         </Card>
       </div>
@@ -683,7 +683,7 @@ export default function SettingsPage() {
                 <ul className="space-y-1 text-blue-700 dark:text-blue-300">
                   <li>• A verification email will be sent to your new email address</li>
                   <li>• You must click the verification link to complete the change</li>
-                  <li>• You will be logged out and need to sign in with your new email</li>
+                  <li>• You will be logged out and need to login with your new email</li>
                 </ul>
               </div>
             </div>

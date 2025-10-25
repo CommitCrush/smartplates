@@ -150,7 +150,8 @@ export default function ManageCookwareCommissionsPage() {
   });
   
   return (
-    <div className="p-6 space-y-6">
+    <div className="bg-primary-100 min-h-screen flex flex-col">
+    <div className="p-6 space-y-6 mx-auto w-full max-w-7xl">
       <h1 className="text-2xl font-bold mb-2">Manage Cookware Commissions</h1>
       <p className="text-muted-foreground">
         Track and manage Amazon affiliate commissions for cookware products.
@@ -160,7 +161,7 @@ export default function ManageCookwareCommissionsPage() {
         {/* Übersichtsstatistiken */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 bg-white">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Earnings</p>
@@ -178,7 +179,7 @@ export default function ManageCookwareCommissionsPage() {
           </Card>
           
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 bg-white">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Clicks</p>
@@ -196,7 +197,7 @@ export default function ManageCookwareCommissionsPage() {
           </Card>
           
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 bg-white">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Conversions</p>
@@ -214,7 +215,7 @@ export default function ManageCookwareCommissionsPage() {
           </Card>
           
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 bg-white">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Conversion Rate</p>
@@ -235,7 +236,7 @@ export default function ManageCookwareCommissionsPage() {
       
       {/* Suche und Filter */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mt-6">
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1 max-w-md bg-white">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search products or brands..." 
@@ -337,7 +338,7 @@ export default function ManageCookwareCommissionsPage() {
         </CardHeader>
         <CardContent>
           <div className="rounded-md border overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto bg-white">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800 border-b">
@@ -410,7 +411,7 @@ export default function ManageCookwareCommissionsPage() {
       </Card>
       
       {/* Amazon Affiliate Integration Info */}
-      <Card className="mt-6">
+      <Card className="mt-6 bg-white">
         <CardHeader className="pb-3">
           <CardTitle>Amazon Affiliate Integration</CardTitle>
           <CardDescription>
@@ -473,6 +474,7 @@ export default function ManageCookwareCommissionsPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 }

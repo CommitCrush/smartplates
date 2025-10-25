@@ -64,11 +64,23 @@ export default function AdminPage() {
       const response = await fetch('/api/admin/recipes');
       if (response.ok) {
         const data = await response.json();
-        // Count recipes from admin_upload and user_upload sources
-        const communityCount = data.recipes ? 
-          data.recipes.filter((recipe: any) => 
-            recipe.source === 'admin_upload' || recipe.source === 'user_upload'
-          ).length : 0;
+        // Use API counts instead of filtering (more reliable)
+        const allRecipes = data.recipes || [];
+        const apiCounts = data.counts || {};
+        
+        // Community count = admin + user collections counts from API
+        const communityCount = (apiCounts.admin || 0) + (apiCounts.user || 0);
+        
+        console.log('📊 API Counts from server:', apiCounts);
+        
+        console.log('🔍 Community Count (using API counts):', {
+          totalRecipesInResponse: allRecipes.length,
+          apiCounts: apiCounts,
+          communityCount: communityCount,
+          calculation: `${apiCounts.admin || 0} (admin) + ${apiCounts.user || 0} (user) = ${communityCount}`,
+          uniqueSources: [...new Set(allRecipes.map((r: any) => r.source))]
+        });
+        
         setCommunityRecipes(communityCount);
       }
     } catch (error) {
@@ -153,6 +165,7 @@ export default function AdminPage() {
   ];
 
   return (
+    <div className="bg-primary-100 min-h-screen">
     <div className="container mx-auto py-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -168,12 +181,12 @@ export default function AdminPage() {
       {/* Dashboard Overview Section */}
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <Settings className="h-5 w-5 text-primary" />
+          <Settings className="h-5 w-5 text-primary " />
           <h2 className="text-xl font-semibold">System Overview</h2>
         </div>
         {/* System Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
-          <Card className="p-4">
+          <Card className="p-4 bg-white">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Users</p>
@@ -183,7 +196,7 @@ export default function AdminPage() {
               <Users className="h-8 w-8 text-blue-500" />
             </div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-4 bg-white">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Online Now</p>
@@ -204,7 +217,7 @@ export default function AdminPage() {
               </div>
             </div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-4 bg-white">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Recipes</p>
@@ -220,7 +233,7 @@ export default function AdminPage() {
               <ChefHat className="h-8 w-8 text-green-500" />
             </div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-4 bg-white">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Community Recipes</p>
@@ -239,7 +252,7 @@ export default function AdminPage() {
               <ChefHat className="h-8 w-8 text-purple-500" />
             </div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-4 bg-white">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Reports</p>
@@ -250,7 +263,7 @@ export default function AdminPage() {
           </Card>
         </div>
         {/* System Status */}
-        <Card className="p-6 mb-8">
+        <Card className="p-6 mb-8 bg-white">
           <h3 className="text-lg font-semibold mb-4">System Status</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
@@ -282,7 +295,7 @@ export default function AdminPage() {
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
-              <Card key={action.href} className="hover:shadow-md transition-shadow">
+              <Card key={action.href} className="hover:shadow-md transition-shadow bg-white">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg bg-gray-100 ${action.color}`}>
@@ -311,7 +324,7 @@ export default function AdminPage() {
       <div className="space-y-6">
         <h2 className="text-xl font-semibold">Recent Activity</h2>
 
-        <Card>
+        <Card className="bg-white">
           <CardHeader>
             <CardTitle>System Events</CardTitle>
             <CardDescription>
@@ -370,6 +383,7 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </div>
+    </div>
     </div>
   );
 }

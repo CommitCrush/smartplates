@@ -11,7 +11,8 @@
  */
 
 import Link from 'next/link';
-import { ChefHat, Mail, Phone, MapPin, Heart } from 'lucide-react';
+import { Mail, Phone, MapPin, Heart } from 'lucide-react';
+import { SmartPlatesLogo } from '../ui/smartplates-logo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -29,9 +30,16 @@ export default function Footer() {
             
             {/* Brand and Description - Mobile Optimized */}
             <div className="lg:col-span-1">
-              <div className="flex items-center space-x-2 mb-3">
-                <ChefHat className="h-6 w-6 sm:h-8 sm:w-8 text-primary-500" />
-                <span className="text-xl sm:text-2xl font-bold text-foreground">SmartPlates</span>
+              <div className="flex items-center space-x-2">
+               <SmartPlatesLogo size="xxl" />
+              <span className="text-xl font-bold text-foreground text-primary-400">
+                <span className="text-primary-700 dark:text-primary-400">
+                  Smart
+                </span>
+                <span className="text-primary-500 dark:text-primary-600">
+                  Plates
+                </span>
+              </span>
               </div>
               <p className="text-sm sm:text-base text-foreground-muted mb-4 leading-relaxed">
                 Smart meal planning and recipe management made easy. Discover new recipes, 

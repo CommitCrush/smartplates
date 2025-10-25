@@ -13,7 +13,8 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">User Details</h1>
-      <div className="bg-primary-50 shadow-lg rounded-lg p-6 space-y-4">
+
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-6 border border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-4">
           <img
             src={user.avatar || '/placeholder-avatar.svg'}
@@ -29,7 +30,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-4 text-sm mt-6">
           <div>
             <span className="font-medium">Created At:</span>{' '}
             {user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}
@@ -46,7 +47,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        <div>
+        <div className="mt-4">
           <span className="font-medium">Dietary Restrictions:</span>
           <div className="flex flex-wrap gap-2 mt-1">
             {(user.dietaryRestrictions || []).length > 0
@@ -59,7 +60,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        <div>
+        <div className="mt-4">
           <span className="font-medium">Favorite Categories:</span>
           <div className="flex flex-wrap gap-2 mt-1">
             {(user.favoriteCategories || []).length > 0
@@ -72,7 +73,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        <div className="flex gap-4 mt-4">
+        <div className="flex gap-4 mt-6">
           <div>
             <span className="font-medium">Saved Recipes:</span> {user.savedRecipes?.length || 0}
           </div>

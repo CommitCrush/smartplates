@@ -86,7 +86,7 @@ export function ProfileEdit({ className, onSave, formData: externalFormData, onF
   if (!user) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-500">Please sign in to edit your profile.</div>
+        <div className="text-gray-500">Please login to edit your profile.</div>
       </div>
     );
   }

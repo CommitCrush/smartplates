@@ -13,7 +13,7 @@ interface LoginFormProps {
 
 export function LoginForm({
   className,
-  redirectTo = "/user/welcome",
+  redirectTo,
 }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,9 +62,31 @@ export function LoginForm({
         }
       } else if (result?.ok) {
         // Login successful - NextAuth will handle the session
-        // Redirect based on the redirect parameter or default
-        console.log('🔄 Login successful, redirecting to:', redirectTo);
-        router.push(redirectTo);
+        console.log('🔄 Login successful, determining redirect path...');
+        
+        // Get user session to determine role-based redirect
+        const response = await fetch('/api/auth/session');
+        const sessionData = await response.json();
+        
+        let finalRedirectTo = redirectTo;
+        
+        // Role-based redirect if no specific redirect was provided
+        if (!redirectTo && sessionData?.user?.role) {
+          if (sessionData.user.role === 'admin') {
+            finalRedirectTo = '/admin';
+          } else if (sessionData.user.role === 'user') {
+            finalRedirectTo = '/user/welcome';
+          } else {
+            // Default (viewer) - nach logout zur Welcome Page
+            finalRedirectTo = '/user/welcome';
+          }
+        } else if (!redirectTo) {
+          // Default fallback - zur Welcome Page
+          finalRedirectTo = '/user/welcome';
+        }
+        
+        console.log('🔄 Redirecting to:', finalRedirectTo);
+        router.push(finalRedirectTo!);
         router.refresh(); // Refresh to update session state
       } else {
         setError('Login failed. Please try again.');
@@ -223,7 +245,7 @@ export function LoginForm({
           disabled={isLoading}
           className="w-full bg-coral-500 text-white py-2 px-4 rounded-lg hover:bg-coral-600 focus:outline-none focus:ring-2 focus:ring-coral-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading ? "Signing in..." : "Sign In"}
+          {isLoading ? "Signing in..." : "Login"}
         </button>
 
         <div className="text-center">

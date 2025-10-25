@@ -217,7 +217,8 @@ export default function RecipeManagementPage() {
   }
 
   return (
-    <Card className="p-6">
+    <div className="bg-primary-100 min-h-screen">
+    <Card className="p-6 space-y-6 mx-auto w-full max-w-7xl mb-8 bg-white">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold">Recipe Management</h3>
         <Button onClick={() => loadRecipes()} disabled={loading}>
@@ -421,5 +422,6 @@ export default function RecipeManagementPage() {
         </div>
       )}
     </Card>
+    </div>
   );
 }

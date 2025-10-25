@@ -193,15 +193,13 @@ The `.env.example` file contains placeholder values for:
 ### 🚀 **Launch Coming Soon!**
 
 ---
-## ⛔ Trademark Notice
+## 📄 License
 
-The source code for this project is licensed under the [GNU GPLv3 License](LICENSE).
+This project is proprietary software. All rights reserved.
 
-The name **"smartplates"**, the associated logo, and all other trademarks of **"CommitCrush"** are the exclusive property of **CommitCrush** and are **NOT** included under the open-source license.
+The codebase and application are protected by copyright law. Unauthorized copying, distribution, commercial use, or public hosting of this software is strictly prohibited.
 
-Use of the "smartplates" name or logo to promote or identify any other product (including a fork of this repository) is strictly prohibited without express written permission.
-
----
+Please see the [LICENSE.md](LICENSE.md) file for detailed terms.
 
 *Made with ❤️ by the SmartPlates Team*
 

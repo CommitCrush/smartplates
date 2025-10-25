@@ -167,14 +167,6 @@ The `.env.example` file contains placeholder values for:
 
 ---
 
-## 📄 License
-
-This project is **proprietary software**. All rights reserved. 
-
-> **Important Notice**: This codebase and application are protected by copyright law. Unauthorized copying, distribution, or commercial use of this software is strictly prohibited without explicit written permission from the SmartPlates development team.
-
----
-
 ## 🌟 Why Choose SmartPlates?
 
 ### **Save Time**
@@ -199,6 +191,15 @@ This project is **proprietary software**. All rights reserved.
 ## **Ready to transform your cooking experience?**
 
 ### 🚀 **Launch Coming Soon!**
+
+---
+## ⛔ Trademark Notice
+
+The source code for this project is licensed under the [GNU GPLv3 License](LICENSE).
+
+The name **"smartplates"**, the associated logo, and all other trademarks of **"CommitCrush"** are the exclusive property of **CommitCrush** and are **NOT** included under the open-source license.
+
+Use of the "smartplates" name or logo to promote or identify any other product (including a fork of this repository) is strictly prohibited without express written permission.
 
 ---
 
